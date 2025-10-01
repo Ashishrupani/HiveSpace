@@ -1,0 +1,7 @@
+
+#ignored files
+/node_modules
+.env
+
+#setup instructions
+#setup.txt
