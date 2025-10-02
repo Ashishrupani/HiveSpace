@@ -1,2 +1,11 @@
 -> This folder will be used for adding controllers
 -> This file will also be deleted later.
+
+#We will use CLERK to handle a lot of logic.
+    - Still learning clerk
+#authenticationControllers contains controllers for:
+    - Sign up
+    - Sign in
+    - Forgot password
+    - Verify Email
+

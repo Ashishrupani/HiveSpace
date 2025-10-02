@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from 'dotenv';
 import cors from 'cors';
+//importing authentication routes
+import authenticationRoutes from './routes/authenticationRoutes.js';
 
 //load environmental variables
 dotenv.config();
@@ -12,24 +14,27 @@ const app = express();
 
 //middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: `${process.env.CLIENT_URL}`, credentials: true }));
 
 //build routes here
-app.get("/", (req, res)=>{
-    res.status(200).json({sucess: 'true', message : 'hello from backend'});
+app.get("/", (req, res) => {
+    res.status(200).json({ sucess: 'true', message: 'hello from backend' });
 })
 
 //this is a health check route for debugging and monitoring
-app.get("/api/health",(req,res)=>{
-    res.status(200).json({sucess : 'true', status: 'UP', message: 'API is healthy'});
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ sucess: 'true', status: 'UP', message: 'API is healthy' });
 })
 
-app.post("/",(req, res)=>{
-    res.status(200).json({sucess: 'true', message : 'POST request received'});
+app.post("/", (req, res) => {
+    res.status(200).json({ sucess: 'true', message: 'POST request received' });
 })
+
+//using authentication routes   (this handles all routes starting with /api/auth/...)
+app.use("/api/auth", authenticationRoutes);
 
 
 //Setting up the server
-app.listen(PORT, ()=> {
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
