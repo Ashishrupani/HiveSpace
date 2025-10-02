@@ -1,2 +1,8 @@
 We will use routes folder to organize our API routes.
 This will be deleted later.
+
+#authenticationRoutes.js contains routes for:
+    -sign up
+    -sign in
+    -forgot-password
+    -verify (one time pin)
