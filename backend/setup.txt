@@ -7,6 +7,9 @@
 
 
 
+#Clerk info: https://clerk.com/docs/expressjs/getting-started/quickstart
+import { clerkClient, requireAuth, getAuth } from '@clerk/express'
+
 #run backend server
 1. npm run start (This will run the server)
 

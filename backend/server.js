@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from 'dotenv';
 import cors from 'cors';
+//importing clerk
+import { clerkMiddleware } from '@clerk/express'
 //importing authentication routes
 import authenticationRoutes from './routes/authenticationRoutes.js';
 
@@ -12,8 +14,10 @@ const PORT = process.env.PORT || 5000;
 //express app
 const app = express();
 
+app.use(clerkMiddleware());
+
 //middlewares
-app.use(express.json());
+//app.use(express.json());
 app.use(cors({ origin: `${process.env.CLIENT_URL}`, credentials: true }));
 
 //build routes here
