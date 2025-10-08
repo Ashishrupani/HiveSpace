@@ -18,7 +18,7 @@ app.use(clerkMiddleware());
 
 //middlewares
 //app.use(express.json());
-app.use(cors({ origin: `${process.env.CLIENT_URL}`, credentials: true }));
+app.use(cors({ origin: `${process.env.CLIENT_URL}` }));
 
 //build routes here
 app.get("/", (req, res) => {
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {
+    console.log("Health check route accessed");
     res.status(200).json({ sucess: 'true', status: 'UP', message: 'API is healthy' });
 })
 

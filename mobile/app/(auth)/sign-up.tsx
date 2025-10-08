@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { Text, TextInput, TouchableOpacity, View, StyleSheet, Platform } from 'react-native'
+import { Text, TextInput, TouchableOpacity, View } from 'react-native'
+import authStyles from '../../styles/auth.styles'
 import { useSignUp } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
 
@@ -67,29 +68,29 @@ export default function SignUpScreen() {
 
   if (pendingVerification) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Verify your email</Text>
-        <Text style={styles.subtitle}>Enter the verification code sent to your email.</Text>
+      <View style={authStyles.container}>
+        <Text style={authStyles.title}>Verify your email</Text>
+        <Text style={authStyles.subtitle}>Enter the verification code sent to your email.</Text>
         <TextInput
-          style={styles.input}
+          style={authStyles.input}
           value={code}
           placeholder="Verification code"
           placeholderTextColor="#888"
           onChangeText={setCode}
         />
-        <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-          <Text style={styles.buttonText}>Verify</Text>
+        <TouchableOpacity style={authStyles.button} onPress={onVerifyPress}>
+          <Text style={authStyles.buttonText}>Verify</Text>
         </TouchableOpacity>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
-      <Text style={styles.subtitle}>Create your account to get started.</Text>
+    <View style={authStyles.container}>
+      <Text style={authStyles.title}>Sign Up</Text>
+      <Text style={authStyles.subtitle}>Create your account to get started.</Text>
       <TextInput
-        style={styles.input}
+        style={authStyles.input}
         autoCapitalize="none"
         value={emailAddress}
         placeholder="Email address"
@@ -98,102 +99,23 @@ export default function SignUpScreen() {
         onChangeText={setEmailAddress}
       />
       <TextInput
-        style={styles.input}
+        style={authStyles.input}
         value={password}
         placeholder="Password"
         placeholderTextColor="#888"
         secureTextEntry={true}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-        <Text style={styles.buttonText}>Continue</Text>
+      <TouchableOpacity style={authStyles.button} onPress={onSignUpPress}>
+        <Text style={authStyles.buttonText}>Continue</Text>
       </TouchableOpacity>
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>Already have an account?</Text>
-        <Link href="/sign-in" style={styles.link}>
-          <Text style={styles.linkText}>Sign in</Text>
+      <View style={authStyles.footerRow}>
+        <Text style={authStyles.footerText}>Already have an account?</Text>
+        <Link href="/sign-in" style={authStyles.link}>
+          <Text style={authStyles.linkText}>Sign in</Text>
         </Link>
       </View>
     </View>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f7f8fa',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  input: {
-    width: '100%',
-    maxWidth: 350,
-    height: 48,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    paddingHorizontal: 16,
-    fontSize: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: Platform.OS === 'ios' ? 0.06 : 0.12,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  button: {
-    width: '100%',
-    maxWidth: 350,
-    height: 48,
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-  },
-  footerText: {
-    color: '#444',
-    fontSize: 15,
-  },
-  link: {
-    marginLeft: 6,
-  },
-  linkText: {
-    color: '#2563eb',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-})
