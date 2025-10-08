@@ -1,10 +1,11 @@
 
 
-export const testApi = async () => {
+export const testApiHealth = async () => {
     
     try{
-        const response = await fetch(`${process.env.API_URL}/api/health`);
-        console.log("API response data:", response);
+        const response = await fetch(`http://localhost:5000/api/health`);
+        const data = await response.json();
+        console.log("API response data:", data);
     }
     catch(err){
         console.error(err);

@@ -18,7 +18,8 @@ app.use(clerkMiddleware());
 
 //middlewares
 //app.use(express.json());
-app.use(cors({ origin: `${process.env.CLIENT_URL}` }));
+app.use(cors({ origin: [process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],
+  credentials: true }));
 
 //build routes here
 app.get("/", (req, res) => {

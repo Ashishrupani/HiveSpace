@@ -2,7 +2,7 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo'
 import { Link } from 'expo-router'
 import { Text, View, StyleSheet, Platform, TouchableOpacity } from 'react-native'
 import { SignOutButton } from '@/components/SignOutButton'
-import { testApi } from '../../api/test.api.js'
+import { testApiHealth } from '../../api/test.api.js'
 
 
 const styles = StyleSheet.create({
@@ -47,7 +47,7 @@ export default function Page() {
   const { user } = useUser()
 
   const handleTestApi = async () => {
-    await testApi();
+    await testApiHealth();
   }
 
   return (
