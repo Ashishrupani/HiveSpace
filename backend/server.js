@@ -3,8 +3,6 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 //importing clerk
 import { clerkMiddleware } from '@clerk/express'
-//importing authentication routes
-import authenticationRoutes from './routes/authenticationRoutes.js';
 
 //load environmental variables
 dotenv.config();
@@ -18,8 +16,7 @@ app.use(clerkMiddleware());
 
 //middlewares
 //app.use(express.json());
-app.use(cors({ origin: [process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],
-  credentials: true }));
+app.use(cors({ origin: "*",   credentials: true }));  //[process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],
 
 //build routes here
 app.get("/", (req, res) => {
