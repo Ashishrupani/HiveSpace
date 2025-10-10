@@ -36,9 +36,6 @@ app.post("/", (req, res) => {
     res.status(200).json({ sucess: 'true', message: 'POST request received' });
 })
 
-//using authentication routes   (this handles all routes starting with /api/auth/...)
-app.use("/api/auth", authenticationRoutes);
-
 
 //Setting up the server
 app.listen(PORT, () => {
