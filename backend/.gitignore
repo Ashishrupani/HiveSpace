@@ -5,3 +5,6 @@
 
 #setup instructions
 #setup.txt
+
+.DS_Store
+.env.local
