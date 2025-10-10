@@ -3,9 +3,4 @@
 
 #We will use CLERK to handle a lot of logic.
     - Still learning clerk
-#authenticationControllers contains controllers for:
-    - Sign up
-    - Sign in
-    - Forgot password
-    - Verify Email
-
+    - Still learning clerks middlewares
