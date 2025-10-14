@@ -2,7 +2,8 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo'
 import { Link } from 'expo-router'
 import { Text, View, StyleSheet, Platform, TouchableOpacity } from 'react-native'
 import { SignOutButton } from '@/components/SignOutButton'
-import { testApiHealth } from '../../api/test.api.js'
+import { testApiHealth } from '../../api/test.api'
+import React from 'react'
 
 
 const styles = StyleSheet.create({
@@ -45,9 +46,14 @@ const styles = StyleSheet.create({
 
 export default function Page() {
   const { user } = useUser()
+  const [apiResponse, setApiResponse] = React.useState(null);
 
   const handleTestApi = async () => {
-    await testApiHealth();
+    const response = await testApiHealth();
+    setApiResponse(response);
+    setTimeout(() => {
+      setApiResponse(null);
+    }, 1500); // Clear the response after 1.5 seconds
   }
 
   return (
@@ -59,7 +65,13 @@ export default function Page() {
          <TouchableOpacity style={styles.button}>
             <Text onPress={handleTestApi} style={styles.buttonText}>Test API</Text>
           </TouchableOpacity>
-        
+
+          {
+            apiResponse && (
+              <Text style={styles.title}> {JSON.stringify(apiResponse)} : <></>"</Text>
+            )
+          }
+
       </SignedIn>
       <SignedOut>
         <Text style={styles.title}>Welcome to HiveSpace!</Text>
