@@ -8,8 +8,11 @@
 // import { ThemedView } from '@/components/themed-view';
 // import { IconSymbol } from '@/components/ui/icon-symbol';
 // import { Fonts } from '@/constants/theme';
-import { Redirect } from 'expo-router';
+import { Link } from 'expo-router';
 
+export default function TabTwoScreen(){
+    return <></>
+}
 // export default function TabTwoScreen() {
 //   return (
 //     <ParallaxScrollView

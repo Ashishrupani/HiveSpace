@@ -6,7 +6,7 @@ export const colors = {
 
   text: '#F5F5F7',
   subtext: '#808080',
-  link: '#342A5F',
+  link: '#2a5f56ff',
 
   shadow: '#342A5F',
   shadowbox: '#D9D9D9',
@@ -17,6 +17,26 @@ export const colors = {
 };
 
 const authStyles = StyleSheet.create({
+	titleContainer: {
+		position: 'absolute',
+		top: 50,
+		left: 30,
+		alignItems: 'flex-start',
+		borderRadius: 10,
+		padding: 10,
+	},
+	mainTitle:{
+		fontSize: 40,
+		fontWeight: 'bold',
+		color: colors.accent,
+		letterSpacing: 5,
+		fontFamily: Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'Roboto-Bold',
+	},
+	logoStyle:{
+		width: 210,
+		height: 200,
+		marginBottom: 60,
+	},
 	container: {
 		flex: 1,
 		justifyContent: 'center',
