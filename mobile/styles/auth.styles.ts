@@ -120,6 +120,14 @@ const authStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     opacity: 0.5,
   	},
+	
+	label: {
+    color: colors.subtext,
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 4,
+    marginTop: 14,
+    },
 
 });
 
