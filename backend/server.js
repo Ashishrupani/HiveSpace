@@ -3,11 +3,19 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 //importing clerk
 import { clerkMiddleware } from '@clerk/express'
+import mongoose from "mongoose";
 
 //load environmental variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+
+//connect to database
+mongoose.connect(process.env.MONGO_DB_URI).then(()=>{
+  console.log('Connected to MongoDB');  
+}).catch((err)=>{
+    console.log(err.message);
+});
 
 //express app
 const app = express();
