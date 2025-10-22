@@ -1,10 +1,11 @@
 
-import { View, TextInput, TouchableOpacity, Text } from "react-native";
+import { View, TextInput, TouchableOpacity, Text, Image } from "react-native";
 import authStyles, { colors } from "../../styles/auth.styles";
 import React from "react";
 import { Stack } from "expo-router";
 import { useSignIn } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
+import logo from '../../assets/images/logo_.png'
 
 export default function PwReset() {
   const [emailAddress, setEmailAddress] = React.useState("");
@@ -53,27 +54,51 @@ export default function PwReset() {
 
       {!successfulCreation && (
         <>
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            backgroundColor: "rgba(255,255,255,0.08)",
+            borderRadius: 15,
+            padding: 25,
+            marginTop: 20,
+            marginBottom: 10,
+          }}
+        > 
           <Text style={authStyles.title}>Reset Password</Text>
           <Text style={authStyles.subtitle}>
-            Enter your email to receive a reset code.
+              Enter your email to receive a reset code.
           </Text>
           <TextInput
-            style={authStyles.input}
-            autoCapitalize="none"
-            placeholder="Email address"
-            value={emailAddress}
-            onChangeText={setEmailAddress}
-            placeholderTextColor="#888"
-            keyboardType="email-address"
-          />
+              style={authStyles.input}
+              autoCapitalize="none"
+              placeholder="Email address"
+              value={emailAddress}
+              onChangeText={setEmailAddress}
+              placeholderTextColor="#888"
+              keyboardType="email-address"
+            />
           <TouchableOpacity style={authStyles.button} onPress={onRequestReset}>
             <Text style={authStyles.buttonText}>Send Reset Email</Text>
           </TouchableOpacity>
+        </View>
         </>
+
       )}
 
       {successfulCreation && (
         <>
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            backgroundColor: "rgba(255,255,255,0.08)",
+            borderRadius: 15,
+            padding: 25,
+            marginTop: 20,
+            marginBottom: 10,
+          }}
+        > 
           <Text style={authStyles.title}>Enter Reset Code</Text>
           <Text style={authStyles.subtitle}>
             Check your email for the code and set a new password.
@@ -96,6 +121,7 @@ export default function PwReset() {
           <TouchableOpacity style={authStyles.button} onPress={onReset}>
             <Text style={authStyles.buttonText}>Set New Password</Text>
           </TouchableOpacity>
+        </View>
         </>
       )}
     </LinearGradient>
