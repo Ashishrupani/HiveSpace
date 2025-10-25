@@ -13,8 +13,8 @@ interface TimerProps {
 
 export default function TimerCard({
   onPress,
-  width = 150,
-  height = 150,
+  width = 168,
+  height = 168,
 }: TimerProps) {
   return (
     <BaseCard 
