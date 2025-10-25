@@ -1,8 +1,8 @@
 import { Link } from 'expo-router'
-import {Text, View, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
-import authStyles from '../../styles/auth.styles'
+import { Image, Text, TouchableOpacity, View } from 'react-native'
 import logo from '../../assets/images/logo_.png'
+import authStyles from '../../constants/styles/auth.styles'
 
 
 

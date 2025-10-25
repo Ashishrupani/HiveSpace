@@ -1,17 +1,25 @@
-import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo'
-import {Text, TouchableOpacity } from 'react-native'
 import { SignOutButton } from '@/components/SignOutButton'
-import { testApiHealth } from '../../api/test.api'
-import React from 'react'
-import authStyles, {colors} from '../../styles/auth.styles'
-import {LinearGradient} from 'expo-linear-gradient'
 import WelcomePage from '@/components/ui/welcomepage'
-
-
+import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useRouter } from 'expo-router'
+import React from 'react'
+import { Text, TouchableOpacity } from 'react-native'
+import { testApiHealth } from '../../api/test.api'
+import authStyles from '../../constants/styles/auth.styles'
+import colors from '../../constants/theme'
 
 export default function Page() {
   const { user } = useUser()
   const [apiResponse, setApiResponse] = React.useState(null);
+  const router = useRouter() 
+
+
+  React.useEffect(() => {
+    if (user) {
+      router.replace("./dashboard");
+    }
+  }, [user]);
 
   const handleTestApi = async () => {
     const response = await testApiHealth();

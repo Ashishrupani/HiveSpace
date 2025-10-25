@@ -1,12 +1,11 @@
 import { useSignIn } from "@clerk/clerk-expo";
-import { Link, router, useRouter, useNavigation } from "expo-router";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { colors } from "../../styles/auth.styles";
-import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import authStyles from "../../styles/auth.styles";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link, useNavigation, useRouter } from "expo-router";
 import React, { useEffect } from "react";
+import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import authStyles from "../../constants/styles/auth.styles";
+import colors from '../../constants/theme';
 
 export default function Page() {
   const router = useRouter();
