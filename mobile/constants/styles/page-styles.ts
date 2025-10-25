@@ -8,7 +8,7 @@ export const pageStyles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 20,//will need to be reduced once top banner is added
   },
   container: {
     flex: 1,
@@ -28,6 +28,11 @@ export const pageStyles = StyleSheet.create({
     color: colors.subtext,
     marginBottom: 24,
   },
+  rowstyles: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 4
+  }
 });
 
 export default pageStyles;

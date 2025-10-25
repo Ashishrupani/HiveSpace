@@ -1,5 +1,6 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Image, View } from "react-native";
+import timer from '../../assets/images/timer_icon.png';
 import cardStyles from "../../constants/styles/card-styles";
 import BaseCard from "./baseCard";
 
@@ -26,9 +27,10 @@ export default function TimerCard({
         justifyContent: 'center', 
         alignItems: 'center' 
       }}>
-        {/* need to find and add icon to assets */}
-        <Text style={{ fontSize: 48 }}>placeholder</Text>
-        <Text style={[cardStyles.label, { marginTop: 8 }]}>Timer</Text>
+      <Image 
+        source={timer} 
+        style={cardStyles.halfwidthImage}
+      />
       </View>
     </BaseCard>
   );

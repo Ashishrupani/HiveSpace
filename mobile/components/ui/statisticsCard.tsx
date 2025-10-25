@@ -14,8 +14,8 @@ interface statsCardProps {
 
 export default function StatisticsCard({
   onPress,
-  width = 150,
-  height = 150,
+  width = 168,
+  height = 168,
   streak,
   personalBest,
 }: statsCardProps) {
@@ -32,7 +32,7 @@ export default function StatisticsCard({
            Personal Best: <Text style={cardStyles.labelBold}>{personalBest}</Text>
         </Text>
 
-         {/* we may what one more metric to go here jsut to even out the page. */}
+         {/* we may what one more metric to go here just to even out the page. */}
     </BaseCard>
   );
 }

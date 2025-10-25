@@ -2,10 +2,9 @@ import TimerCard from "@/components/ui/timerCard";
 import { useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
-import { Goal } from "../../components/ui/goalsCard";
+import GoalsCard, { Goal } from "../../components/ui/goalsCard";
 import StatisticsCard from "../../components/ui/statisticsCard";
 import pageStyles from "../../constants/styles/page-styles";
-
 
 export default function dashboard(){
   const router = useRouter();
@@ -23,7 +22,8 @@ export default function dashboard(){
     try {
       // const response = await fetch("/api/dashboard");//api call to backend
       // const data = await response.json();
-      //this is the just test data makesure we are update components right
+      // This is the just test data makesure we are update components right this will
+      // be removed once the api routes are made
       const data = {
         profileColor: '#2a5f56ff',
         profileemoji: 4 ,
@@ -64,7 +64,6 @@ export default function dashboard(){
   return (
     <ScrollView style={pageStyles.container}>
       <View style={pageStyles.scrollContent}>
-        {/* <Text style={pageStyles.title}>Dashboard</Text> */}
 
         <StatisticsCard
           streak={streak}
@@ -72,14 +71,31 @@ export default function dashboard(){
           onPress={onstatspress}
         />
 
-        {/* <GoalsCard 
+        <GoalsCard 
           goals={goals} 
           onPress={ongoalsPress}
-        /> */}
-
-        <TimerCard
-          onPress={ontimerpress}
         />
+        {/* WIP:group activity card once done */}
+        <GoalsCard 
+          goals={goals} 
+          onPress={ongoalsPress}
+        />
+{/* horizonal view for placeing half width card side by side */}
+        <View style={pageStyles.rowstyles}>
+          <TimerCard
+            onPress={ontimerpress}
+          />
+          {/* WIP spotify card ones done */}
+          <TimerCard
+            onPress={ontimerpress}
+          />
+        </View>
+
+
+
+
+
+
 
       </View>
     </ScrollView>

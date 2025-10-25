@@ -25,5 +25,14 @@ export const cardStyles = StyleSheet.create({
     color: colors.text,
     fontWeight: 'bold',
   },
+  rowstyles: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 4
+  },
+  halfwidthImage: {
+    width: 100, //percent image size
+    height: 100,
+  },
 });
 export default cardStyles;
