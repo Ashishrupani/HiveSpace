@@ -1,10 +1,10 @@
-import * as React from "react";
-import { Text, TextInput, TouchableOpacity, View, Pressable } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
-import { Link, useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import authStyles, { colors } from "../../styles/auth.styles";
+import { Link, useNavigation, useRouter } from "expo-router";
+import * as React from "react";
+import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import authStyles, { colors } from "../../constants/styles/auth.styles";
 
 export default function SignUpScreen() {
   const router = useRouter();
