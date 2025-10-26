@@ -1,11 +1,10 @@
 
-import { View, TextInput, TouchableOpacity, Text, Image } from "react-native";
-import authStyles, { colors } from "../../styles/auth.styles";
-import React from "react";
-import { Stack } from "expo-router";
 import { useSignIn } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
-import logo from '../../assets/images/logo_.png'
+import { Stack } from "expo-router";
+import React from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import authStyles, { colors } from "../../constants/styles/auth.styles";
 
 export default function PwReset() {
   const [emailAddress, setEmailAddress] = React.useState("");
