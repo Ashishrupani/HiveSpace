@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, useNavigation, useRouter } from "expo-router";
 import * as React from "react";
 import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
-import authStyles, { colors } from "../../constants/styles/auth.styles";
+import authStyles from "../../constants/styles/auth.styles";
+import colors from '../../constants/theme';
 
 export default function SignUpScreen() {
   const router = useRouter();

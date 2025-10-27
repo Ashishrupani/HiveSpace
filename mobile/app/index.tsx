@@ -5,9 +5,9 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import React from 'react'
 import { Text, TouchableOpacity } from 'react-native'
-import { testApiHealth } from '../../api/test.api'
-import authStyles from '../../constants/styles/auth.styles'
-import colors from '../../constants/theme'
+import { testApiHealth } from '../api/test.api'
+import authStyles from '../constants/styles/auth.styles'
+import colors from '../constants/theme'
 
 export default function Page() {
   const { user } = useUser()
@@ -19,6 +19,7 @@ export default function Page() {
     if (user) {
       router.replace("./dashboard");
     }
+    console.log("useeffect ran in index page");
   }, [user]);
 
   const handleTestApi = async () => {
@@ -32,7 +33,7 @@ export default function Page() {
   return (
     <LinearGradient colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]} style={authStyles.container}>
       <SignedIn>
-        <Text style={authStyles.title}>Hello {user?.emailAddresses[0].emailAddress}</Text>
+        {/* <Text style={authStyles.title}>Hello {user?.emailAddresses[0].emailAddress}</Text>
         <SignOutButton />
 
          <TouchableOpacity style={authStyles.button}>
@@ -43,7 +44,9 @@ export default function Page() {
             apiResponse && (
               <Text style={authStyles.title}> {JSON.stringify(apiResponse)} : <></>"</Text>
             )
-          }
+          } */}
+      
+
       </SignedIn>
       <SignedOut>
         <WelcomePage />
