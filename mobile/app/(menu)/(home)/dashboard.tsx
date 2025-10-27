@@ -1,13 +1,16 @@
 import TimerCard from "@/components/ui/timerCard";
 import { useRouter } from "expo-router";
 import React from "react";
-import { ScrollView, View } from "react-native";
-import GoalsCard, { Goal } from "../../components/ui/goalsCard";
-import StatisticsCard from "../../components/ui/statisticsCard";
-import pageStyles from "../../constants/styles/page-styles";
+import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useNavigation } from '@react-navigation/native';
+import GoalsCard, { Goal } from "../../../components/ui/goalsCard";
+import StatisticsCard from "../../../components/ui/statisticsCard";
+import pageStyles from "../../../constants/styles/page-styles";
+import { SignOutButton } from '@/components/SignOutButton'
 
 export default function dashboard(){
   const router = useRouter();
+  const navigation = useNavigation<any>();
 
   React.useEffect(() => {
     fetchStats();
@@ -62,6 +65,8 @@ export default function dashboard(){
   };
 
   return (
+    <>
+    <SignOutButton />
     <ScrollView style={pageStyles.container}>
       <View style={pageStyles.scrollContent}>
 
@@ -70,11 +75,11 @@ export default function dashboard(){
           personalBest={personalBest}
           onPress={onstatspress}
         />
-
         <GoalsCard 
           goals={goals} 
           onPress={ongoalsPress}
         />
+
         {/* WIP:group activity card once done */}
         <GoalsCard 
           goals={goals} 
@@ -91,13 +96,8 @@ export default function dashboard(){
           />
         </View>
 
-
-
-
-
-
-
       </View>
     </ScrollView>
+    </>
   );
 }

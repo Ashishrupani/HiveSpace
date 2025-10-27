@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack } from "expo-router";
 import React from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import authStyles, { colors } from "../../constants/styles/auth.styles";
+import authStyles from "../../constants/styles/auth.styles";
+import colors from "../../constants/theme";
 
 export default function PwReset() {
   const [emailAddress, setEmailAddress] = React.useState("");
