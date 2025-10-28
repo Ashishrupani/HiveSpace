@@ -32,3 +32,7 @@ export default function GroupLayout() {
   )
 }
 
+
+/* Notes
+ * This layout component sets up the group screen with a tab navigator.
+ */

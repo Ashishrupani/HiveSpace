@@ -42,3 +42,8 @@ export default function HomeLayout() {
         </Tabs>
   )
 }
+
+
+/* Notes
+ * This layout component sets up the home screen with a tab navigator.
+ */
