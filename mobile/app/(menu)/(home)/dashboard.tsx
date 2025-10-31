@@ -57,11 +57,14 @@ export default function dashboard(){
   const ongoalsPress = () => {
     console.log("goals pressed");
     //routing for onclick
+    //navigation.navigate("Goals");
+
   };
 
   const ontimerpress = () => {
     console.log("timer pressed");
     //routing for onclick
+    router.push("/(menu)/(home)/timer");
   };
 
   return (
