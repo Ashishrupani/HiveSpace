@@ -6,6 +6,7 @@ import * as React from "react";
 import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
 import authStyles from "../../constants/styles/auth.styles";
 import colors from '../../constants/theme';
+import { ScrollView } from "react-native";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -132,9 +133,14 @@ export default function SignUpScreen() {
   // --- Sign Up screen (themed like sign-in) ---
   return (
     <LinearGradient
-      colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
-      style={authStyles.container}
+      colors={[colors.gradienttop, colors.gradientbottom]}
+      style={{ flex: 1 }}
     >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <LinearGradient
+          colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
+          style={authStyles.container}
+        >
       {/* Title + subtitle aligned like sign-in */}
       <View style={{ position: "absolute", top: 10, left: 50 }}>
         <Text
@@ -236,6 +242,8 @@ export default function SignUpScreen() {
           Login
         </Link>
       </Text>
+        </LinearGradient>
+      </ScrollView>
     </LinearGradient>
   );
 }

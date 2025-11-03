@@ -84,15 +84,8 @@ export default function dashboard(){
         />
 
         {/* WIP:group activity card once done */}
-        <GoalsCard 
-          goals={goals} 
-          onPress={ongoalsPress}
-        />
 {/* horizonal view for placeing half width card side by side */}
         <View style={pageStyles.rowstyles}>
-          <TimerCard
-            onPress={ontimerpress}
-          />
           {/* WIP spotify card ones done */}
           <TimerCard
             onPress={ontimerpress}
