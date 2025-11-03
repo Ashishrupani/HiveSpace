@@ -26,17 +26,23 @@ export default function HomeLayout() {
             }}
           />
           <Tabs.Screen
+            name="stats"
+            options={{
+              title: 'Stats',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+            }}
+          />
+          <Tabs.Screen
             name="timer"
             options={{
-              title: 'Timer',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
+              href: null,
             }}
           />
           <Tabs.Screen
             name="profile"
             options={{
               title: 'Profile',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+              href: null,
             }}
           />
         </Tabs>
