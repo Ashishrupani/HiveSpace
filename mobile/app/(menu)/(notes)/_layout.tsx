@@ -4,7 +4,6 @@ import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 
 export default function NotesLayout() {
-
   return (
     <Tabs
           screenOptions={{
