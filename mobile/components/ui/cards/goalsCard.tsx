@@ -1,8 +1,8 @@
 import React from "react";
 import { Text, View } from "react-native";
 import * as Progress from 'react-native-progress';
-import cardStyles from "../../constants/styles/card-styles";
-import { colors } from "../../constants/theme";
+import cardStyles from "../../../constants/styles/card-styles";
+import { colors } from "../../../constants/theme";
 import BaseCard from "./baseCard";
 
 //goal type

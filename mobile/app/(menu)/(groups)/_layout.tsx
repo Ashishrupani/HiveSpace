@@ -22,13 +22,17 @@ export default function GroupLayout() {
             }}
           />
           <Tabs.Screen
-            name="createGroup"
+            name="groupSetting"
             options={{
-              title: 'Create Group',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+              title: 'Settings',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
             }}
           />
           </Tabs>
   )
 }
 
+
+/* Notes
+ * This layout component sets up the group screen with a tab navigator.
+ */

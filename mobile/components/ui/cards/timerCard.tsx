@@ -1,7 +1,7 @@
 import React from "react";
 import { Image, View } from "react-native";
-import timer from '../../assets/images/timer_icon.png';
-import cardStyles from "../../constants/styles/card-styles";
+import timer from '../../../assets/images/timer_icon.png';
+import cardStyles from "../../../constants/styles/card-styles";
 import BaseCard from "./baseCard";
 
 

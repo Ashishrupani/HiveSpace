@@ -1,10 +1,10 @@
-import TimerCard from "@/components/ui/timerCard";
+import TimerCard from "@/components/ui/cards/timerCard";
 import { useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import GoalsCard, { Goal } from "../../../components/ui/goalsCard";
-import StatisticsCard from "../../../components/ui/statisticsCard";
+import GoalsCard, { Goal } from "../../../components/ui/cards/goalsCard";
+import StatisticsCard from "../../../components/ui/cards/statisticsCard";
 import pageStyles from "../../../constants/styles/page-styles";
 import { SignOutButton } from '@/components/SignOutButton'
 
@@ -57,11 +57,14 @@ export default function dashboard(){
   const ongoalsPress = () => {
     console.log("goals pressed");
     //routing for onclick
+    //navigation.navigate("Goals");
+
   };
 
   const ontimerpress = () => {
     console.log("timer pressed");
     //routing for onclick
+    router.push("/(menu)/(home)/timer");
   };
 
   return (

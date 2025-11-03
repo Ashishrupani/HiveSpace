@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView, View, Text, TouchableOpacity } from "react-native";
-import NoteCard from "../../../components/ui/noteCard";
+import NoteCard from "../../../components/ui/cards/noteCard";
 import { Colors } from "../../../constants/theme";
 import { colors } from "../../../constants/theme";
 import cardStyles from "../../../constants/styles/card-styles";

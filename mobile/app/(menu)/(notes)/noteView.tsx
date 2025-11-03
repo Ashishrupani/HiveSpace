@@ -1,10 +1,11 @@
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { View, Text, ScrollView, Pressable } from "react-native";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { colors } from "../../../constants/theme";
 import { Colors } from "../../../constants/theme";
 import cardStyles from "../../../constants/styles/card-styles";
 import { Clock } from "lucide-react-native";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
 
 export default function NoteView() {
     // Receive note data passed from noteDashboard.tsx
@@ -18,7 +19,14 @@ export default function NoteView() {
     // Parse tags back from JSON
     const parsedTags = tags ? JSON.parse(tags) : [];
 
+    const router = useRouter();
+    const navigation = useNavigation();
+
     return (
+        <>
+        <Pressable onPress={() => router.push("/noteDashboard")} style={{ backgroundColor: Colors.dark.background, paddingTop:10}}>
+                    <Ionicons name="arrow-back" size={30} color="#fff" />
+        </Pressable>
         <ScrollView
             style={{
                 flex: 1,
@@ -90,5 +98,6 @@ export default function NoteView() {
                 {description}
             </Text>
         </ScrollView>
+        </>
     );
 }

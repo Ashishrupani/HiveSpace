@@ -1,9 +1,10 @@
+import { useNavigation, useRouter } from 'expo-router';
 import HexagonDial from '@/components/ui/timerdial';
 import pageStyles from '@/constants/styles/page-styles';
-import colors from '@/constants/theme';
+import colors, { Colors } from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from 'react';
-import { TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, TextInput, TouchableOpacity, View } from 'react-native';
 
 // This is adaped from this open source project 
 // https://github.com/nabendu82/TimerReactNative/blob/master/App/index.js
@@ -22,6 +23,9 @@ export default function TabTwoScreen() {
   
   const { mins, secs } = getRemaining(remainingSecs);
   const timeDisplay = `${mins}:${secs}`;
+
+  const router = useRouter();
+  const navigation = useNavigation();
   
   const ontimerpress = () => {
     setIsActive(!isActive);
@@ -50,6 +54,9 @@ export default function TabTwoScreen() {
   
   return (
     <View style={pageStyles.timerdial}>
+      <Pressable onPress={() => router.push("/dashboard")} style={{ ...pageStyles.button, paddingTop:10}}>
+        <Ionicons name="arrow-back" size={30} color="#bd5417ff" />
+      </Pressable>
 
       <HexagonDial
         progress={1 - (remainingSecs / (initialTime * 60))}

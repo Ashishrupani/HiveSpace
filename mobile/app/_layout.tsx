@@ -20,3 +20,11 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+/*
+ * ***Notes*****
+ * This code sets up the root layout for a React Native Expo application using Expo Router and Clerk for authentication.
+ * The ClerkProvider component wraps the entire app to provide authentication context
+ * while GestureHandlerRootView ensures proper handling of gestures throughout the app.
+ * The Slot component is a placeholder for rendering child routes defined in the Expo Router configuration.
+ */
