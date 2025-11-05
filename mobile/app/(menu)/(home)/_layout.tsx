@@ -9,43 +9,43 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 //import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HomeLayout() {
-    //const colorScheme = useColorScheme() as 'light' | 'dark' | undefined;
+  //const colorScheme = useColorScheme() as 'light' | 'dark' | undefined;
 
   return (
     <Tabs
-          screenOptions={{
-            tabBarActiveTintColor: Colors.light.tint,
-            headerShown: false,
-            tabBarButton: HapticTab,
-          }}>
-          <Tabs.Screen
-            name="dashboard"
-            options={{
-              title: 'Home',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="stats"
-            options={{
-              title: 'Stats',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-            }}
-          />
-          <Tabs.Screen
-            name="timer"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'Profile',
-              href: null,
-            }}
-          />
-        </Tabs>
+      screenOptions={{
+        tabBarActiveTintColor: Colors.light.tint,
+        headerShown: false,
+        tabBarButton: HapticTab,
+      }}>
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="timer"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+        }}
+      />
+    </Tabs>
   )
 }
 
