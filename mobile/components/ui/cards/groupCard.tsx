@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import BaseCard from './baseCard';
 import cardStyles from '../../../constants/styles/card-styles';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { groupCardStyles } from '../../../constants/styles/card-styles';
 
 interface GroupCardProps {
   name: string;
@@ -16,61 +17,27 @@ interface GroupCardProps {
 
 export default function GroupCard({ name, members, logoUri, iconName = 'chevron.left.forwardslash.chevron.right', onPress }: GroupCardProps) {
   return (
-    <BaseCard onPress={onPress} height={110}>
-      <View style={styles.row}>
-        <View style={styles.logoWrap}>
+    <View style={groupCardStyles.shadowWrap}>
+      <BaseCard onPress={onPress} height={110}>
+        <View style={groupCardStyles.row}>
+        <View style={groupCardStyles.logoWrap}>
           {logoUri ? (
-            <Image source={{ uri: logoUri }} style={styles.logoImage} resizeMode="cover" />
+            <Image source={{ uri: logoUri }} style={groupCardStyles.logoImage} resizeMode="cover" />
           ) : (
-            <View style={styles.iconCircle}>
+            <View style={groupCardStyles.iconCircle}>
               <IconSymbol name={iconName as any} size={36} color="#fff" />
             </View>
           )}
         </View>
 
-        <View style={styles.content}>
-          <Text numberOfLines={1} style={styles.name}>{name}</Text>
+        <View style={groupCardStyles.content}>
+          <Text numberOfLines={1} style={groupCardStyles.name}>{name}</Text>
           <Text style={cardStyles.label}>{members} members</Text>
         </View>
-      </View>
-    </BaseCard>
+        </View>
+      </BaseCard>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoImage: {
-    width: '100%',
-    height: '100%',
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#342A5f',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-});
+
