@@ -6,6 +6,7 @@ import { Colors } from "../../../constants/theme";
 import cardStyles from "../../../constants/styles/card-styles";
 import { Clock } from "lucide-react-native";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
+import BackButton from "@/components/ui/BackButton";
 
 export default function NoteView() {
     // Receive note data passed from noteDashboard.tsx
@@ -24,9 +25,7 @@ export default function NoteView() {
 
     return (
         <>
-        <Pressable onPress={() => router.push("/noteDashboard")} style={{ backgroundColor: Colors.dark.background, paddingTop:10}}>
-                    <Ionicons name="arrow-back" size={30} color="#fff" />
-        </Pressable>
+        <BackButton color={Colors.dark.text} />
         <ScrollView
             style={{
                 flex: 1,
