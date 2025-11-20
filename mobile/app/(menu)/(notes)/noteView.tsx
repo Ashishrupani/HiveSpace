@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Colors } from "../../../constants/theme";
@@ -20,6 +21,21 @@ export default function NoteView() {
   const [note, setNote] = useState<UINote | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+
+  async function openAttachment() {
+  const current = note;
+  if (!current || !current.fileUri) return;
+
+  try {
+    await Linking.openURL(current.fileUri);
+  } catch (err) {
+    console.error("Failed to open attachment:", err);
+    Alert.alert(
+      "Error",
+      "Could not open attachment. Make sure you have an app installed that can open this file type."
+    );
+  }
+}
 
   useEffect(() => {
     if (!id) return;
@@ -168,6 +184,43 @@ export default function NoteView() {
             lineHeight: 22,
           }}
         />
+              {/* Full-screen editor */}
+      <TextInput
+        placeholder="Write your note here..."
+        placeholderTextColor="#777"
+        value={body}
+        onChangeText={setBody}
+        multiline
+        style={{
+          minHeight: 300,
+          borderRadius: 12,
+          backgroundColor: "#1f1f1f",
+          padding: 12,
+          color: "#fff",
+          textAlignVertical: "top",
+          fontSize: 15,
+          lineHeight: 22,
+        }}
+      />
+
+      {/* Attachment button (if this note has a file) */}
+      {note.fileUri && (
+        <TouchableOpacity
+          onPress={openAttachment}
+          style={{
+            marginTop: 16,
+            backgroundColor: Colors.light.tint,
+            paddingVertical: 12,
+            borderRadius: 12,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontWeight: "600" }}>
+            Open Attachment {note.mimeType ? `(${note.mimeType})` : ""}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       </ScrollView>
     </View>
   );

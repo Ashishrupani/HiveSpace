@@ -11,7 +11,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect  } from "expo-router";
 import { Plus, Edit3, Trash2 } from "lucide-react-native";
 
 import { Colors, colors } from "../../../constants/theme";
@@ -57,9 +57,13 @@ export default function NotesDashboard() {
     }
   }, []);
 
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
+    // Called every time the Notes tab/screen is focused
     loadNotes();
-  }, [loadNotes]);
+  }, [loadNotes])
+);
+
 
   const resetForm = () => {
     setName("");
@@ -124,8 +128,7 @@ export default function NotesDashboard() {
         // Create note with file attachment
         await createNote({
           title: name.trim(),
-          description:
-            "Uploaded file note. Open attachment to view the content.",
+          description: "",
           tags: [subject.trim()],
           fileUri: pendingFile.fileUri,
           mimeType: pendingFile.mimeType ?? null,
