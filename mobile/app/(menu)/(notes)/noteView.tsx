@@ -1,94 +1,174 @@
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
+// app/(menu)/(notes)/noteView.tsx
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { colors } from "../../../constants/theme";
 import { Colors } from "../../../constants/theme";
 import cardStyles from "../../../constants/styles/card-styles";
-import { Clock } from "lucide-react-native";
+import { Clock, Save } from "lucide-react-native";
+import { getNoteById, updateNote, UINote } from "../../../lib/notes-repo";
 
 export default function NoteView() {
-    // Receive note data passed from noteDashboard.tsx
-    const { title, description, tags, time } = useLocalSearchParams<{
-        title: string;
-        description: string;
-        tags: string;
-        time: string;
-    }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [note, setNote] = useState<UINote | null>(null);
+  const [body, setBody] = useState("");
+  const [saving, setSaving] = useState(false);
 
-    // Parse tags back from JSON
-    const parsedTags = tags ? JSON.parse(tags) : [];
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        const loaded = await getNoteById(Number(id));
+        if (loaded) {
+          setNote(loaded);
+          setBody(loaded.description || "");
+        }
+      } catch (err) {
+        console.error("Failed to load note:", err);
+      }
+    })();
+  }, [id]);
 
+  const handleSave = async () => {
+    if (!note) return;
+    try {
+      setSaving(true);
+      await updateNote({
+        id: note.id,
+        description: body,
+      });
+      Alert.alert("Saved", "Your note has been saved.");
+    } catch (err) {
+      console.error("Failed to save note:", err);
+      Alert.alert("Error", "Failed to save note.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!note) {
     return (
-        <ScrollView
-            style={{
-                flex: 1,
-                backgroundColor: Colors.dark.background,
-                paddingHorizontal: 20,
-                paddingVertical: 24,
-            }}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Note Title & Time */}
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 10,
-                }}
-            >
-                <Text
-                    style={[
-                        cardStyles.labelBold,
-                        { fontSize: 22, color: colors.accent, flex: 1 },
-                    ]}
-                    numberOfLines={2}
-                >
-                    {title}
-                </Text>
-
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Clock color={colors.text} size={16} />
-                    <Text
-                        style={[cardStyles.label, { marginLeft: 4, color: colors.text }]}
-                    >
-                        {time}
-                    </Text>
-                </View>
-            </View>
-
-            {/* Tags */}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 16 }}>
-                {parsedTags.map((tag: string, index: number) => (
-                    <View
-                        key={index}
-                        style={{
-                            //backgroundColor: colors.secondary,
-                            borderRadius: 12,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            marginRight: 8,
-                            marginBottom: 8,
-                        }}
-                    >
-                        <Text style={{ color: colors.accent, fontSize: 12 }}>{tag}</Text>
-                    </View>
-                ))}
-            </View>
-
-            {/* Full Description */}
-            <Text
-                style={[
-                    cardStyles.label,
-                    {
-                        color: colors.accent,
-                        lineHeight: 22,
-                        fontSize: 15,
-                    },
-                ]}
-            >
-                {description}
-            </Text>
-        </ScrollView>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: Colors.dark.background,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color={Colors.light.tint} />
+        <Text style={[cardStyles.label, { marginTop: 8 }]}>
+          Loading note...
+        </Text>
+      </View>
     );
+  }
+
+  const subjectText = note.tags?.[0] ?? "";
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: Colors.dark.background,
+      }}
+    >
+      {/* Top bar with Save button */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 8,
+        }}
+      >
+        <Text style={[cardStyles.labelBold, { fontSize: 18 }]}>
+          {note.title}
+        </Text>
+
+        <TouchableOpacity
+          onPress={handleSave}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 10,
+            backgroundColor: Colors.light.tint,
+            opacity: saving ? 0.7 : 1,
+          }}
+          disabled={saving}
+        >
+          <Save color="#fff" size={16} />
+          <Text
+            style={{
+              color: "#fff",
+              marginLeft: 6,
+              fontWeight: "600",
+              fontSize: 13,
+            }}
+          >
+            {saving ? "Saving..." : "Save"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Subject + time */}
+        <View
+          style={{
+            marginBottom: 12,
+          }}
+        >
+          <Text
+            style={[
+              cardStyles.label,
+              { marginBottom: 4, opacity: 0.85 },
+            ]}
+          >
+            {subjectText}
+          </Text>
+
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Clock color={Colors.dark.text} size={16} />
+            <Text style={[cardStyles.label, { marginLeft: 4 }]}>
+              {note.time}
+            </Text>
+          </View>
+        </View>
+
+        {/* Full-screen editor */}
+        <TextInput
+          placeholder="Write your note here..."
+          placeholderTextColor="#777"
+          value={body}
+          onChangeText={setBody}
+          multiline
+          style={{
+            minHeight: 300,
+            borderRadius: 12,
+            backgroundColor: "#1f1f1f",
+            padding: 12,
+            color: "#fff",
+            textAlignVertical: "top",
+            fontSize: 15,
+            lineHeight: 22,
+          }}
+        />
+      </ScrollView>
+    </View>
+  );
 }
