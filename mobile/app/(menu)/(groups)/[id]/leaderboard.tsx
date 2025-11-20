@@ -1,7 +1,335 @@
-import React from "react"
+import React, { useMemo, useState } from 'react';
+import { View, ScrollView, StyleSheet, FlatList, Pressable, Image } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import BackButton from '@/components/ui/BackButton';
+import { ThemedText } from '@/components/themed-text';
+import { LinearGradient } from 'expo-linear-gradient';
+import authStyles from '@/constants/styles/auth.styles';
+import { colors } from '@/constants/theme';
+const bee = require('../../../../assets/images/bee_astronanut.jpg');
+const queen = require('../../../../assets/images/queen_bee.avif');
+
+type Player = {
+  id: string;
+  name: string;
+  points: number;
+};
+
+const MOCK_PLAYERS: Player[] = [
+  { id: '1', name: 'Prakriti', points: 1280 },
+  { id: '2', name: 'Natalia', points: 1100 },
+  { id: '3', name: 'Maki', points: 980 },
+  { id: '4', name: 'Ashish', points: 850 },
+  { id: '5', name: 'Aaron', points: 720 },
+  { id: '6', name: "Abraham", points: 610 },
+  { id: '7', name: 'Dr. Wang', points: 520 },
+  { id: '8', name: 'Queen Bee', points: 450 },
+  { id: '9', name: 'Red Pepper', points: 390 },
+  { id: '10', name: 'Bee Astronaut', points: 330 },
+];
 
 export default function Leaderboard() {
+  const { id } = useLocalSearchParams();
+  const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
+
+  const sorted = useMemo(() => {
+    // For now tabs don't change the mocked data, but we keep hook so it's easy to plug in real backend.
+    return MOCK_PLAYERS.slice().sort((a, b) => b.points - a.points);
+  }, [tab]);
+
+  const top3 = sorted.slice(0, 3);
+  const rest = sorted.slice(3);
+
   return (
-    <></>
-  )
+    <LinearGradient
+      colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
+      style={authStyles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <BackButton />
+
+        <ThemedText type="title" style={styles.header}>
+          Leaderboard
+        </ThemedText>
+        <ThemedText style={styles.subheader}>Group ID: {id}</ThemedText>
+
+        <View style={styles.tabRow}>
+          {(['Daily', 'Weekly', 'All time'] as const).map((t) => (
+            <Pressable
+              key={t}
+              onPress={() => setTab(t)}
+              style={[styles.tab, tab === t ? styles.tabActive : undefined]}
+            >
+              <ThemedText style={[styles.tabText, tab === t ? styles.tabTextActive : undefined]}>{t}</ThemedText>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Podium */}
+        <View style={styles.podiumRow}>
+          <View style={styles.podiumSide}>
+            {top3[1] && (
+              <View style={styles.podiumItem}>
+                <Image source={bee} style={[styles.avatarLarge, styles.avatarSilverImage]} />
+                <View style={styles.podiumCard}>
+                  <ThemedText style={styles.podiumName}>{top3[1].name}</ThemedText>
+                  <ThemedText style={styles.podiumPoints}>{top3[1].points}</ThemedText>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.podiumCenter}>
+            {top3[0] && (
+              <View style={styles.podiumItemCenter}>
+                <Image source={queen} style={[styles.avatarXL, styles.avatarGoldImage]} />
+                <View style={styles.podiumCardCenter}>
+                  <ThemedText style={styles.podiumNameCenter}>{top3[0].name}</ThemedText>
+                  <ThemedText style={styles.podiumPointsCenter}>{top3[0].points}</ThemedText>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.podiumSide}>
+            {top3[2] && (
+              <View style={styles.podiumItem}>
+                <Image source={bee} style={[styles.avatarLarge, styles.avatarBronzeImage]} />
+                <View style={styles.podiumCard}>
+                  <ThemedText style={styles.podiumName}>{top3[2].name}</ThemedText>
+                  <ThemedText style={styles.podiumPoints}>{top3[2].points}</ThemedText>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* List of remaining players in dark cards */}
+        <View style={styles.listWrap}>
+          <FlatList
+            data={rest}
+            keyExtractor={(p) => p.id}
+            renderItem={({ item, index }) => (
+              <View style={styles.listCard}>
+                <View style={styles.listLeft}>
+                  <View style={styles.avatarSmall}>
+                    <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
+                  </View>
+                  <View style={styles.nameCol}>
+                    <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
+                    <ThemedText style={styles.username}>@username</ThemedText>
+                  </View>
+                </View>
+                <ThemedText style={styles.points}>{item.points}</ThemedText>
+              </View>
+            )}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            contentContainerStyle={{ paddingBottom: 80 }}
+          />
+        </View>
+      </ScrollView>
+    </LinearGradient>
+  );
 }
+
+function getInitials(name: string) {
+  const parts = name.split(' ');
+  const first = parts[0] ? parts[0][0] : '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+const styles = StyleSheet.create({
+  scroll: {
+    padding: 20,
+    paddingTop: 34,
+    flexGrow: 1,
+  },
+  header: {
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+    fontWeight: '700',
+  },
+  subheader: {
+    textAlign: 'center',
+    marginBottom: 12,
+    opacity: 0.9,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 999,
+    padding: 6,
+    marginBottom: 18,
+  },
+  tab: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  tabActive: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#fff',
+    fontWeight: '800',
+  },
+
+  podiumRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 20,
+  },
+  podiumSide: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  podiumCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  podiumItem: {
+    alignItems: 'center',
+  },
+  podiumItemCenter: {
+    alignItems: 'center',
+  },
+  avatarLarge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarXL: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  avatarGold: {
+    backgroundColor: '#FFD700',
+  },
+  avatarSilver: {
+    backgroundColor: '#94A3B8',
+  },
+  avatarBronze: {
+    backgroundColor: '#C76B2D',
+  },
+  avatarTextSmall: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  avatarTextXL: {
+    color: '#111',
+    fontWeight: '800',
+  },
+  /* image variants for top-3 */
+  avatarSilverImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  avatarGoldImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 4,
+    borderColor: '#FFD700',
+  },
+  avatarBronzeImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  podiumCard: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  podiumCardCenter: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  podiumName: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  podiumPoints: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  podiumNameCenter: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  podiumPointsCenter: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 18,
+  },
+
+  listWrap: {
+    marginTop: 6,
+  },
+  listCard: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  nameCol: {
+    flexDirection: 'column',
+  },
+  nameBold: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  username: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 12,
+  },
+  points: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: 'transparent',
+  },
+});
