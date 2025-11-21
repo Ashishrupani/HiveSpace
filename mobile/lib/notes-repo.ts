@@ -1,3 +1,4 @@
+// mobile/lib/notes-repo.ts
 import { getDB } from "./db";
 
 /**
@@ -8,7 +9,7 @@ export interface DBNote {
   id: number;
   title: string;
   description: string;
-  tags: string | null; // stored as JSON string
+  tags: string | null; // stored as JSON string, first element = subject
   fileUri: string | null;
   mimeType: string | null;
   createdAt: number;
@@ -16,14 +17,15 @@ export interface DBNote {
 }
 
 /**
- * Shape used by your UI (matches your NoteCard interface).
+ * Shape used by your UI.
  */
 export interface UINote {
   id: number;
   title: string;
   description: string;
-  tags: string[];
-  time: string; // formatted string like "2h ago" or date
+  subject: string;      // single subject
+  time: string;         // updated time (formatted)
+  createdTime: string;  // created time (formatted)
   fileUri?: string | null;
   mimeType?: string | null;
 }
@@ -32,22 +34,24 @@ export interface UINote {
  * Helper: convert DB row -> UI note
  */
 function mapRowToUINote(row: DBNote): UINote {
-  let tags: string[] = [];
+  let subject = "";
   try {
-    tags = row.tags ? JSON.parse(row.tags) : [];
+    const arr = row.tags ? (JSON.parse(row.tags) as string[]) : [];
+    subject = arr[0] ?? "";
   } catch {
-    tags = [];
+    subject = "";
   }
 
-  // For now we'll just show a readable date/time.
   const time = new Date(row.updatedAt).toLocaleString();
+  const createdTime = new Date(row.createdAt).toLocaleString();
 
   return {
     id: row.id,
     title: row.title,
     description: row.description,
-    tags,
+    subject,
     time,
+    createdTime,
     fileUri: row.fileUri,
     mimeType: row.mimeType,
   };
@@ -70,13 +74,15 @@ export async function listNotes(): Promise<UINote[]> {
 export async function createNote(input: {
   title: string;
   description: string;
-  tags?: string[];
+  subject: string;
   fileUri?: string | null;
   mimeType?: string | null;
 }): Promise<number> {
   const db = await getDB();
   const now = Date.now();
-  const tagsJson = input.tags ? JSON.stringify(input.tags) : null;
+
+  // still stored as JSON array in DB for compatibility
+  const tagsJson = JSON.stringify([input.subject]);
 
   const result = await db.runAsync(
     `INSERT INTO notes (title, description, tags, fileUri, mimeType, createdAt, updatedAt)
@@ -96,7 +102,7 @@ export async function createNote(input: {
 }
 
 /**
- * Optional: get a single note by id (for later use in noteView if you want).
+ * Get a single note by id.
  */
 export async function getNoteById(id: number): Promise<UINote | null> {
   const db = await getDB();
@@ -109,18 +115,21 @@ export async function getNoteById(id: number): Promise<UINote | null> {
 }
 
 /**
- * Optional: delete a note.
+ * Delete a note.
  */
 export async function deleteNote(id: number): Promise<void> {
   const db = await getDB();
   await db.runAsync("DELETE FROM notes WHERE id = ?", [id]);
 }
 
+/**
+ * Update a note.
+ */
 export async function updateNote(input: {
   id: number;
   title?: string;
   description?: string;
-  tags?: string[];
+  subject?: string;
   fileUri?: string | null;
   mimeType?: string | null;
 }): Promise<void> {
@@ -135,8 +144,12 @@ export async function updateNote(input: {
 
   const title = input.title ?? existing.title;
   const description = input.description ?? existing.description;
+
   const tagsJson =
-    input.tags !== undefined ? JSON.stringify(input.tags) : existing.tags;
+    input.subject !== undefined
+      ? JSON.stringify([input.subject])
+      : existing.tags;
+
   const fileUri =
     input.fileUri !== undefined ? input.fileUri : existing.fileUri;
   const mimeType =

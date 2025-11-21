@@ -10,8 +10,9 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  Image,
 } from "react-native";
-import { useRouter, useFocusEffect  } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Plus, Edit3, Trash2 } from "lucide-react-native";
 
 import { Colors, colors } from "../../../constants/theme";
@@ -27,6 +28,39 @@ import { pickAndStoreFile } from "../../../lib/note-upload";
 
 type NoteMode = "create" | "upload" | null;
 
+// Fixed subject options
+const SUBJECT_OPTIONS = [
+  "English",
+  "Math",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Computer Science",
+  "History",
+  "Geography",
+  "Other",
+];
+
+// Map subjects to images (create these files under assets/subjects)
+// Map subjects to images (your images folder)
+const SUBJECT_IMAGES: Record<string, any> = {
+  English: require("./images/English.jpg"),
+  Math: require("./images/Math.jpg"),
+  Physics: require("./images/Physics.jpg"),
+  Chemistry: require("./images/Chemistry.jpg"),
+  Biology: require("./images/Biology.jpg"),
+  "Computer Science": require("./images/Computer Science.jpg"),
+  History: require("./images/History.jpg"),
+  Geography: require("./images/Geography.jpg"),
+  Other: require("./images/Others.png"), // your "Others" image
+};
+
+function getSubjectImage(subject: string) {
+  // subject will be one of the SUBJECT_OPTIONS (same spelling/case)
+  return SUBJECT_IMAGES[subject] ?? SUBJECT_IMAGES.Other;
+}
+
+
 export default function NotesDashboard() {
   const router = useRouter();
 
@@ -40,6 +74,8 @@ export default function NotesDashboard() {
 
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
+  const [subjectMenuOpen, setSubjectMenuOpen] = useState(false);
+
   const [pendingFile, setPendingFile] = useState<{
     fileUri: string;
     mimeType: string | null;
@@ -57,19 +93,19 @@ export default function NotesDashboard() {
     }
   }, []);
 
-useFocusEffect(
-  useCallback(() => {
-    // Called every time the Notes tab/screen is focused
-    loadNotes();
-  }, [loadNotes])
-);
-
+  useFocusEffect(
+    useCallback(() => {
+      // Called every time the Notes tab/screen is focused
+      loadNotes();
+    }, [loadNotes])
+  );
 
   const resetForm = () => {
     setName("");
     setSubject("");
     setPendingFile(null);
     setMode(null);
+    setSubjectMenuOpen(false);
   };
 
   const openActionModal = () => {
@@ -108,11 +144,10 @@ useFocusEffect(
       setSaving(true);
 
       if (mode === "create") {
-        // Create empty note, then go to full-screen editor
         const id = await createNote({
           title: name.trim(),
           description: "",
-          tags: [subject.trim()],
+          subject: subject.trim(),
           fileUri: null,
           mimeType: null,
         });
@@ -122,14 +157,13 @@ useFocusEffect(
 
         router.push({
           pathname: "/(menu)/(notes)/noteView",
-          params: { id: String(id) },
+          params: { id: String(id), mode: "edit" },
         });
       } else if (mode === "upload" && pendingFile?.fileUri) {
-        // Create note with file attachment
         await createNote({
           title: name.trim(),
           description: "",
-          tags: [subject.trim()],
+          subject: subject.trim(),
           fileUri: pendingFile.fileUri,
           mimeType: pendingFile.mimeType ?? null,
         });
@@ -146,29 +180,11 @@ useFocusEffect(
     }
   };
 
-  const handleDelete = async (id: number) => {
-    Alert.alert("Delete note", "Are you sure you want to delete this note?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteNote(id);
-            await loadNotes();
-          } catch (err) {
-            console.error("Failed to delete note:", err);
-            Alert.alert("Error", "Failed to delete note.");
-          }
-        },
-      },
-    ]);
-  };
-
-  const openNote = (note: UINote) => {
+  // open in view or edit mode
+  const openNote = (note: UINote, mode: "view" | "edit" = "view") => {
     router.push({
       pathname: "/(menu)/(notes)/noteView",
-      params: { id: String(note.id) },
+      params: { id: String(note.id), mode },
     });
   };
 
@@ -198,51 +214,76 @@ useFocusEffect(
         >
           {notes.length > 0 ? (
             notes.map((note) => {
-              const subjectText = note.tags?.[0] ?? "";
+              const subjectText = note.subject;
+              const imageSource = getSubjectImage(subjectText || "Other");
+
               return (
                 <TouchableOpacity
                   key={note.id}
                   style={styles.cardContainer}
-                  onPress={() => openNote(note)} // 👉 tap card opens note
-                  activeOpacity={0.85}
+                  onPress={() => openNote(note, "view")} // tap card = view mode
+                  activeOpacity={0.9}
                 >
-                  <Text
-                    style={[
-                      cardStyles.labelBold,
-                      { fontSize: 18, marginBottom: 4 },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {note.title}
-                  </Text>
-                  <Text
-                    style={[
-                      cardStyles.label,
-                      { marginBottom: 8, opacity: 0.8 },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {subjectText}
-                  </Text>
+                  {/* Top: subject image + created time overlay */}
+                  <View style={styles.cardImageWrapper}>
+                    <Image
+                      source={imageSource}
+                      style={styles.cardImage}
+                      resizeMode="cover"
+                    />
+                    <Text style={styles.createdDateText}>
+                      {note.createdTime}
+                    </Text>
+                  </View>
 
-                  <View style={styles.cardActionsRow}>
-                    <TouchableOpacity
-                      onPress={() => openNote(note)}
-                      style={[styles.actionButton, { marginRight: 8 }]}
-                    >
-                      <Edit3 color={colors.accent} size={16} />
-                      <Text style={styles.actionText}>Edit</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={() => handleDelete(note.id)}
-                      style={[styles.actionButton, { backgroundColor: "#802222" }]}
-                    >
-                      <Trash2 color="#FFDADA" size={16} />
-                      <Text style={[styles.actionText, { color: "#FFDADA" }]}>
-                        Delete
+                  {/* Bottom: title + subject + actions */}
+                  <View style={styles.cardBottomRow}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text
+                        style={[
+                          cardStyles.labelBold,
+                          { fontSize: 18, marginBottom: 2 },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {note.title}
                       </Text>
-                    </TouchableOpacity>
+
+                      <Text
+                        style={[
+                          cardStyles.label,
+                          { opacity: 0.8 },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {subjectText}
+                      </Text>
+                    </View>
+
+                    <View style={styles.cardActionsRow}>
+                      <TouchableOpacity
+                        onPress={() => openNote(note, "edit")}
+                        style={[styles.actionButton, { marginRight: 8 }]}
+                      >
+                        <Edit3 color={colors.accent} size={16} />
+                        <Text style={styles.actionText}>Edit</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handleDelete(note.id)}
+                        style={[
+                          styles.actionButton,
+                          { backgroundColor: "#802222" },
+                        ]}
+                      >
+                        <Trash2 color="#FFDADA" size={16} />
+                        <Text
+                          style={[styles.actionText, { color: "#FFDADA" }]}
+                        >
+                          Delete
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -352,13 +393,42 @@ useFocusEffect(
               style={styles.input}
             />
 
-            <TextInput
-              placeholder="Subject"
-              placeholderTextColor="#888"
-              value={subject}
-              onChangeText={setSubject}
-              style={styles.input}
-            />
+            {/* Subject dropdown */}
+            <Text style={[cardStyles.label, { marginBottom: 4 }]}>
+              Subject
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.input, { justifyContent: "center" }]}
+              onPress={() => setSubjectMenuOpen((prev) => !prev)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{
+                  color: subject ? "#fff" : "#888",
+                  fontSize: 14,
+                }}
+              >
+                {subject || "Select subject"}
+              </Text>
+            </TouchableOpacity>
+
+            {subjectMenuOpen && (
+              <View style={styles.dropdown}>
+                {SUBJECT_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setSubject(option);
+                      setSubjectMenuOpen(false);
+                    }}
+                  >
+                    <Text style={styles.dropdownItemText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             {mode === "upload" && pendingFile && (
               <Text
@@ -376,9 +446,7 @@ useFocusEffect(
                 }}
                 style={[styles.formButton, { backgroundColor: "#444" }]}
               >
-                <Text
-                  style={[styles.formButtonText, { color: "#eee" }]}
-                >
+                <Text style={[styles.formButtonText, { color: "#eee" }]}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -410,12 +478,38 @@ const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: "#1f1f1f",
     borderRadius: 16,
-    padding: 14,
     marginBottom: 12,
+    overflow: "hidden",
+  },
+  cardImageWrapper: {
+    position: "relative",
+    height: 120,
+    width: "100%",
+    backgroundColor: "#222",
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+  },
+  createdDateText: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    fontSize: 11,
+    color: "#fff",
+  },
+  cardBottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   cardActionsRow: {
     flexDirection: "row",
-    marginTop: 8,
   },
   actionButton: {
     flexDirection: "row",
@@ -463,6 +557,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
+    fontSize: 14,
+  },
+  dropdown: {
+    backgroundColor: "#333",
+    borderRadius: 10,
+    marginTop: 4,
+    marginBottom: 8,
+    maxHeight: 180,
+    borderWidth: 1,
+    borderColor: "#444",
+  },
+  dropdownItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  dropdownItemText: {
+    color: "#fff",
     fontSize: 14,
   },
   formButtonsRow: {
