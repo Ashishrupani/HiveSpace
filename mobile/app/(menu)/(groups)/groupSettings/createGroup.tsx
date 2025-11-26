@@ -4,54 +4,67 @@ import { Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platfor
 import { useRouter } from 'expo-router';
 import BackButton from '@/components/ui/BackButton';
 import colors from '@/constants/theme';
+import axios from 'axios';
+import { useUser } from '@clerk/clerk-expo';
+
 
 export default function CreateGroup() {
-	const [groupName, setGroupName] = useState('');
-	const [members, setMembers] = useState('');
-	const router = useRouter();
+  const [groupName, setGroupName] = useState('');
+  const [about, setAbout] = useState('');
+  const router = useRouter();
+  const { user } = useUser();
 
-	const handleCreate = () => {
-		if (!groupName.trim()) {
-			Alert.alert('Error', 'Group name is required.');
-			return;
-		}
-		// TODO: Replace with API call to create group
-		Alert.alert('Success', `Group "${groupName}" created!`);
-		setGroupName('');
-		setMembers('');
-		router.back();
-	};
+  const handleCreate = async () => {
+    if (!groupName.trim()) {
+      Alert.alert('Error', 'Group name is required.');
+      return;
+    }
 
-	return (
-		<KeyboardAvoidingView
-			style={createGroupStyles.container}
-			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-		>
-			<BackButton onPress={() => router.navigate('/groupSetting')}/>
-			<Text style={createGroupStyles.title}>Create a New Group</Text>
-			<TextInput
-				placeholder="Group Name"
-				value={groupName}
-				onChangeText={setGroupName}
-				style={createGroupStyles.input}
-				placeholderTextColor="#b0b0b0"
-				autoCapitalize="words"
-				returnKeyType="done"
-			/>
-			<TextInput
-				placeholder="Number of Members (optional)"
-				value={members}
-				onChangeText={setMembers}
-				style={createGroupStyles.input}
-				placeholderTextColor="#b0b0b0"
-				keyboardType="numeric"
-				returnKeyType="done"
-			/>
-			<TouchableOpacity style={createGroupStyles.button} onPress={handleCreate}>
-				<Text style={createGroupStyles.buttonText}>Create Group</Text>
-			</TouchableOpacity>
-		</KeyboardAvoidingView>
-	);
+    //sending post request to /api/groups/createGroup
+    const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about, user });
+
+    if (response.status !== 200) {
+      Alert.alert('Error', 'Failed to create group. Please try again.', response.data.message);
+    }
+    else{
+    Alert.alert('Success', `Group "${groupName}" created!`);
+    }
+
+    setGroupName('');
+    setAbout('');
+    router.back();
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={createGroupStyles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <BackButton onPress={() => router.navigate('/groupSetting')}/>
+      <Text style={createGroupStyles.title}>Create a New Group</Text>
+      <TextInput
+        placeholder="Group Name"
+        value={groupName}
+        onChangeText={setGroupName}
+        style={createGroupStyles.input}
+        placeholderTextColor="#b0b0b0"
+        autoCapitalize="words"
+        returnKeyType="done"
+      />
+      <TextInput
+        placeholder="About this group (optional)"
+        value={about}
+        onChangeText={setAbout}
+        style={[createGroupStyles.input, {height: 90, textAlignVertical: 'top'}]}
+        placeholderTextColor="#b0b0b0"
+        multiline
+        maxLength={300}
+      />
+      <TouchableOpacity style={createGroupStyles.button} onPress={handleCreate}>
+        <Text style={createGroupStyles.buttonText}>Create Group</Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
+  );
 }
 
 
@@ -65,7 +78,7 @@ const createGroupStyles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: colors.text,
+    color: '#000',
     marginBottom: 18,
     textAlign: 'center',
     letterSpacing: 0.2,
@@ -79,7 +92,7 @@ const createGroupStyles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
     marginBottom: 18,
-    color: colors.text,
+    color: '#000',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,

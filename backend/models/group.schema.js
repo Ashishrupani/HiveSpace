@@ -6,6 +6,7 @@ const groupSchema = new Schema(
     {
         //group name
         name: { type: String, required: true, unique: true },
+        about: { type: String },
         //group icons
         icon: { type: String },
         color: { type: String },

@@ -5,7 +5,6 @@ import { dashboardHandler, profileHandler } from '../controllers/homeControllers
 const router = express.Router();
 
 // Clerk's middleware to protect routes
-router.use(requireAuth());
 
 //routes for home
 router.get("/dashboard", dashboardHandler);

@@ -4,8 +4,6 @@ import { groupDashboardHandler, createGroupHandler, getGroupDetailsHandler } fro
 
 const router = express.Router();
 
-// Clerk's middleware to protect routes
-router.use(requireAuth());
 
 // Route handler for group dashboard
 router.get("/groupDashboard", groupDashboardHandler);
