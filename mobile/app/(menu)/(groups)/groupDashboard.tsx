@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, ScrollView } from 'react-native';
-import pageStyles from '@/constants/styles/page-styles';
+import groupDashboardStyles from '../../../constants/styles/groupDashboard.styles';
 import GroupCard from '@/components/ui/cards/groupCard';
 import { useRouter , useNavigation} from 'expo-router';
 
@@ -21,8 +21,8 @@ export default function groupDashboard(){
     };
 
     return (
-      <ScrollView style={pageStyles.container}>
-        <View style={pageStyles.scrollContent}>
+      <ScrollView style={groupDashboardStyles.container}>
+        <View style={groupDashboardStyles.scrollContent}>
           {groups.map((g) => (
             <GroupCard
               key={g.id}
