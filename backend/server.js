@@ -2,8 +2,9 @@ import express from "express";
 import dotenv from 'dotenv';
 import cors from 'cors';
 //importing clerk
-import { clerkMiddleware } from '@clerk/express'
+import { clerkMiddleware , clerkClient } from '@clerk/express'
 import mongoose from "mongoose";
+import groupRoutes from './routes/groupRoutes.js';
 
 //load environmental variables
 dotenv.config();
@@ -23,13 +24,15 @@ const app = express();
 app.use(clerkMiddleware());
 
 //middlewares
-//app.use(express.json());
-app.use(cors({ origin: "*",   credentials: true }));  //[process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],
+app.use(express.json());
+app.use(cors({ origin: [process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],   credentials: true }));  //[process.env.CLIENT_URL, process.env.CLIENT_URL_OTHER],
 
 //build routes here
 app.get("/", (req, res) => {
     res.status(200).json({ sucess: 'true', message: 'hello from backend' });
 })
+
+app.use("/api/groups", groupRoutes);
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {

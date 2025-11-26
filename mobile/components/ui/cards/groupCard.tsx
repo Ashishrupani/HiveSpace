@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import BaseCard from './baseCard';
-import cardStyles from '../../../constants/styles/card-styles';
+import { View, Text, Image} from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { groupCardStyles } from '../../../constants/styles/card-styles';
+import { TouchableOpacity } from "react-native";
 
 interface GroupCardProps {
   name: string;
@@ -16,61 +16,33 @@ interface GroupCardProps {
 
 export default function GroupCard({ name, members, logoUri, iconName = 'chevron.left.forwardslash.chevron.right', onPress }: GroupCardProps) {
   return (
-    <BaseCard onPress={onPress} height={110}>
-      <View style={styles.row}>
-        <View style={styles.logoWrap}>
+    <TouchableOpacity
+      style={[groupCardStyles.shadowWrap, { backgroundColor: '#F6F7F9', height: 110 }]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <View style={groupCardStyles.row}>
+        <View style={groupCardStyles.logoWrap}>
           {logoUri ? (
-            <Image source={{ uri: logoUri }} style={styles.logoImage} resizeMode="cover" />
+            <Image source={{ uri: logoUri }} style={groupCardStyles.logoImage} resizeMode="cover" />
           ) : (
-            <View style={styles.iconCircle}>
-              <IconSymbol name={iconName as any} size={36} color="#fff" />
+            <View style={groupCardStyles.iconCircle}>
+              <IconSymbol name={iconName as any} size={32} color="#fff" />
             </View>
           )}
         </View>
-
-        <View style={styles.content}>
-          <Text numberOfLines={1} style={styles.name}>{name}</Text>
-          <Text style={cardStyles.label}>{members} members</Text>
+        <View style={groupCardStyles.content}>
+          <Text numberOfLines={1} style={groupCardStyles.name}>{name}</Text>
+          <Text style={{ color: '#6B7280', fontSize: 13, marginBottom: 2 }}>Group • Community</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#6c5ce7', marginRight: 6 }} />
+            <Text style={{ color: '#6c5ce7', fontWeight: '600', fontSize: 14 }}>{members}</Text>
+            <Text style={{ color: '#A3A3A3', fontSize: 13, marginLeft: 4 }}>members</Text>
+          </View>
         </View>
       </View>
-    </BaseCard>
+    </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoImage: {
-    width: '100%',
-    height: '100%',
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#342A5f',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-});
+

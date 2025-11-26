@@ -10,7 +10,9 @@ import { useRouter } from "expo-router";
 
 export default function NotesDashboard() {
     const router = useRouter();
-    const onAddNote=() => console.log("Add new note pressed");
+    const onAddNote=() => {
+        console.log("Add new note pressed");
+    };
     const notes = [
         {
             title: "History of Artificial Intelligence",

@@ -28,7 +28,21 @@ export default function GroupLayout() {
               tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
             }}
           />
-          </Tabs>
+          <Tabs.Screen
+            name="[id]"
+            options={{
+              href: null,
+              tabBarStyle: { display: 'none' },
+            }}
+          />
+          <Tabs.Screen
+            name="groupSettings"
+            options={{
+              href: null,
+              tabBarStyle: { display: 'none' },
+            }} 
+          />
+        </Tabs>
   )
 }
 

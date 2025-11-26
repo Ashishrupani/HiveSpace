@@ -56,7 +56,7 @@ export const colors = {
   primary: '#342A5f',
   accent: '#FFFFFF',
 
-  text: '#F5F5F7',
+  text: '#ffffffff',
   subtext: '#808080',
   link: '#2a5f56ff',
 

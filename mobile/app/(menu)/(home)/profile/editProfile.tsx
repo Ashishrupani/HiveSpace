@@ -145,7 +145,7 @@ export default function EditProfileScreen() {
       await user?.reload?.();
       Alert.alert("Saved", "Your profile has been updated.");
       // Go back to the Profile tab explicitly
-      router.replace("/(menu)/(home)/profile/profile");
+      router.replace("/(menu)/(home)/profile/profilePage");
     } catch (e: any) {
       console.error(e);
       if (typeof e?.errors?.[0]?.message === "string" && e.errors[0].message.toLowerCase().includes("username")) {
@@ -171,7 +171,7 @@ export default function EditProfileScreen() {
       {/* Minimal header (no big banner). Back takes you to Profile tab. */}
       <View style={styles.headerBar}>
         <TouchableOpacity
-          onPress={() => router.replace("/(menu)/(home)/profile/profile")}
+          onPress={() => router.replace("/(menu)/(home)/profile/profilePage")}
           hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
         >
           <IconSymbol name="chevron.left" size={20} color="#111" />
