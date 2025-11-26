@@ -34,6 +34,7 @@ export const useSpotify = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
+  console.log('Spotify Redirect URI:',redirectUri);
 
   const [authRequest, authResponse, openSpotifyLogin] = AuthSession.useAuthRequest(
     {
