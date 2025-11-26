@@ -69,28 +69,46 @@ export const cardStyles = StyleSheet.create({
 });
 
 export const groupCardStyles = StyleSheet.create({
+  shadowWrap: {
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 12,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    padding: 14,
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECECEC',
     flex: 1,
+    minHeight: 72,
+    gap: 14,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#E5E7EB',
   },
   logoImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 28,
   },
   iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#342A5f',
     justifyContent: 'center',
     alignItems: 'center',
@@ -98,23 +116,14 @@ export const groupCardStyles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
+    marginLeft: 0,
   },
   name: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  shadowWrap: {
-    borderRadius: 14,
-    // iOS shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    // Android elevation
-    elevation: 3,
-    // allow the shadow to show outside the bounds
-    backgroundColor: 'transparent',
+    color: '#111',
+    marginBottom: 2,
+    letterSpacing: 0.1,
   },
 });
 

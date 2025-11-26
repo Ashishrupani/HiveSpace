@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, ScrollView, TextInput, TouchableOpacity, Text, Alert } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
-import authStyles from '@/constants/styles/auth.styles';
+import groupSettingsStyles from '@/constants/styles/group-settings.styles';
 import GroupCard from '@/components/ui/cards/groupCard';
 import { useRouter } from 'expo-router';
 
@@ -32,41 +32,55 @@ export default function GroupSetting() {
   }
 
   const onCreatePress = () => {
-    // navigate to the create group screen
-    router.push('/groups/createGroup' as any);
-  }
+    router.push('/(menu)/(groups)/groupSettings/createGroup');
+  };
+
+  const onJoinPress = () => {
+    router.push('/(menu)/(groups)/groupSettings/joinGroup');
+  };
 
   return (
-    <>
-    <ScrollView style={pageStyles.container}>
-      <View style={pageStyles.scrollContent}>
-        <TextInput
-          placeholder="Search groups"
-          value={query}
-          onChangeText={setQuery}
-          style={[authStyles.input, { marginBottom: 12 }]}
-        />
-
-        {filtered.map((item) => (
-          <View key={item.id} style={{ marginBottom: 8 }}>
-            <GroupCard name={item.name} members={item.members} onPress={() => {}} />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
-              {joined[item.id] ? (
-                <TouchableOpacity style={[authStyles.button, { backgroundColor: '#6c757d' }]} disabled>
-                  <Text style={authStyles.buttonText}>Joined</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={authStyles.button} onPress={() => handleJoin(item.id, item.name)}>
-                  <Text style={authStyles.buttonText}>Join</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        ))}
+    <ScrollView style={groupSettingsStyles.container}>
+      {/* Navigation buttons for Create and Join Group */}
+      <View style={[groupSettingsStyles.navRow, { marginBottom: 28 }]}> 
+        <TouchableOpacity style={groupSettingsStyles.navButton} onPress={onCreatePress}>
+          <Text style={groupSettingsStyles.navButtonText}>Create a Group</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={groupSettingsStyles.navButton} onPress={onJoinPress}>
+          <Text style={groupSettingsStyles.navButtonText}>Join a Group</Text>
+        </TouchableOpacity>
       </View>
+
+      <TextInput
+        placeholder="Search groups"
+        value={query}
+        onChangeText={setQuery}
+        style={[groupSettingsStyles.searchInput, { marginBottom: 28 }]}
+        placeholderTextColor="#b0b0b0"
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+      />
+
+      {filtered.map((item) => (
+        <View key={item.id} style={[groupSettingsStyles.cardContainer, { backgroundColor: '#F6F7F9', padding: 0, marginBottom: 22 }]}> 
+          <GroupCard name={item.name} members={item.members} onPress={() => {}} />
+          <View style={[groupSettingsStyles.joinRow, { marginRight: 12, marginBottom: 8 }]}> 
+            {joined[item.id] ? (
+              <TouchableOpacity style={groupSettingsStyles.joinedButton} disabled>
+                <Text style={groupSettingsStyles.joinButtonText}>Joined</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={groupSettingsStyles.joinButton} onPress={() => handleJoin(item.id, item.name)}>
+                <Text style={groupSettingsStyles.joinButtonText}>Join</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      ))}
+      <View style={{ height: 24 }} />
     </ScrollView>
-    </>
-  )
+  );
 }
 
 
