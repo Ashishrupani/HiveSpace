@@ -115,8 +115,6 @@ export default function Dashboard() {
       />
     </View>
 
-      <GoalsCard goals={goals} onPress={ongoalsPress} />
-
       <GoalsCard 
         goals={getTopThreeGoals()} 
         onPress={ongoalsPress}

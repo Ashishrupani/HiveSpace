@@ -36,19 +36,10 @@ export default function GroupHome() {
       <BackButton />
       
 
-      {/* 2x2 grid with horizontal (wide) cards */}
-        {/* Top row: Goals (left) + minimal group tile (right) */}
-        <View style={styles.gridRow}>
-          <View style={styles.gridCol}>
-            <GoalsCard
-              height={120}
-              goals={getTopThreeGroupGoals(groupId)}
-              onPress={onGroupGoalsPress}
-            />
-          </View>
-
-          <View style={styles.gridCol} />
-        </View>
+      <GoalsCard 
+        goals={getTopThreeGroupGoals(groupId)}
+        onPress={onGroupGoalsPress}
+      />
 
         {/* Row: Leaderboard and Group side-by-side, equal widths and heights */}
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 18 }}>

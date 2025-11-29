@@ -23,7 +23,7 @@ export default function GoalsCard({
 
   return (
     <DashboardCard onPress={onPress} width={width} height={height}>
-      <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>Progress Goals</Text>
+      <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>Goals</Text>
       
       {!hasGoals && (
         <Text style={styles.emptyText}>

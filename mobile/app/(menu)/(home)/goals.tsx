@@ -4,12 +4,14 @@ import pageStyles from '@/constants/styles/page-styles';
 import GoalProgressBar from '@/components/ui/goalsProgressbar';
 import { colors } from "../../../constants/theme";
 import { useGoals, Goal } from '@/contexts/GoalsContext';
+import BackButton from '@/components/ui/BackButton';
 
 export default function Goals() {
-    const { goals, completedGoals, addGoal, updateGoal, completeGoal, deleteGoal } = useGoals();
+    const { goals, completedGoals, addGoal, updateGoal, editGoalDetails, completeGoal, deleteGoal } = useGoals();
     
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
     const [showCompleted, setShowCompleted] = useState(false);
     
@@ -19,6 +21,12 @@ export default function Goals() {
     const [newGoalColor, setNewGoalColor] = useState('#4CAF50');
     const [newGoalDueDate, setNewGoalDueDate] = useState('');
     const [updateValue, setUpdateValue] = useState('');
+    
+    // Edit form state
+    const [editLabel, setEditLabel] = useState('');
+    const [editTarget, setEditTarget] = useState('');
+    const [editColor, setEditColor] = useState('#4CAF50');
+    const [editDueDate, setEditDueDate] = useState('');
 
     const colors_palette = ['#4CAF50', '#FF5722', '#2196F3', '#9C27B0', '#FF9800', '#00BCD4'];
 
@@ -90,6 +98,38 @@ export default function Goals() {
         );
     };
 
+    const openEditModal = (goal: Goal) => {
+        setSelectedGoal(goal);
+        setEditLabel(goal.label);
+        setEditTarget(goal.goal.toString());
+        setEditColor(goal.color || '#4CAF50');
+        setEditDueDate(goal.dueDate || '');
+        setShowEditModal(true);
+    };
+
+    const handleEditGoal = () => {
+        if (!selectedGoal || !editLabel.trim() || !editTarget.trim()) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+        }
+
+        const target = parseFloat(editTarget);
+        if (isNaN(target) || target <= 0) {
+            Alert.alert('Error', 'Please enter a valid target number');
+            return;
+        }
+
+        editGoalDetails(selectedGoal.id, {
+            label: editLabel,
+            goal: target,
+            color: editColor,
+            dueDate: editDueDate || undefined,
+        });
+
+        setShowEditModal(false);
+        setSelectedGoal(null);
+    };
+
     const handleDeleteGoal = (goalId: string, isCompleted: boolean = false) => {
         Alert.alert(
             'Delete Goal',
@@ -114,6 +154,7 @@ export default function Goals() {
 
     return (
         <View style={styles.container}>
+            <BackButton />
             <Text style={pageStyles.title}>My Goals</Text>
             
             <View style={styles.toggleContainer}>
@@ -172,6 +213,12 @@ export default function Goals() {
                                     <View style={styles.goalActions}>
                                         <TouchableOpacity 
                                             style={styles.actionButton}
+                                            onPress={() => openEditModal(goal)}
+                                        >
+                                            <Text style={styles.actionButtonText}>Edit</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity 
+                                            style={styles.actionButton}
                                             onPress={() => openUpdateModal(goal)}
                                         >
                                             <Text style={styles.actionButtonText}>Update</Text>
@@ -193,8 +240,8 @@ export default function Goals() {
 
             {!showCompleted && (
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={pageStyles.button} onPress={() => setShowAddModal(true)}>
-                        <Text style={pageStyles.icon}>+</Text>
+                    <TouchableOpacity style={styles.createButton} onPress={() => setShowAddModal(true)}>
+                        <Text style={styles.createButtonText}>Create New Goal</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -206,9 +253,20 @@ export default function Goals() {
                 animationType="slide"
                 onRequestClose={() => setShowAddModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Add New Goal</Text>
+                <TouchableOpacity 
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => {
+                        setShowAddModal(false);
+                        setNewGoalLabel('');
+                        setNewGoalTarget('');
+                        setNewGoalColor('#4CAF50');
+                        setNewGoalDueDate('');
+                    }}
+                >
+                    <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Add New Goal</Text>
                         
                         <TextInput
                             style={styles.input}
@@ -270,8 +328,9 @@ export default function Goals() {
                                 <Text style={[styles.modalButtonText, styles.addButtonText]}>Add Goal</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             </Modal>
 
             {/* Update Progress Modal */}
@@ -316,6 +375,78 @@ export default function Goals() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Edit Goal Details Modal */}
+            <Modal
+                visible={showEditModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowEditModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Edit Goal Details</Text>
+                        
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Goal name"
+                            placeholderTextColor={colors.subtext}
+                            value={editLabel}
+                            onChangeText={setEditLabel}
+                        />
+                        
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Target number"
+                            placeholderTextColor={colors.subtext}
+                            keyboardType="numeric"
+                            value={editTarget}
+                            onChangeText={setEditTarget}
+                        />
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Due date (optional, e.g., 12/31/2025)"
+                            placeholderTextColor={colors.subtext}
+                            value={editDueDate}
+                            onChangeText={setEditDueDate}
+                        />
+
+                        <Text style={styles.colorLabel}>Choose color:</Text>
+                        <View style={styles.colorPicker}>
+                            {colors_palette.map(color => (
+                                <TouchableOpacity
+                                    key={color}
+                                    style={[
+                                        styles.colorOption,
+                                        { backgroundColor: color },
+                                        editColor === color && styles.colorOptionSelected
+                                    ]}
+                                    onPress={() => setEditColor(color)}
+                                />
+                            ))}
+                        </View>
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => {
+                                    setShowEditModal(false);
+                                    setSelectedGoal(null);
+                                }}
+                            >
+                                <Text style={styles.modalButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.addButton]}
+                                onPress={handleEditGoal}
+                            >
+                                <Text style={[styles.modalButtonText, styles.addButtonText]}>Save Changes</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -324,6 +455,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f7f8fa',
+        paddingTop: 60,
     },
     scrollView: {
         flex: 1,
@@ -333,10 +465,20 @@ const styles = StyleSheet.create({
         paddingBottom: 20
     },
     buttonContainer: {
-        marginTop: 20,
-        alignItems: 'flex-end',
-        paddingRight: 30,
-        paddingBottom: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+    },
+    createButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    createButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
     toggleContainer: {
         flexDirection: 'row',

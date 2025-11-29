@@ -15,6 +15,7 @@ interface GoalsContextType {
     completedGoals: Goal[];
     addGoal: (goal: Goal) => void;
     updateGoal: (id: string, value: number) => void;
+    editGoalDetails: (id: string, updates: Partial<Pick<Goal, 'label' | 'goal' | 'color' | 'dueDate'>>) => void;
     completeGoal: (id: string) => void;
     deleteGoal: (id: string, isCompleted?: boolean) => void;
     getTopThreeGoals: () => Goal[];
@@ -42,6 +43,15 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             if (goal.id === id) {
                 const newValue = Math.min(goal.value + valueToAdd, goal.goal);
                 return { ...goal, value: newValue };
+            }
+            return goal;
+        }));
+    };
+
+    const editGoalDetails = (id: string, updates: Partial<Pick<Goal, 'label' | 'goal' | 'color' | 'dueDate'>>) => {
+        setGoals(goals.map(goal => {
+            if (goal.id === id) {
+                return { ...goal, ...updates };
             }
             return goal;
         }));
@@ -87,6 +97,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
             completedGoals,
             addGoal,
             updateGoal,
+            editGoalDetails,
             completeGoal,
             deleteGoal,
             getTopThreeGoals,
