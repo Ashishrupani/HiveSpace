@@ -2,11 +2,28 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
 import GoalProgressBar from '@/components/ui/goalsProgressbar';
-import { colors } from "../../../constants/theme";
-import { useGoals, Goal } from '@/contexts/GoalsContext';
+import { colors } from "../../../../constants/theme";
+import { useGroupGoals } from '@/contexts/GroupGoalsContext';
+import { Goal } from '@/contexts/GoalsContext';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import BackButton from '@/components/ui/BackButton';
 
-export default function Goals() {
-    const { goals, completedGoals, addGoal, updateGoal, completeGoal, deleteGoal } = useGoals();
+export default function GroupGoals() {
+    const { id } = useLocalSearchParams();
+    const groupId = Array.isArray(id) ? id[0] : id || '1';
+    const router = useRouter();
+    
+    const { 
+        getGroupGoals, 
+        getGroupCompletedGoals, 
+        addGroupGoal, 
+        updateGroupGoal, 
+        completeGroupGoal, 
+        deleteGroupGoal 
+    } = useGroupGoals();
+    
+    const goals = getGroupGoals(groupId);
+    const completedGoals = getGroupCompletedGoals(groupId);
     
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -35,7 +52,7 @@ export default function Goals() {
         }
 
         const newGoal: Goal = {
-            id: Date.now().toString(),
+            id: `g${groupId}-${Date.now()}`,
             label: newGoalLabel,
             goal: target,
             value: 0,
@@ -43,7 +60,7 @@ export default function Goals() {
             dueDate: newGoalDueDate || undefined,
         };
 
-        addGoal(newGoal);
+        addGroupGoal(groupId, newGoal);
         setNewGoalLabel('');
         setNewGoalTarget('');
         setNewGoalColor('#4CAF50');
@@ -63,9 +80,8 @@ export default function Goals() {
             return;
         }
 
-        updateGoal(selectedGoal.id, value);
+        updateGroupGoal(groupId, selectedGoal.id, value);
         
-        // Check if goal is completed
         const goal = goals.find(g => g.id === selectedGoal.id);
         if (goal && (goal.value + value) >= goal.goal) {
             Alert.alert('🎉 Goal Completed!', `Congratulations on completing "${goal.label}"!`);
@@ -84,7 +100,7 @@ export default function Goals() {
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Complete',
-                    onPress: () => completeGoal(goal.id)
+                    onPress: () => completeGroupGoal(groupId, goal.id)
                 }
             ]
         );
@@ -99,7 +115,7 @@ export default function Goals() {
                 {
                     text: 'Delete',
                     style: 'destructive',
-                    onPress: () => deleteGoal(goalId, isCompleted)
+                    onPress: () => deleteGroupGoal(groupId, goalId, isCompleted)
                 }
             ]
         );
@@ -114,7 +130,8 @@ export default function Goals() {
 
     return (
         <View style={styles.container}>
-            <Text style={pageStyles.title}>My Goals</Text>
+            <BackButton />
+            <Text style={pageStyles.title}>Group Goals</Text>
             
             <View style={styles.toggleContainer}>
                 <TouchableOpacity 
@@ -208,11 +225,11 @@ export default function Goals() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Add New Goal</Text>
+                        <Text style={styles.modalTitle}>Add New Group Goal</Text>
                         
                         <TextInput
                             style={styles.input}
-                            placeholder="Goal name (e.g., Read 12 books)"
+                            placeholder="Goal name (e.g., Weekly meetups)"
                             placeholderTextColor={colors.subtext}
                             value={newGoalLabel}
                             onChangeText={setNewGoalLabel}
@@ -324,6 +341,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f7f8fa',
+        paddingTop: 60,
     },
     scrollView: {
         flex: 1,

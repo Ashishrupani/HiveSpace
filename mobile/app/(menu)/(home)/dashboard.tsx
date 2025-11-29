@@ -3,16 +3,18 @@ import { useRouter } from "expo-router";
 import React, { useEffect }from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import GoalsCard, { Goal } from "../../../components/ui/cards/goalsCard";
+import GoalsCard from "../../../components/ui/cards/goalsCard";
 import StatisticsCard from "../../../components/ui/cards/statisticsCard";
 import MusicCard from "../../../components/ui/cards/musicCard"
 import pageStyles from "../../../constants/styles/page-styles";
 import { SignOutButton } from '@/components/SignOutButton'
 import { useSpotify } from '@/hooks/useSpotify';
+import { useGoals } from '@/contexts/GoalsContext';
 
 export default function dashboard(){
   const router = useRouter();
   const navigation = useNavigation<any>();
+  const { getTopThreeGoals } = useGoals();
 
   React.useEffect(() => {
     fetchStats();
@@ -20,7 +22,6 @@ export default function dashboard(){
   
   const [streak, setStreak] = React.useState(0);
   const [personalBest, setPersonalBest] = React.useState(0);
-  const [goals, setGoals] = React.useState<Goal[]>([]);
 
 
   const fetchStats = async () => {
@@ -34,17 +35,11 @@ export default function dashboard(){
         profileemoji: 4 ,
         streak: 42,
         personalBest: 7,
-        goals: [
-          { label: "Daily Scans", value: 7, goal: 10, color: "#00A650" },
-          { label: "Study Time", value: 45, goal: 60, color: "#FFB800" },
-          { label: "Notes Created", value: 15, goal: 20, color: "#007AFF" },
-        ]
       };
       
       //use set functions to set the values in each component
       setStreak(data.streak);
       setPersonalBest(data.personalBest);
-      setGoals(data.goals);
 
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
@@ -59,8 +54,7 @@ export default function dashboard(){
   const ongoalsPress = () => {
     console.log("goals pressed");
     //routing for onclick
-    //navigation.navigate("Goals");
-
+    router.push("/(menu)/(home)/goals");
   };
 
   const ontimerpress = () => {
@@ -107,7 +101,7 @@ export default function dashboard(){
           onPress={onstatspress}
         />
         <GoalsCard 
-          goals={goals} 
+          goals={getTopThreeGoals()} 
           onPress={ongoalsPress}
         />
 

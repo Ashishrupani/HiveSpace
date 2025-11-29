@@ -1,14 +1,19 @@
 import BackButton from '@/components/ui/BackButton';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, useNavigation } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import React from 'react'
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import BaseCard from '@/components/ui/cards/baseCard';
-import GoalsCard, { Goal } from '@/components/ui/cards/goalsCard';
+import GoalsCard from '@/components/ui/cards/goalsCard';
+import { useGroupGoals } from '@/contexts/GroupGoalsContext';
 
 export default function GroupHome() {
     const {id} = useLocalSearchParams();
     const navigation = useNavigation();
+    const router = useRouter();
+    const { getTopThreeGroupGoals } = useGroupGoals();
+
+    const groupId = Array.isArray(id) ? id[0] : id || '1';
 
     React.useEffect(() => {
       // keep mount/unmount logs for debugging only; do not mutate navigator here
@@ -18,24 +23,26 @@ export default function GroupHome() {
       };
     }, []);
 
-  const groupId = id ? `Group ${id}` : 'Group';
+  const groupName = id ? `Group ${id}` : 'Group';
+
+  const onGroupGoalsPress = () => {
+    router.push(`/(groups)/${groupId}/groupGoals` as any);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <BackButton />
       <GoalsCard
-        height={120}
-        goals={[
-          { label: 'Connections', value: 4, goal: 10, color: '#0a7ea4' },
-          { label: 'Posts', value: 1, goal: 3, color: '#342A5f' },
-        ]}
+        height={200}
+        goals={getTopThreeGroupGoals(groupId)}
+        onPress={onGroupGoalsPress}
       />
 
       <View style={styles.centerWrap}>
         <BaseCard height={140} onPress={() => {}}>
           <View style={styles.infoRow}>
-            <Text style={styles.groupName}>{groupId}</Text>
-            <Text style={styles.groupId}>ID: {id}</Text>
+            <Text style={styles.groupName}>{groupName}</Text>
+            <Text style={styles.groupId}>ID: {groupId}</Text>
           </View>
         </BaseCard>
       </View>

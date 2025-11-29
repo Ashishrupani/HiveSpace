@@ -4,11 +4,13 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { GroupGoalsProvider } from '@/contexts/GroupGoalsContext';
 
 export default function GroupLayout() {
 
   return (
-    <Tabs
+    <GroupGoalsProvider>
+      <Tabs
           screenOptions={{
             tabBarActiveTintColor: Colors.light.tint,
             headerShown: false,
@@ -43,6 +45,7 @@ export default function GroupLayout() {
             }} 
           />
         </Tabs>
+    </GroupGoalsProvider>
   )
 }
 

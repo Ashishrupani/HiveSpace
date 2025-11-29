@@ -3,14 +3,7 @@ import { View, Text } from 'react-native';
 import * as Progress from 'react-native-progress';
 import cardStyles from '@/constants/styles/card-styles';
 import { colors } from '@/constants/theme';
-
-export interface Goal {
-    id: string;
-    label: string;
-    value: number;
-    goal: number;
-    color?: string;
-}
+import { Goal } from '@/contexts/GoalsContext';
 
 interface GoalProgressBarProps {
     goal: Goal;
@@ -21,7 +14,7 @@ export default function GoalProgressBar({ goal }: GoalProgressBarProps) {
     const percentage = Math.round(progress * 100);
 
     return (
-        <View style={cardStyles.card}>
+        <View style={[cardStyles.card, { backgroundColor: '#fff' }]}>
             <View style={cardStyles.rowstyles}>
                 <Text style={cardStyles.label}>{goal.label}</Text>
                 <Text style={cardStyles.label}>{percentage}%</Text>
@@ -33,7 +26,7 @@ export default function GoalProgressBar({ goal }: GoalProgressBarProps) {
                 width={null}
                 height={10}
                 color={goal.color || colors.primary}
-                unfilledColor={colors.text}
+                unfilledColor='#e0e0e0'
                 borderWidth={0}
                 borderRadius={5}
             />
