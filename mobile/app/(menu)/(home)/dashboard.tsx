@@ -1,51 +1,45 @@
-import TimerCard from "@/components/ui/cards/timerCard";
+import React, { useEffect } from "react";
+import { ScrollView, View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import React, { useEffect }from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
+
+import TimerCard from "@/components/ui/cards/timerCard";
 import GoalsCard, { Goal } from "../../../components/ui/cards/goalsCard";
 import StatisticsCard from "../../../components/ui/cards/statisticsCard";
-import MusicCard from "../../../components/ui/cards/musicCard"
+import MusicCard from "../../../components/ui/cards/musicCard";
+import NotificationsCard from "../../../components/ui/cards/notificationCard"; 
 import pageStyles from "../../../constants/styles/page-styles";
-import { SignOutButton } from '@/components/SignOutButton'
-import { useSpotify } from '@/hooks/useSpotify';
+import { useSpotify } from "@/hooks/useSpotify";
 
-export default function dashboard(){
+export default function Dashboard() {
   const router = useRouter();
   const navigation = useNavigation<any>();
 
-  React.useEffect(() => {
-    fetchStats();
-  }, []);  
-  
   const [streak, setStreak] = React.useState(0);
   const [personalBest, setPersonalBest] = React.useState(0);
   const [goals, setGoals] = React.useState<Goal[]>([]);
 
+  React.useEffect(() => {
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
     try {
-      // const response = await fetch("/api/dashboard");//api call to backend
-      // const data = await response.json();
-      // This is the just test data makesure we are update components right this will
-      // be removed once the api routes are made
       const data = {
-        profileColor: '#2a5f56ff',
-        profileemoji: 4 ,
+        profileColor: "#2a5f56ff",
+        profileemoji: 4,
         streak: 42,
         personalBest: 7,
         goals: [
           { label: "Daily Scans", value: 7, goal: 10, color: "#00A650" },
           { label: "Study Time", value: 45, goal: 60, color: "#FFB800" },
           { label: "Notes Created", value: 15, goal: 20, color: "#007AFF" },
-        ]
+        ],
       };
-      
-      //use set functions to set the values in each component
+
       setStreak(data.streak);
       setPersonalBest(data.personalBest);
       setGoals(data.goals);
-
     } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
     }
@@ -53,26 +47,21 @@ export default function dashboard(){
 
   const onstatspress = () => {
     console.log("stats pressed");
-    //routing for onclick
   };
 
   const ongoalsPress = () => {
     console.log("goals pressed");
-    //routing for onclick
-    //navigation.navigate("Goals");
-
   };
 
   const ontimerpress = () => {
     console.log("timer pressed");
-    //routing for onclick
     router.push("/(menu)/(home)/timer");
   };
 
   const spotify = useSpotify();
 
   useEffect(() => {
-    console.log('[Dashboard] Spotify connected:', spotify.isConnected);
+    console.log("[Dashboard] Spotify connected:", spotify.isConnected);
     if (spotify.isConnected) {
       spotify.fetchCurrentTrack();
       const interval = setInterval(spotify.fetchCurrentTrack, 5000);
@@ -81,55 +70,86 @@ export default function dashboard(){
   }, [spotify.isConnected]);
 
   const handleSpotifyLogin = async () => {
-    console.log('[Dashboard] Login button pressed');
+    console.log("[Dashboard] Login button pressed");
     await spotify.login();
   };
 
   const handlePlayPause = async () => {
-    console.log('[Dashboard] Play/Pause pressed');
+    console.log("[Dashboard] Play/Pause pressed");
     await spotify.playPause();
   };
 
   const handleSkip = async () => {
-    console.log('[Dashboard] Skip pressed');
+    console.log("[Dashboard] Skip pressed");
     await spotify.skip();
   };
 
+  const mockNotifications = [
+    {
+      id: "1",
+      title: "New study session started",
+      body: "You began a 25-minute focus session.",
+      timeAgo: "2h ago",
+    },
+    {
+      id: "2",
+      title: "Goal reached",
+      body: "Daily scans goal completed!",
+      timeAgo: "Yesterday",
+    },
+    {
+      id: "3",
+      title: "Goal Progress Updated",
+      body: "Daily scans goal completed!",
+      timeAgo: "10h ago",
+    },
+  ];
+
   return (
-    <>
-    <SignOutButton />
-    <ScrollView style={pageStyles.container}>
-      <View style={pageStyles.scrollContent}>
+    <ScrollView
+      style={pageStyles.container}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* little negative margin to pull the first card closer to header */}
+    <View style={{ marginTop: -50 }}>
+      <StatisticsCard
+        streak={streak}
+        personalBest={personalBest}
+        onPress={onstatspress}
+      />
+    </View>
 
-        <StatisticsCard
-          streak={streak}
-          personalBest={personalBest}
-          onPress={onstatspress}
+      <GoalsCard goals={goals} onPress={ongoalsPress} />
+
+      {/* Timer + Spotify row */}
+      <View style={styles.row}>
+        <TimerCard onPress={ontimerpress} width="48%" />
+        <MusicCard
+          isConnected={spotify.isConnected}
+          currentTrack={spotify.currentTrack}
+          isPlaying={spotify.isPlaying}
+          onLogin={handleSpotifyLogin}
+          onPlayPause={handlePlayPause}
+          onSkip={handleSkip}
+          width="48%"
         />
-        <GoalsCard 
-          goals={goals} 
-          onPress={ongoalsPress}
-        />
-
-        {/* WIP:group activity card once done */}
-{/* horizonal view for placeing half width card side by side */}
-        <View style={pageStyles.rowstyles}>
-          {/* WIP spotify card ones done */}
-          <TimerCard
-            onPress={ontimerpress}
-          />
-          <MusicCard
-            isConnected={spotify.isConnected}
-            currentTrack={spotify.currentTrack}
-            isPlaying={spotify.isPlaying}
-            onLogin={handleSpotifyLogin}
-            onPlayPause={handlePlayPause}
-            onSkip={handleSkip}
-          />
-        </View>
-
       </View>
+
+      {/* Notifications section */}
+      <NotificationsCard notifications={mockNotifications} />
     </ScrollView>
-    </>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 10, // pulls everything up closer to the header
+    paddingBottom: 1,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: -1,
+  },
+});

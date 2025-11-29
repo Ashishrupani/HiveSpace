@@ -1,11 +1,11 @@
 import React from "react";
-import { Text, View } from "react-native";
-import * as Progress from 'react-native-progress';
+import { Text, View, StyleSheet } from "react-native";
+import * as Progress from "react-native-progress";
 import cardStyles from "../../../constants/styles/card-styles";
-import { colors } from "../../../constants/theme";
-import BaseCard from "./baseCard";
+import { colors, Colors } from "../../../constants/theme";
+import DashboardCard from "./dashboardCard";
 
-//goal type
+// goal type
 export interface Goal {
   label: string;
   value: number;
@@ -14,7 +14,7 @@ export interface Goal {
 }
 
 interface GoalsProps {
-  goals: Goal[]; 
+  goals: Goal[];
   onPress?: () => void;
   width?: number;
   height?: number;
@@ -24,39 +24,77 @@ export default function GoalsCard({
   goals,
   onPress,
   width,
-  height = 200,
+  height,
 }: GoalsProps) {
+  const hasGoals = goals && goals.length > 0;
+
   return (
-    <BaseCard 
-      onPress={onPress} 
-      width={width}
-      height={height}
-    >
-      <Text style={[cardStyles.labelBold]}>Goals</Text>
+    <DashboardCard onPress={onPress} width={width} height={height}>
+      <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>Progress Goals</Text>
       
-      {goals.map((goal, index) => {
-        const progress = goal.goal > 0 ? goal.value / goal.goal : 0;
-        const percentage = Math.round(progress * 100);
-        
-        return (
-          <View key={index} style={{ marginBottom: 12 }}>
-            <View style={cardStyles.rowstyles}>
-              <Text style={cardStyles.label}>{goal.label}</Text>
-              <Text style={cardStyles.label}>{percentage}%</Text>
+      {!hasGoals && (
+        <Text style={styles.emptyText}>
+          No goals yet. Add some to start tracking your progress.
+        </Text>
+      )}
+
+      {hasGoals &&
+        goals.map((goal, index) => {
+          const progress = goal.goal > 0 ? goal.value / goal.goal : 0;
+          const percentage = Math.round(progress * 100);
+
+          return (
+            <View key={index} style={styles.goalBlock}>
+              <View style={styles.row}>
+                <Text style={styles.label}>{goal.label}</Text>
+                <Text style={styles.percentage}>{percentage}%</Text>
+              </View>
+
+              <View style={styles.progressWrapper}>
+                <Progress.Bar
+                  progress={progress}
+                  width={null}
+                  height={6}
+                  color={goal.color || colors.primary}
+                  unfilledColor="#E5E7EB"
+                  borderWidth={0}
+                  borderRadius={20}
+                />
+              </View>
             </View>
-            {/* for full documentation https://github.com/oblador/react-native-progress  */}
-            <Progress.Bar 
-              progress={progress}
-              width={null}
-              height={10}
-              color={goal.color || colors.primary}
-              unfilledColor= {colors.text}
-              borderWidth={0}
-              borderRadius={5}
-            />
-          </View>
-        );
-      })}
-    </BaseCard>
+          );
+        })}
+    </DashboardCard>
   );
 }
+
+const styles = StyleSheet.create({
+  title: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: "rgba(0,0,0,0.6)",
+  },
+  goalBlock: {
+    marginBottom: 14,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  label: {
+    ...cardStyles.label,
+    flexShrink: 1,
+  },
+  percentage: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  progressWrapper: {
+    marginTop: 6,
+  },
+});

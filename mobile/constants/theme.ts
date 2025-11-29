@@ -64,7 +64,7 @@ export const colors = {
   shadowbox: '#D9D9D9',
 
   noteBackground: '#f5f2f5ff',   
-  noteCard: '#bababaff',         
+  noteCard: '#ffffffff',         
   noteInput: '#ffffff64',        
   
   gradienttop: '#00082B',
