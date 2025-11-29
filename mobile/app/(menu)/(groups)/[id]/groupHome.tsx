@@ -1,14 +1,19 @@
 import BackButton from '@/components/ui/BackButton';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams, useNavigation } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import React from 'react'
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import BaseCard from '@/components/ui/cards/baseCard';
+import LeaderboardCard from '@/components/ui/cards/LeaderboardCard';
+import QuizCard from '@/components/ui/cards/QuizCard';
 import GoalsCard, { Goal } from '@/components/ui/cards/goalsCard';
+import GroupCard from '@/components/ui/cards/groupCard';
+import { groupCardStyles } from '@/constants/styles/card-styles';
 
 export default function GroupHome() {
     const {id} = useLocalSearchParams();
-    const navigation = useNavigation();
+  const navigation = useNavigation();
+  const router = useRouter();
 
     React.useEffect(() => {
       // keep mount/unmount logs for debugging only; do not mutate navigator here
@@ -23,29 +28,59 @@ export default function GroupHome() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <BackButton />
-      <GoalsCard
-        height={120}
-        goals={[
-          { label: 'Connections', value: 4, goal: 10, color: '#0a7ea4' },
-          { label: 'Posts', value: 1, goal: 3, color: '#342A5f' },
-        ]}
-      />
+      
 
-      <View style={styles.centerWrap}>
-        <BaseCard height={140} onPress={() => {}}>
-          <View style={styles.infoRow}>
-            <Text style={styles.groupName}>{groupId}</Text>
-            <Text style={styles.groupId}>ID: {id}</Text>
+      {/* 2x2 grid with horizontal (wide) cards */}
+        {/* Top row: Goals (left) + minimal group tile (right) */}
+        <View style={styles.gridRow}>
+          <View style={styles.gridCol}>
+            <GoalsCard
+              height={120}
+              goals={[
+                { label: 'Connections', value: 4, goal: 10, color: '#0a7ea4' },
+                { label: 'Posts', value: 1, goal: 3, color: '#342A5f' },
+              ]}
+            />
           </View>
-        </BaseCard>
-      </View>
+
+          <View style={styles.gridCol} />
+        </View>
+
+        {/* Row: Leaderboard and Group side-by-side, equal widths and heights */}
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 18 }}>
+          <View style={{ width: '49%' }}>
+            <LeaderboardCard
+              onPress={() => router.push(`/(groups)/${id}/leaderboard` as any)}
+              style={{ width: '100%' }}
+              height={120}
+            />
+          </View>
+
+          <View style={{ width: '49%' }}>
+            <BaseCard width={'100%'} height={120} onPress={() => {}} style={{ padding: 12, borderRadius: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="people" size={18} color="#342A5f" />
+                <Text style={{ fontWeight: '700', color: '#342A5f', marginLeft: 8 }}>{groupId}</Text>
+              </View>
+              <Text style={{ color: '#666', marginTop: 8 }}>ID: {id}</Text>
+            </BaseCard>
+          </View>
+        </View>
+
+        {/* Quiz below (left-aligned under Leaderboard) */}
+        <View style={{ width: '70%', alignSelf: 'flex-start', marginTop: 12 }}>
+          <QuizCard
+            onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
+            style={{ width: '100%' }}
+            height={120}
+          />
+        </View>
 
     </ScrollView>
   )
+
 }
 
-// Temporary styles for the GroupHome screen; these should be moved to a separate file and imported as needed
-// Note: These styles are just placeholders and should be refined based on the actual design requirements
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -72,6 +107,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 40,
   },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 12,
+  },
+  twoColumnRowTop: {
+    height: 8,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    gap: 12,
+  },
+  gridCol: {
+    width: '48%'
+  },
   infoRow: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -85,5 +143,33 @@ const styles = StyleSheet.create({
   groupId: {
     fontSize: 14,
     color: '#666',
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 28,
+    gap: 12,
+  },
+  largeCardsColumn: {
+    marginTop: 28,
+    alignItems: 'center',
+    gap: 12,
+  },
+  cardInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  cardTitle: {
+    color: '#fff',
+    marginTop: 8,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  cardWrapper: {
+    width: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
