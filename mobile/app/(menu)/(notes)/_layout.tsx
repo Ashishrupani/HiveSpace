@@ -1,9 +1,11 @@
+
 import React, { useEffect } from "react";
 import { Tabs } from "expo-router";
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/theme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { migrate } from "../../../lib/db";
+
 
 export default function NotesLayout() {
   // Run DB migration once when this layout mounts

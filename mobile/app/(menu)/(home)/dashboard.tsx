@@ -1,12 +1,14 @@
-import TimerCard from "@/components/ui/timerCard";
+import TimerCard from "@/components/ui/cards/timerCard";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect }from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import { useNavigation } from '@react-navigation/native';
-import GoalsCard, { Goal } from "../../../components/ui/goalsCard";
-import StatisticsCard from "../../../components/ui/statisticsCard";
+import GoalsCard, { Goal } from "../../../components/ui/cards/goalsCard";
+import StatisticsCard from "../../../components/ui/cards/statisticsCard";
+import MusicCard from "../../../components/ui/cards/musicCard"
 import pageStyles from "../../../constants/styles/page-styles";
 import { SignOutButton } from '@/components/SignOutButton'
+import { useSpotify } from '@/hooks/useSpotify';
 
 export default function dashboard(){
   const router = useRouter();
@@ -57,11 +59,40 @@ export default function dashboard(){
   const ongoalsPress = () => {
     console.log("goals pressed");
     //routing for onclick
+    //navigation.navigate("Goals");
+
   };
 
   const ontimerpress = () => {
     console.log("timer pressed");
     //routing for onclick
+    router.push("/(menu)/(home)/timer");
+  };
+
+  const spotify = useSpotify();
+
+  useEffect(() => {
+    console.log('[Dashboard] Spotify connected:', spotify.isConnected);
+    if (spotify.isConnected) {
+      spotify.fetchCurrentTrack();
+      const interval = setInterval(spotify.fetchCurrentTrack, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [spotify.isConnected]);
+
+  const handleSpotifyLogin = async () => {
+    console.log('[Dashboard] Login button pressed');
+    await spotify.login();
+  };
+
+  const handlePlayPause = async () => {
+    console.log('[Dashboard] Play/Pause pressed');
+    await spotify.playPause();
+  };
+
+  const handleSkip = async () => {
+    console.log('[Dashboard] Skip pressed');
+    await spotify.skip();
   };
 
   return (
@@ -81,18 +112,19 @@ export default function dashboard(){
         />
 
         {/* WIP:group activity card once done */}
-        <GoalsCard 
-          goals={goals} 
-          onPress={ongoalsPress}
-        />
 {/* horizonal view for placeing half width card side by side */}
         <View style={pageStyles.rowstyles}>
-          <TimerCard
-            onPress={ontimerpress}
-          />
           {/* WIP spotify card ones done */}
           <TimerCard
             onPress={ontimerpress}
+          />
+          <MusicCard
+            isConnected={spotify.isConnected}
+            currentTrack={spotify.currentTrack}
+            isPlaying={spotify.isPlaying}
+            onLogin={handleSpotifyLogin}
+            onPlayPause={handlePlayPause}
+            onSkip={handleSkip}
           />
         </View>
 

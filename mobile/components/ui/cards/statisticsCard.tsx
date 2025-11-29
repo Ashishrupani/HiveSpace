@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "react-native";
-import cardStyles from "../../constants/styles/card-styles";
+import cardStyles from "../../../constants/styles/card-styles";
 import BaseCard from "./baseCard";
 
 

@@ -11,5 +11,6 @@ export default function HomeLayout() {
   );
 }
 
-
- 
+/* Notes
+ * This layout component sets up the home screen with a drawer navigation.
+ */

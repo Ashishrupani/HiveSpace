@@ -1,7 +1,7 @@
 import React from "react";
 import { TouchableOpacity, TouchableOpacityProps } from "react-native";
-import cardStyles from "../../constants/styles/card-styles";
-import { colors } from "../../constants/theme";
+import cardStyles from "../../../constants/styles/card-styles";
+import { colors } from "../../../constants/theme";
 
 //https://github.com/Paraboly/react-native-card/blob/master/lib/components/Card/Card.tsx
 //adapted to fit from this open source project

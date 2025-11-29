@@ -49,3 +49,7 @@ app-example
 .env.local
 .vscode
 
+# local db
+hspace.sqlite
+hspace.db
+*.db

@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { colors } from "../../constants/theme";
-import cardStyles from "../../constants/styles/card-styles";
+import { colors } from "../../../constants/theme";
+import cardStyles from "../../../constants/styles/card-styles";
 import BaseCard from "./baseCard";
 import { Clock } from "lucide-react-native";
 

@@ -6,13 +6,13 @@ import * as React from "react";
 import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
 import authStyles from "../../constants/styles/auth.styles";
 import colors from '../../constants/theme';
+import { ScrollView } from "react-native";
 
 export default function SignUpScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { isLoaded, signUp, setActive } = useSignUp();
 
-  // header matches sign-in
   React.useEffect(() => {
     navigation.setOptions({
       title: "",
@@ -29,6 +29,8 @@ export default function SignUpScreen() {
   }, [navigation]);
 
   // form state
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
   const [username, setUsername] = React.useState("");
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -37,10 +39,20 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = React.useState(false);
   const [code, setCode] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
   // submit sign up
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || submitting) return;
+
+    const f = firstName.trim();
+    const l = lastName.trim();
+    const em = emailAddress.trim();
+
+    if (!f || !l) {
+      setError("Please enter your first and last name.");
+      return;
+    }
     if (password.trim().length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -50,13 +62,16 @@ export default function SignUpScreen() {
       return;
     }
     setError(null);
+    setSubmitting(true);
 
     try {
       await signUp.create({
-        emailAddress,
+        emailAddress: em,
         password,
-        // optional: store username in public metadata or after verification
-        // unsafeMetadata: { username },
+        firstName: f,          // <-- saved to Clerk user
+        lastName: l,           // <-- saved to Clerk user
+        // keep your username for later use
+        unsafeMetadata: { username }, // you had this pattern already :contentReference[oaicite:0]{index=0}
       });
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -64,6 +79,8 @@ export default function SignUpScreen() {
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
       setError("Could not create account. Please check your info and try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,7 +101,7 @@ export default function SignUpScreen() {
     }
   };
 
-  // --- Verification screen (same theme) ---
+  // --- Verification screen ---
   if (pendingVerification) {
     return (
       <LinearGradient
@@ -117,6 +134,7 @@ export default function SignUpScreen() {
             placeholderTextColor={colors.subtext}
             onChangeText={setCode}
             keyboardType="number-pad"
+            autoCapitalize="none"
           />
           {!!error && (
             <Text style={{ color: "#ffb4b4", marginBottom: 10, textAlign: "center" }}>{error}</Text>
@@ -129,12 +147,17 @@ export default function SignUpScreen() {
     );
   }
 
-  // --- Sign Up screen (themed like sign-in) ---
+  // --- Sign Up screen ---
   return (
     <LinearGradient
-      colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
-      style={authStyles.container}
+      colors={[colors.gradienttop, colors.gradientbottom]}
+      style={{ flex: 1 }}
     >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <LinearGradient
+          colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
+          style={authStyles.container}
+        >
       {/* Title + subtitle aligned like sign-in */}
       <View style={{ position: "absolute", top: 10, left: 50 }}>
         <Text
@@ -166,11 +189,30 @@ export default function SignUpScreen() {
           marginTop: 120,
         }}
       >
-        {/* Username */}
-        <Text style={[authStyles.label]}>Username</Text>
+        {/* First name */}
         <TextInput
           style={[authStyles.input, { marginBottom: 20, marginTop: 10 }]}
-          placeholder="HiveSpace"
+          placeholder="First name"
+          placeholderTextColor={colors.subtext}
+          value={firstName}
+          onChangeText={setFirstName}
+          autoCapitalize="words"
+        />
+
+        {/* Last name */}
+        <TextInput
+          style={[authStyles.input, { marginBottom: 20, marginTop: 10 }]}
+          placeholder="Last name"
+          placeholderTextColor={colors.subtext}
+          value={lastName}
+          onChangeText={setLastName}
+          autoCapitalize="words"
+        />
+
+        {/* Username (optional) */}
+        <TextInput
+          style={[authStyles.input, { marginBottom: 20, marginTop: 10 }]}
+          placeholder="Username"
           placeholderTextColor={colors.subtext}
           autoCapitalize="none"
           value={username}
@@ -178,10 +220,9 @@ export default function SignUpScreen() {
         />
 
         {/* Email */}
-        <Text style={[authStyles.label]}>Email</Text>
         <TextInput
           style={[authStyles.input, { marginBottom: 20, marginTop: 10 }]}
-          placeholder="Hivespace@example.com"
+          placeholder="Email address"
           placeholderTextColor={colors.subtext}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -190,15 +231,16 @@ export default function SignUpScreen() {
         />
 
         {/* Password */}
-        <Text style={[authStyles.label]}>Password</Text>
+
         <View style={{ position: "relative", marginTop: 10, marginBottom: 20 }}>
           <TextInput
             style={[authStyles.input, { paddingRight: 48 }]}
-            placeholder="••••••••"
+            placeholder="Password"
             placeholderTextColor={colors.subtext}
             secureTextEntry={!showPwd}
             value={password}
             onChangeText={setPassword}
+            autoCapitalize="none"
           />
           <Pressable
             onPress={() => setShowPwd((s) => !s)}
@@ -209,14 +251,14 @@ export default function SignUpScreen() {
         </View>
 
         {/* Confirm */}
-        <Text style={[authStyles.label]}>Confirm Password</Text>
         <TextInput
-          style={[authStyles.input, { marginTop: 10, marginBottom: 26 }]}
-          placeholder="••••••••"
+          style={[authStyles.input, { marginTop: 1, marginBottom: 26 }]}
+          placeholder="Confirm password"
           placeholderTextColor={colors.subtext}
           secureTextEntry={!showPwd}
           value={confirm}
           onChangeText={setConfirm}
+          autoCapitalize="none"
         />
 
         {!!error && (
@@ -224,8 +266,8 @@ export default function SignUpScreen() {
         )}
 
         {/* Submit */}
-        <TouchableOpacity style={authStyles.button} onPress={onSignUpPress}>
-          <Text style={authStyles.buttonText}>Sign up</Text>
+        <TouchableOpacity style={authStyles.button} onPress={onSignUpPress} disabled={submitting}>
+          <Text style={authStyles.buttonText}>{submitting ? "Creating..." : "Sign up"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -236,6 +278,8 @@ export default function SignUpScreen() {
           Login
         </Link>
       </Text>
+        </LinearGradient>
+      </ScrollView>
     </LinearGradient>
   );
 }
