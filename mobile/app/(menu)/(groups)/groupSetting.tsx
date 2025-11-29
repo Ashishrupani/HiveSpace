@@ -1,9 +1,8 @@
 import React from 'react'
 import { View, ScrollView, TextInput, TouchableOpacity, Text, Alert } from 'react-native';
-import pageStyles from '@/constants/styles/page-styles';
 import groupSettingsStyles from '@/constants/styles/group-settings.styles';
-import GroupCard from '@/components/ui/cards/groupCard';
 import { useRouter } from 'expo-router';
+import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
 
 export default function GroupSetting() {
   const router = useRouter();
@@ -12,11 +11,10 @@ export default function GroupSetting() {
 
   // Sample groups - replace with API data
   const groups = React.useMemo(() => [
-    { id: 'g1', name: 'Study Buddies', members: 24 },
-    { id: 'g2', name: 'React Learners', members: 12 },
-    { id: 'g3', name: 'Design Crew', members: 8 },
-    { id: 'g4', name: 'Productivity Champs', members: 42 },
-    { id: 'g5', name: 'Book Club', members: 16 },
+      { id: '1', name: 'Study Buddies', members: 24, iconName: 'timer' },
+      { id: '2', name: 'React Learners', members: 12, iconName: 'note.fill' },
+      { id: '3', name: 'Design Crew', members: 8, iconName: 'person.crop.circle' },
+      { id: '4', name: 'Productivity Champs', members: 42, iconName: 'chart.bar.fill' },
   ], []);
 
   const filtered = React.useMemo(() => {
@@ -32,16 +30,15 @@ export default function GroupSetting() {
   }
 
   const onCreatePress = () => {
-    router.push('/(menu)/(groups)/groupSettings/createGroup');
+    router.navigate('/(menu)/(groups)/groupSettings/createGroup');
   };
 
   const onJoinPress = () => {
-    router.push('/(menu)/(groups)/groupSettings/joinGroup');
+    router.navigate('/(menu)/(groups)/groupSettings/joinGroup');
   };
 
   return (
     <ScrollView style={groupSettingsStyles.container}>
-      {/* Navigation buttons for Create and Join Group */}
       <View style={[groupSettingsStyles.navRow, { marginBottom: 28 }]}> 
         <TouchableOpacity style={groupSettingsStyles.navButton} onPress={onCreatePress}>
           <Text style={groupSettingsStyles.navButtonText}>Create a Group</Text>
@@ -63,20 +60,15 @@ export default function GroupSetting() {
       />
 
       {filtered.map((item) => (
-        <View key={item.id} style={[groupSettingsStyles.cardContainer, { backgroundColor: '#F6F7F9', padding: 0, marginBottom: 22 }]}> 
-          <GroupCard name={item.name} members={item.members} onPress={() => {}} />
-          <View style={[groupSettingsStyles.joinRow, { marginRight: 12, marginBottom: 8 }]}> 
-            {joined[item.id] ? (
-              <TouchableOpacity style={groupSettingsStyles.joinedButton} disabled>
-                <Text style={groupSettingsStyles.joinButtonText}>Joined</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={groupSettingsStyles.joinButton} onPress={() => handleJoin(item.id, item.name)}>
-                <Text style={groupSettingsStyles.joinButtonText}>Join</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        <GroupCardWithJoin
+          key={item.id}
+          id={item.id}
+          name={item.name}
+          members={item.members}
+          iconName={item.iconName}
+          isJoined={!!joined[item.id]}
+          onJoin={handleJoin}
+        />
       ))}
       <View style={{ height: 24 }} />
     </ScrollView>

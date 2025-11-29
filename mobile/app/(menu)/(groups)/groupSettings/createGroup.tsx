@@ -40,7 +40,7 @@ export default function CreateGroup() {
       style={createGroupStyles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <BackButton onPress={() => router.navigate('/groupSetting')}/>
+      <BackButton onPress={ () => router.replace('/(menu)/(groups)/groupSetting') }/>
       <Text style={createGroupStyles.title}>Create a New Group</Text>
       <TextInput
         placeholder="Group Name"
