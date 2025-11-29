@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image} from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { groupCardStyles } from '../../../constants/styles/card-styles';
 import { TouchableOpacity } from "react-native";
@@ -44,5 +44,3 @@ export default function GroupCard({ name, members, logoUri, iconName = 'chevron.
     </TouchableOpacity>
   );
 }
-
-
