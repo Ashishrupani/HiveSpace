@@ -8,6 +8,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { GoalsProvider } from '@/contexts/GoalsContext';
 //import colors from '@/constants/theme';
 //import { useColorScheme } from '@/hooks/use-color-scheme';
+import { SignOutButton } from '@/components/SignOutButton';
 
 export default function HomeLayout() {
   //const colorScheme = useColorScheme() as 'light' | 'dark' | undefined;

@@ -26,7 +26,7 @@ const groupSettingsStyles = StyleSheet.create({
     elevation: 2,
   },
   navButtonText: {
-    color: '#fff',
+    color: '#ffffffff',
     fontSize: 17,
     fontWeight: '600',
     letterSpacing: 0.2,
@@ -40,7 +40,7 @@ const groupSettingsStyles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     marginBottom: 18,
-    color: colors.text,
+    color: '#000',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
