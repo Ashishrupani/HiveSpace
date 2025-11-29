@@ -6,6 +6,7 @@ interface GroupGoalsContextType {
     getGroupCompletedGoals: (groupId: string) => Goal[];
     addGroupGoal: (groupId: string, goal: Goal) => void;
     updateGroupGoal: (groupId: string, goalId: string, value: number) => void;
+    editGroupGoalDetails: (groupId: string, goalId: string, updates: Partial<Pick<Goal, 'label' | 'goal' | 'color' | 'dueDate'>>) => void;
     completeGroupGoal: (groupId: string, goalId: string) => void;
     deleteGroupGoal: (groupId: string, goalId: string, isCompleted?: boolean) => void;
     getTopThreeGroupGoals: (groupId: string) => Goal[];
@@ -70,6 +71,28 @@ export function GroupGoalsProvider({ children }: { children: ReactNode }) {
                 if (goal.id === goalId) {
                     const newValue = Math.min(goal.value + valueToAdd, goal.goal);
                     return { ...goal, value: newValue };
+                }
+                return goal;
+            });
+
+            return {
+                ...prev,
+                [groupId]: {
+                    ...group,
+                    active: updatedActive
+                }
+            };
+        });
+    };
+
+    const editGroupGoalDetails = (groupId: string, goalId: string, updates: Partial<Pick<Goal, 'label' | 'goal' | 'color' | 'dueDate'>>) => {
+        setGroupGoalsMap(prev => {
+            const group = prev[groupId];
+            if (!group) return prev;
+
+            const updatedActive = group.active.map(goal => {
+                if (goal.id === goalId) {
+                    return { ...goal, ...updates };
                 }
                 return goal;
             });
@@ -152,6 +175,7 @@ export function GroupGoalsProvider({ children }: { children: ReactNode }) {
             getGroupCompletedGoals,
             addGroupGoal,
             updateGroupGoal,
+            editGroupGoalDetails,
             completeGroupGoal,
             deleteGroupGoal,
             getTopThreeGroupGoals,

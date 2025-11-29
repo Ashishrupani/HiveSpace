@@ -14,7 +14,7 @@ type Props = {
 export default function BackButton({ onPress, style, size = 30, color }: Props) {
   const navigation = useNavigation();
   const scheme = useColorScheme();
-  const iconColor = color ?? (scheme === 'dark' ? Colors.light.text : Colors.dark.text);
+  const iconColor = color ?? Colors.light.tint;
 
   const handle = () => {
     if (onPress) return onPress();
