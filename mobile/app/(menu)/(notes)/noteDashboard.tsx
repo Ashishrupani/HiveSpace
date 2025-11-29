@@ -1,34 +1,33 @@
 // app/(menu)/(notes)/noteDashboard.tsx
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  StyleSheet,
-  Alert,
-  Image,
-} from "react-native";
+// NotesDashboard
+//  - Shows all notes saved in SQLite
+//  - Lets the user create a new note or upload one with an attached file
+//  - Navigates to noteView in "view" or "edit" mode
+//  - All data access goes through lib/notes-repo and lib/note-upload
+
+import React, { useState, useCallback } from "react";
+import { ScrollView, View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, StyleSheet, Alert, Image,} from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Plus, Edit3, Trash2 } from "lucide-react-native";
-
 import { Colors, colors } from "../../../constants/theme";
 import cardStyles from "../../../constants/styles/card-styles";
-
-import {
-  listNotes,
-  createNote,
-  deleteNote,
-  UINote,
-} from "../../../lib/notes-repo";
+import {listNotes, createNote, deleteNote, UINote,} from "../../../lib/notes-repo";
 import { pickAndStoreFile } from "../../../lib/note-upload";
 
+// -----------------------------------------------------------------------------
+// Types & constants
+// -----------------------------------------------------------------------------
+
+/**
+ * Mode for the "Add note" flow.
+ * - "create": user will create a blank note and type content in noteView.
+ * - "upload": user picks a file and we attach its URI to the note.
+ */
 type NoteMode = "create" | "upload" | null;
 
-// Fixed subject options
+/**
+ * Fixed set of subjects that appear in the subject dropdown.
+ */
 const SUBJECT_OPTIONS = [
   "English",
   "Math",
@@ -41,46 +40,71 @@ const SUBJECT_OPTIONS = [
   "Other",
 ];
 
-// Map subjects to images (create these files under assets/subjects)
-// Map subjects to images (your images folder)
+/**
+ * Static subject → image mapping.
+ * NOTE: Make sure these files exist under the same folder as this file:
+ *   ./images/English01.jpg
+ *   ./images/Math01.jpg
+ *   ...
+ */
 const SUBJECT_IMAGES: Record<string, any> = {
-  English: require("./images/English.jpg"),
-  Math: require("./images/Math.jpg"),
-  Physics: require("./images/Physics.jpg"),
+  English: require("./images/English01.jpg"),
+  Math: require("./images/Math01.jpg"),
+  Physics: require("./images/Physics01.jpg"),
   Chemistry: require("./images/Chemistry.jpg"),
   Biology: require("./images/Biology.jpg"),
-  "Computer Science": require("./images/Computer Science.jpg"),
-  History: require("./images/History.jpg"),
-  Geography: require("./images/Geography.jpg"),
-  Other: require("./images/Others.png"), // your "Others" image
+  "Computer Science": require("./images/CompSci01.jpg"),
+  History: require("./images/History01.jpg"),
+  Geography: require("./images/Geography01.jpg"),
+  Other: require("./images/others01.jpg"),
 };
 
+/**
+ * Helper to safely pick an image for a subject.
+ */
 function getSubjectImage(subject: string) {
-  // subject will be one of the SUBJECT_OPTIONS (same spelling/case)
   return SUBJECT_IMAGES[subject] ?? SUBJECT_IMAGES.Other;
 }
 
+// -----------------------------------------------------------------------------
+// Component
+// -----------------------------------------------------------------------------
 
 export default function NotesDashboard() {
   const router = useRouter();
 
+  // List of all notes from SQLite.
   const [notes, setNotes] = useState<UINote[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // "Save" button state in the form modal.
   const [saving, setSaving] = useState(false);
 
+  // Modal visibility flags.
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [formModalVisible, setFormModalVisible] = useState(false);
+
+  // Current "Add note" mode ("create" or "upload").
   const [mode, setMode] = useState<NoteMode>(null);
 
+  // Form fields for the Name + Subject modal.
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [subjectMenuOpen, setSubjectMenuOpen] = useState(false);
 
+  // File picked during the "upload" flow.
   const [pendingFile, setPendingFile] = useState<{
     fileUri: string;
     mimeType: string | null;
   } | null>(null);
 
+  // ---------------------------------------------------------------------------
+  // Data loading
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Load all notes from SQLite and update state.
+   */
   const loadNotes = useCallback(async () => {
     try {
       setLoading(true);
@@ -93,13 +117,23 @@ export default function NotesDashboard() {
     }
   }, []);
 
+  /**
+   * Reload notes whenever the Notes tab/screen gains focus.
+   * This ensures new/edited notes appear when you navigate back from noteView.
+   */
   useFocusEffect(
     useCallback(() => {
-      // Called every time the Notes tab/screen is focused
       loadNotes();
     }, [loadNotes])
   );
 
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Reset all form-related state back to defaults.
+   */
   const resetForm = () => {
     setName("");
     setSubject("");
@@ -108,10 +142,17 @@ export default function NotesDashboard() {
     setSubjectMenuOpen(false);
   };
 
+  /**
+   * Open the "Create or Upload?" action modal.
+   */
   const openActionModal = () => {
     setActionModalVisible(true);
   };
 
+  /**
+   * User chose "Create note".
+   * We just open the form modal in "create" mode.
+   */
   const handleChooseCreate = () => {
     setActionModalVisible(false);
     resetForm();
@@ -119,6 +160,10 @@ export default function NotesDashboard() {
     setFormModalVisible(true);
   };
 
+  /**
+   * User chose "Upload note".
+   * We first pick a file, then open the form modal in "upload" mode.
+   */
   const handleChooseUpload = async () => {
     setActionModalVisible(false);
     resetForm();
@@ -126,14 +171,20 @@ export default function NotesDashboard() {
 
     const picked = await pickAndStoreFile();
     if (!picked || !picked.fileUri) {
+      // User cancelled picker; stop the flow.
       setMode(null);
       return;
     }
+
     setPendingFile(picked);
     setFormModalVisible(true);
   };
 
-  // Save meta (Name + Subject)
+  /**
+   * Save the Name + Subject metadata for a new note.
+   * - In "create" mode: create an empty note and navigate to noteView (edit).
+   * - In "upload" mode: create a note with fileUri and stay on dashboard.
+   */
   const handleSaveMeta = async () => {
     if (!name.trim() || !subject.trim()) {
       Alert.alert("Missing info", "Please enter both name and subject.");
@@ -144,6 +195,7 @@ export default function NotesDashboard() {
       setSaving(true);
 
       if (mode === "create") {
+        // Create an empty note and immediately open it in edit mode.
         const id = await createNote({
           title: name.trim(),
           description: "",
@@ -160,6 +212,7 @@ export default function NotesDashboard() {
           params: { id: String(id), mode: "edit" },
         });
       } else if (mode === "upload" && pendingFile?.fileUri) {
+        // Create a note that has an attachment.
         await createNote({
           title: name.trim(),
           description: "",
@@ -170,7 +223,7 @@ export default function NotesDashboard() {
 
         setFormModalVisible(false);
         resetForm();
-        await loadNotes();
+        await loadNotes(); // refresh list so the new card appears
       }
     } catch (err) {
       console.error("Failed to save note metadata:", err);
@@ -180,7 +233,9 @@ export default function NotesDashboard() {
     }
   };
 
-  // open in view or edit mode
+  /**
+   * Navigate to the noteView screen in either "view" or "edit" mode.
+   */
   const openNote = (note: UINote, mode: "view" | "edit" = "view") => {
     router.push({
       pathname: "/(menu)/(notes)/noteView",
@@ -188,28 +243,46 @@ export default function NotesDashboard() {
     });
   };
 
+  /**
+   * Delete a note after user confirmation.
+   */
+  const handleDelete = (id: number) => {
+    Alert.alert("Delete note", "Are you sure you want to delete this note?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteNote(id);
+            await loadNotes();
+          } catch (err) {
+            console.error("Failed to delete note:", err);
+            Alert.alert("Error", "Failed to delete note.");
+          }
+        },
+      },
+    ]);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.dark.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.noteBackground }}>
+      {/* Loading state */}
       {loading ? (
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[cardStyles.label, { marginTop: 8 }]}>
             Loading notes...
           </Text>
         </View>
       ) : (
+        // Notes list
         <ScrollView
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 100,
-            paddingTop: 12,
-          }}
+          contentContainerStyle={styles.listContentContainer}
           showsVerticalScrollIndicator={false}
         >
           {notes.length > 0 ? (
@@ -261,6 +334,7 @@ export default function NotesDashboard() {
                     </View>
 
                     <View style={styles.cardActionsRow}>
+                      {/* Edit note button */}
                       <TouchableOpacity
                         onPress={() => openNote(note, "edit")}
                         style={[styles.actionButton, { marginRight: 8 }]}
@@ -269,16 +343,17 @@ export default function NotesDashboard() {
                         <Text style={styles.actionText}>Edit</Text>
                       </TouchableOpacity>
 
+                      {/* Delete note button */}
                       <TouchableOpacity
                         onPress={() => handleDelete(note.id)}
                         style={[
                           styles.actionButton,
-                          { backgroundColor: "#802222" },
+                          { backgroundColor: "#ef6800ff" },
                         ]}
                       >
                         <Trash2 color="#FFDADA" size={16} />
                         <Text
-                          style={[styles.actionText, { color: "#FFDADA" }]}
+                          style={[styles.actionText, { color: "#ffe5daff" }]}
                         >
                           Delete
                         </Text>
@@ -289,13 +364,8 @@ export default function NotesDashboard() {
               );
             })
           ) : (
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 50,
-              }}
-            >
+            // Empty state
+            <View style={styles.emptyStateContainer}>
               <Text style={[cardStyles.label, { color: colors.text }]}>
                 No notes yet. Tap + to create or upload a note.
               </Text>
@@ -304,23 +374,14 @@ export default function NotesDashboard() {
         </ScrollView>
       )}
 
-      {/* Floating + button */}
-      <TouchableOpacity
-        onPress={openActionModal}
-        style={{
-          position: "absolute",
-          bottom: 30,
-          right: 25,
-          backgroundColor: colors.primary,
-          borderRadius: 30,
-          padding: 16,
-          elevation: 5,
-        }}
-      >
+      {/* Floating + button (open action modal) */}
+      <TouchableOpacity onPress={openActionModal} style={styles.fab}>
         <Plus color={colors.accent} size={26} />
       </TouchableOpacity>
 
-      {/* Action chooser modal */}
+      {/* ---------------------------------------------------------------------
+         Action chooser modal ("Create note" or "Upload note")
+         ------------------------------------------------------------------ */}
       <Modal
         visible={actionModalVisible}
         transparent
@@ -364,7 +425,9 @@ export default function NotesDashboard() {
         </View>
       </Modal>
 
-      {/* Name + Subject form modal */}
+      {/* ---------------------------------------------------------------------
+         Name + Subject form modal
+         ------------------------------------------------------------------ */}
       <Modal
         visible={formModalVisible}
         transparent
@@ -385,6 +448,7 @@ export default function NotesDashboard() {
               {mode === "create" ? "Create note" : "Upload note"}
             </Text>
 
+            {/* Name input */}
             <TextInput
               placeholder="Name"
               placeholderTextColor="#888"
@@ -393,11 +457,12 @@ export default function NotesDashboard() {
               style={styles.input}
             />
 
-            {/* Subject dropdown */}
+            {/* Subject dropdown label */}
             <Text style={[cardStyles.label, { marginBottom: 4 }]}>
               Subject
             </Text>
 
+            {/* Subject dropdown trigger */}
             <TouchableOpacity
               style={[styles.input, { justifyContent: "center" }]}
               onPress={() => setSubjectMenuOpen((prev) => !prev)}
@@ -405,7 +470,7 @@ export default function NotesDashboard() {
             >
               <Text
                 style={{
-                  color: subject ? "#fff" : "#888",
+                  color: subject ? Colors.light.text : "#888",
                   fontSize: 14,
                 }}
               >
@@ -413,23 +478,27 @@ export default function NotesDashboard() {
               </Text>
             </TouchableOpacity>
 
+            {/* Subject dropdown list */}
             {subjectMenuOpen && (
               <View style={styles.dropdown}>
-                {SUBJECT_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSubject(option);
-                      setSubjectMenuOpen(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView>
+                  {SUBJECT_OPTIONS.map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setSubject(option);
+                        setSubjectMenuOpen(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
 
+            {/* Small hint when a file has been attached in upload mode */}
             {mode === "upload" && pendingFile && (
               <Text
                 style={[cardStyles.label, { marginTop: 8, opacity: 0.8 }]}
@@ -438,6 +507,7 @@ export default function NotesDashboard() {
               </Text>
             )}
 
+            {/* Form buttons: Cancel / Save */}
             <View style={styles.formButtonsRow}>
               <TouchableOpacity
                 onPress={() => {
@@ -474,9 +544,25 @@ export default function NotesDashboard() {
   );
 }
 
+// -----------------------------------------------------------------------------
+// Styles
+// -----------------------------------------------------------------------------
+
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listContentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+    paddingTop: 12,
+  },
+
+  // Note card
   cardContainer: {
-    backgroundColor: "#1f1f1f",
+    backgroundColor: colors.noteCard,
     borderRadius: 16,
     marginBottom: 12,
     overflow: "hidden",
@@ -485,7 +571,7 @@ const styles = StyleSheet.create({
     position: "relative",
     height: 120,
     width: "100%",
-    backgroundColor: "#222",
+    backgroundColor: colors.noteCard,
   },
   cardImage: {
     width: "100%",
@@ -525,14 +611,24 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#f5f5f5",
   },
+
+  emptyStateContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 50,
+  },
+
+  // Overlay used by both modals
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // "Create or Upload?" modal
   actionModal: {
-    backgroundColor: "#222",
+    backgroundColor: colors.noteCard,
     borderRadius: 16,
     padding: 16,
     width: "80%",
@@ -544,38 +640,46 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
   },
+
+  // Name + Subject modal
   formModal: {
-    backgroundColor: "#222",
+    backgroundColor: colors.noteCard,
     borderRadius: 16,
     padding: 16,
     width: "90%",
   },
   input: {
-    backgroundColor: "#333",
-    color: "#fff",
+    backgroundColor: colors.noteInput,
+    color: Colors.light.text,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
     fontSize: 14,
   },
+
+  // Subject dropdown
   dropdown: {
-    backgroundColor: "#333",
+    backgroundColor: colors.noteInput,
     borderRadius: 10,
     marginTop: 4,
     marginBottom: 8,
-    maxHeight: 180,
+    maxHeight: 180, // keeps it from getting too tall
     borderWidth: 1,
     borderColor: "#444",
+    width: "100%",
+    alignSelf: "stretch",
   },
   dropdownItem: {
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
   dropdownItemText: {
-    color: "#fff",
+    color: Colors.light.text,
     fontSize: 14,
   },
+
+  // Form buttons
   formButtonsRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -590,5 +694,16 @@ const styles = StyleSheet.create({
   formButtonText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+
+  // Floating action button (+)
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 25,
+    backgroundColor: colors.primary,
+    borderRadius: 30,
+    padding: 16,
+    elevation: 5,
   },
 });

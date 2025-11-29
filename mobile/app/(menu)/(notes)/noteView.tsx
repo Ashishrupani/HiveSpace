@@ -1,66 +1,96 @@
 import React, { useEffect, useState } from "react";
-import {View,Text,ScrollView,TouchableOpacity,TextInput,ActivityIndicator,Alert,} from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { Colors } from "../../../constants/theme";
-import cardStyles from "../../../constants/styles/card-styles";
 import { Clock, Save } from "lucide-react-native";
+
+import { Colors, colors } from "../../../constants/theme";
+import cardStyles from "../../../constants/styles/card-styles";
+
 import { getNoteById, updateNote, UINote } from "../../../lib/notes-repo";
 import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+
+// -----------------------------------------------------------------------------
+// Component
+// -----------------------------------------------------------------------------
 
 export default function NoteView() {
+  // Note id passed via router params from the dashboard.
   const { id } = useLocalSearchParams<{ id: string }>();
+
   const [note, setNote] = useState<UINote | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
 
- 
-async function openAttachment() {
-  const current = note;
-  if (!current || !current.fileUri) return;
+  // ---------------------------------------------------------------------------
+  // Attachment handling (open via system share sheet)
+  // ---------------------------------------------------------------------------
 
-  console.log("Opening attachment URI (share):", current.fileUri);
+  async function openAttachment() {
+    const current = note;
+    if (!current || !current.fileUri) return;
 
-  try {
-    const canShare = await Sharing.isAvailableAsync();
-    if (!canShare) {
+    console.log("Opening attachment URI (share):", current.fileUri);
+
+    try {
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert(
+          "Not supported",
+          "Sharing is not available on this device."
+        );
+        return;
+      }
+
+      // Opens the system share sheet so the user can pick an app
+      // (e.g., Microsoft Edge, Adobe, Google Drive) to open the file.
+      await Sharing.shareAsync(current.fileUri);
+    } catch (err) {
+      console.error("Failed to share/open attachment:", err);
       Alert.alert(
-        "Not supported",
-        "Sharing is not available on this device."
+        "Error",
+        "Could not open attachment. Please try again or re-upload the file."
       );
-      return;
     }
-
-    // This will open the system share sheet where the user can pick
-    // Google Drive, Adobe, etc. to open the PDF.
-    await Sharing.shareAsync(current.fileUri)
-  } catch (err) {
-    console.error("Failed to share/open attachment:", err);
-    Alert.alert(
-      "Error",
-      "Could not open attachment. Please try again or re-upload the file."
-    );
   }
-}
 
+  // ---------------------------------------------------------------------------
+  // Load note data from SQLite
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (!id) return;
+
     (async () => {
       try {
         const loaded = await getNoteById(Number(id));
         if (loaded) {
           setNote(loaded);
           setBody(loaded.description || "");
+        } else {
+          Alert.alert("Not found", "The requested note could not be found.");
         }
       } catch (err) {
         console.error("Failed to load note:", err);
+        Alert.alert("Error", "Failed to load note.");
       }
     })();
   }, [id]);
 
+  // ---------------------------------------------------------------------------
+  // Save note body back to SQLite
+  // ---------------------------------------------------------------------------
+
   const handleSave = async () => {
     if (!note) return;
+
     try {
       setSaving(true);
       await updateNote({
@@ -75,17 +105,17 @@ async function openAttachment() {
       setSaving(false);
     }
   };
-const mimeLabel =
-  note?.mimeType === "application/pdf"
-    ? "PDF"
-    : note?.mimeType ?? "";
+
+  // ---------------------------------------------------------------------------
+  // Loading state (before note is available)
+  // ---------------------------------------------------------------------------
 
   if (!note) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: Colors.dark.background,
+          backgroundColor: colors.noteBackground,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -98,15 +128,25 @@ const mimeLabel =
     );
   }
 
+  // Derived values
   const subjectText = note.subject;
+  const mimeLabel =
+    note.mimeType === "application/pdf"
+      ? "PDF"
+      : note.mimeType ?? "";
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: Colors.dark.background,
+        backgroundColor: colors.noteBackground,
       }}
     >
-      {/* Top bar with Save button */}
+      {/* Top bar with title + Save button */}
       <View
         style={{
           flexDirection: "row",
@@ -117,10 +157,18 @@ const mimeLabel =
           paddingBottom: 8,
         }}
       >
-        <Text style={[cardStyles.labelBold, { fontSize: 18 }]}>
+        {/* Note title */}
+        <Text
+          style={[
+            cardStyles.labelBold,
+            { fontSize: 18, color: Colors.light.text },
+          ]}
+          numberOfLines={1}
+        >
           {note.title}
         </Text>
 
+        {/* Save button */}
         <TouchableOpacity
           onPress={handleSave}
           style={{
@@ -153,7 +201,7 @@ const mimeLabel =
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Subject + time */}
+        {/* Subject + time row */}
         <View
           style={{
             marginBottom: 12,
@@ -162,57 +210,62 @@ const mimeLabel =
           <Text
             style={[
               cardStyles.label,
-              { marginBottom: 4, opacity: 0.85 },
+              { marginBottom: 4, opacity: 0.85, color: Colors.light.text },
             ]}
           >
             {subjectText}
           </Text>
 
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Clock color={Colors.dark.text} size={16} />
-            <Text style={[cardStyles.label, { marginLeft: 4 }]}>
+            <Clock color={Colors.light.text} size={16} />
+            <Text
+              style={[
+                cardStyles.label,
+                { marginLeft: 4, color: Colors.light.text },
+              ]}
+            >
               {note.time}
             </Text>
           </View>
         </View>
 
-              {/* Full-screen editor */}
-      <TextInput
-        placeholder="Write your note here..."
-        placeholderTextColor="#777"
-        value={body}
-        onChangeText={setBody}
-        multiline
-        style={{
-          minHeight: 300,
-          borderRadius: 12,
-          backgroundColor: "#1f1f1f",
-          padding: 12,
-          color: "#fff",
-          textAlignVertical: "top",
-          fontSize: 15,
-          lineHeight: 22,
-        }}
-      />
+        {/* Attachment button (if this note has a file) */}
+        {note.fileUri && (
+          <TouchableOpacity
+            onPress={openAttachment}
+            style={{
+              marginTop: 8,
+              marginBottom: 12,
+              backgroundColor: Colors.light.tint,
+              paddingVertical: 12,
+              borderRadius: 12,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>
+              Open Uploaded File {mimeLabel ? `(${mimeLabel})` : ""}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-      {/* Attachment button (if this note has a file) */}
-      {note.fileUri && (
-        <TouchableOpacity
-          onPress={openAttachment}
+        {/* Main text editor for the note body */}
+        <TextInput
+          placeholder="Write your note here..."
+          placeholderTextColor="#777"
+          value={body}
+          onChangeText={setBody}
+          multiline
           style={{
-            marginTop: 16,
-            backgroundColor: Colors.light.tint,
-            paddingVertical: 12,
+            minHeight: 300,
             borderRadius: 12,
-            alignItems: "center",
+            backgroundColor: colors.noteInput,
+            padding: 12,
+            color: Colors.light.text,
+            textAlignVertical: "top",
+            fontSize: 15,
+            lineHeight: 22,
           }}
-        >
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            View in another app {note.mimeType ? `(${note.mimeType})` : ""}
-          </Text>
-        </TouchableOpacity>
-      )}
-
+        />
       </ScrollView>
     </View>
   );

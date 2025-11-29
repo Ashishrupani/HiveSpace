@@ -62,6 +62,10 @@ export const colors = {
 
   shadow: '#342A5F',
   shadowbox: '#D9D9D9',
+
+  noteBackground: '#f5f2f5ff',   
+  noteCard: '#bababaff',         
+  noteInput: '#ffffff64',        
   
   gradienttop: '#00082B',
   gradientmid: '#351C38',

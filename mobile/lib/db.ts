@@ -1,6 +1,5 @@
 import * as SQLite from "expo-sqlite";
 
-// Reuse the same DB connection everywhere
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export function getDB() {

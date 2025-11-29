@@ -1,4 +1,3 @@
-// mobile/lib/notes-repo.ts
 import { getDB } from "./db";
 
 /**
@@ -17,7 +16,7 @@ export interface DBNote {
 }
 
 /**
- * Shape used by your UI.
+ * Shape used by UI.
  */
 export interface UINote {
   id: number;
@@ -30,9 +29,7 @@ export interface UINote {
   mimeType?: string | null;
 }
 
-/**
- * Helper: convert DB row -> UI note
- */
+ //Helper: convert DB row -> UI note
 function mapRowToUINote(row: DBNote): UINote {
   let subject = "";
   try {
@@ -57,9 +54,8 @@ function mapRowToUINote(row: DBNote): UINote {
   };
 }
 
-/**
- * Get all notes from SQLite, newest first.
- */
+// Get all notes from SQLite, newest first.
+
 export async function listNotes(): Promise<UINote[]> {
   const db = await getDB();
   const rows = await db.getAllAsync<DBNote>(
@@ -68,9 +64,9 @@ export async function listNotes(): Promise<UINote[]> {
   return rows.map(mapRowToUINote);
 }
 
-/**
- * Create a new note.
- */
+
+// Create a new note.
+
 export async function createNote(input: {
   title: string;
   description: string;
@@ -86,7 +82,7 @@ export async function createNote(input: {
 
   const result = await db.runAsync(
     `INSERT INTO notes (title, description, tags, fileUri, mimeType, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       input.title,
       input.description,
@@ -101,9 +97,8 @@ export async function createNote(input: {
   return result.lastInsertRowId!;
 }
 
-/**
- * Get a single note by id.
- */
+
+//Get a single note by id.
 export async function getNoteById(id: number): Promise<UINote | null> {
   const db = await getDB();
   const row = await db.getFirstAsync<DBNote>(
@@ -114,17 +109,15 @@ export async function getNoteById(id: number): Promise<UINote | null> {
   return mapRowToUINote(row);
 }
 
-/**
- * Delete a note.
- */
+
+// Delete a note.
 export async function deleteNote(id: number): Promise<void> {
   const db = await getDB();
   await db.runAsync("DELETE FROM notes WHERE id = ?", [id]);
 }
 
-/**
- * Update a note.
- */
+// Update a note.
+
 export async function updateNote(input: {
   id: number;
   title?: string;
