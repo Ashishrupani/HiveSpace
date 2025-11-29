@@ -1,5 +1,6 @@
 import React from 'react';
 import { Drawer } from 'expo-router/drawer';
+import { SignOutButton } from '@/components/SignOutButton';
 
 /**
  * Simple Drawer navigation using Expo Router's Drawer helper.
@@ -12,7 +13,7 @@ export default function DrawerNavigation() {
       screenOptions={{
         drawerPosition: 'left'
       }}>
-      <Drawer.Screen name="(home)" options={{ title: 'Home' }} />
+      <Drawer.Screen name="(home)" options={{ title: 'Home', headerRight: () => <SignOutButton />, }} />
       <Drawer.Screen name="(groups)" options={{ title: 'Groups' }} />
       <Drawer.Screen name="(notes)" options={{ title: 'Notes' }} />
     </Drawer>

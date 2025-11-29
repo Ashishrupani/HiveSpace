@@ -315,7 +315,7 @@ export default function NotesDashboard() {
                       <Text
                         style={[
                           cardStyles.labelBold,
-                          { fontSize: 18, marginBottom: 2 },
+                          { fontSize: 18, marginBottom: 2 }, { color: Colors.light.text },
                         ]}
                         numberOfLines={1}
                       >
@@ -366,7 +366,7 @@ export default function NotesDashboard() {
           ) : (
             // Empty state
             <View style={styles.emptyStateContainer}>
-              <Text style={[cardStyles.label, { color: colors.text }]}>
+              <Text style={[cardStyles.label, { color: Colors.light.text }]}>
                 No notes yet. Tap + to create or upload a note.
               </Text>
             </View>
@@ -393,7 +393,7 @@ export default function NotesDashboard() {
             <Text
               style={[
                 cardStyles.labelBold,
-                { fontSize: 18, marginBottom: 12 },
+                { fontSize: 18, marginBottom: 12 }, { color: Colors.light.text }
               ]}
             >
               Add note
@@ -403,21 +403,21 @@ export default function NotesDashboard() {
               style={styles.actionOption}
               onPress={handleChooseCreate}
             >
-              <Text style={styles.actionOptionText}>Create note</Text>
+              <Text style={[styles.actionOptionText, { color: Colors.light.text }]}>Create note</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionOption}
               onPress={handleChooseUpload}
             >
-              <Text style={styles.actionOptionText}>Upload note</Text>
+              <Text style={[styles.actionOptionText,{ color: Colors.light.text }]}>Upload note</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionOption, { marginTop: 8 }]}
               onPress={() => setActionModalVisible(false)}
             >
-              <Text style={[styles.actionOptionText, { opacity: 0.7 }]}>
+              <Text style={[styles.actionOptionText, { opacity: 0.7 },{ color: Colors.light.text }]}>
                 Cancel
               </Text>
             </TouchableOpacity>
@@ -442,7 +442,7 @@ export default function NotesDashboard() {
             <Text
               style={[
                 cardStyles.labelBold,
-                { fontSize: 18, marginBottom: 12 },
+                { fontSize: 18, marginBottom: 12 }, { color: Colors.light.text }
               ]}
             >
               {mode === "create" ? "Create note" : "Upload note"}
@@ -451,14 +451,14 @@ export default function NotesDashboard() {
             {/* Name input */}
             <TextInput
               placeholder="Name"
-              placeholderTextColor="#888"
+              placeholderTextColor="#7a7a7aff"
               value={name}
               onChangeText={setName}
               style={styles.input}
             />
 
             {/* Subject dropdown label */}
-            <Text style={[cardStyles.label, { marginBottom: 4 }]}>
+            <Text style={[cardStyles.label, { marginBottom: 4 }, { color: Colors.light.text }]}>
               Subject
             </Text>
 
@@ -656,6 +656,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 10,
     fontSize: 14,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
 
   // Subject dropdown
