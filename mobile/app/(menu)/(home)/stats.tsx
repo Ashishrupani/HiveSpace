@@ -1,94 +1,269 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import colors from '@/constants/theme';
-import pageStyles from '@/constants/styles/page-styles';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import colors from '@/constants/theme'; // Assuming this path exists based on your snippet
+
+// Helper to get screen width for responsive sizing
+const { width, height } = Dimensions.get('window');
 
 export default function StatsScreen() {
-//test data will be removed once api and DB are setup
+  // FIXED: Updated data to actually reflect a 2-day streak (Today + Yesterday)
+  // and removed the contradiction.
   const data = {
-    '2025-10-27': { bgColor: '#4a3f7a', time: '2h 30m', streak: true },
-    '2025-10-28': { bgColor: '#5d4f8f', time: '4h 15m', streak: true },
-    '2025-10-29': { bgColor: '#7060a5', time: '6h 0m', streak: true },
-    '2025-10-30': { bgColor: '#8372ba', time: '8h 20m', streak: true },
-    '2025-10-31': { bgColor: '#5d4f8f', time: '3h 45m', streak: true },
-    '2025-11-02': { bgColor: '#7060a5', time: '5h 10m', streak: true },
-    '2025-11-03': { bgColor: '#7060a5', time: '5h 10m', streak: true },
+    '2025-10-27': { bgColor: 'rgba(112, 96, 165, 0.4)', textColor: '#fff', score: 2 },
+    '2025-10-28': { bgColor: 'rgba(131, 114, 186, 0.6)', textColor: '#fff', score: 4 },
+    '2025-10-29': { bgColor: 'rgba(157, 137, 222, 0.8)', textColor: '#fff', score: 6 },
+    '2025-10-30': { bgColor: '#8372ba', textColor: '#fff', score: 8 },
+    '2025-10-31': { bgColor: 'rgba(112, 96, 165, 0.4)', textColor: '#fff', score: 3 },
+
+    // Previous cluster
+    '2025-11-02': { bgColor: 'rgba(112, 96, 165, 0.5)', textColor: '#fff', score: 5 },
+    '2025-11-03': { bgColor: 'rgba(112, 96, 165, 0.5)', textColor: '#fff', score: 5 },
+
+    // Current Week Streak (Yesterday + Today)
+    '2025-11-25': { bgColor: 'rgba(131, 114, 186, 0.6)', textColor: '#fff', score: 4 },
+    '2025-11-26': { bgColor: colors.accent || '#00D4FF', textColor: '#fff', isToday: true },
   } as any;
-  // for future reference when finishing this page the background color will be calculated to be some value using min, max and,floor to find a value in a range of defined colors list saving 
-  // us the cost of calculating this and sending it from the backend. The Heat map may be a bad idea since the streak boarder makes it hard to see the color difference.
-  // At this time its not clear how the DB will handle streaks but this will also be possible to calculate in the frontend.
-  // I would also like ot make each date touchable so that we can  get more fine grained statistics but its not clear if we will have that data yet.
+
   return (
-      <View style={pageStyles.scrollContent}>
-       
-        <View style={styles.statsCard}>
-          <Text style={styles.statsText}>Total this week: 36h 10m</Text>
-          <Text style={styles.streakText}>Current streak: 2 days</Text>
-          <Text style={styles.streakText}>Personal best: 5 days</Text>
-        </View>
-        
-        <Calendar
-          markingType={'custom'}
-          markedDates={data}
-          dayComponent={({date, marking}: any) => {
-            const bgColor = marking?.bgColor;
-            const hasStreak = marking?.streak;
-            const timeText = marking?.time || '0m';
-            
-            return (
-              <View style={[styles.day, {backgroundColor: bgColor}, hasStreak && styles.streakBorder]}>
-                <Text style={styles.dayText}>{date.day}</Text>
-                <Text style={styles.time}>{timeText}</Text>
+    <LinearGradient
+      colors={[colors.gradienttop || '#0f0c29', colors.gradientmid || '#302b63', colors.gradientbottom || '#24243e']}
+      style={styles.container}
+    >
+      {/* FIXED: Removed ScrollView, using View with flex: 1 to fit on one page */}
+      <View style={styles.contentContainer}>
+
+        {/* --- Top Stats Section --- */}
+        <View style={styles.headerContainer}>
+
+          {/* Main Card: Total This Week */}
+          <LinearGradient
+            colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+            style={styles.mainCard}
+          >
+            <View>
+              <Text style={styles.cardLabel}>TOTAL THIS WEEK</Text>
+              {/* FIXED: Updated time to be realistic for 2 days of activity */}
+              <Text style={styles.mainStatText}>12h 30m</Text>
+            </View>
+            <View style={styles.iconContainer}>
+              <View style={styles.iconGlow} />
+              <Ionicons name="time" size={32} color="#a5a1ff" />
+            </View>
+          </LinearGradient>
+
+          {/* Row for Streak & Best */}
+          <View style={styles.statsRow}>
+            {/* Current Streak */}
+            <LinearGradient
+              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+              style={styles.smallCard}
+            >
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardLabel}>CURRENT STREAK</Text>
+                <Ionicons name="flame" size={18} color="#FF6B6B" />
               </View>
-            );
-          }}
-          theme={{
-            calendarBackground: colors.primary,
-            monthTextColor: colors.text,
-            arrowColor: colors.gradientbottom,
-          }}
-        />
+              <Text style={styles.subStatText}>2 Days</Text>
+            </LinearGradient>
+
+            {/* Personal Best */}
+            <LinearGradient
+              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+              style={styles.smallCard}
+            >
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.cardLabel}>PERSONAL BEST</Text>
+                <Ionicons name="trophy" size={18} color="#FFD93D" />
+              </View>
+              <Text style={styles.subStatText}>5 Days</Text>
+            </LinearGradient>
+          </View>
+
+        </View>
+
+        {/* --- Calendar Section --- */}
+        {/* Added flex: 1 to fill remaining space properly without scrolling */}
+        <View style={styles.calendarContainer}>
+          <Text style={styles.sectionTitle}>Monthly Activity</Text>
+
+          <View style={styles.calendarWrapper}>
+            <Calendar
+              markingType={'custom'}
+              markedDates={data}
+              monthFormat={'MMMM yyyy'}
+              hideExtraDays={true}
+              firstDay={0} // Sunday
+              enableSwipeMonths={true}
+              dayComponent={({ date, state, marking }: any) => {
+                const isSelected = !!marking;
+                const bgColor = marking?.bgColor || 'transparent';
+                const isToday = marking?.isToday;
+                const borderStyle = isToday ? styles.todayBorder : {};
+
+                return (
+                  <View style={styles.dayContainer}>
+                    <View style={[
+                      styles.dayCircle,
+                      { backgroundColor: isSelected ? bgColor : 'rgba(255,255,255,0.03)' },
+                      borderStyle
+                    ]}>
+                      <Text style={[
+                        styles.dayText,
+                        { color: state === 'disabled' ? '#444' : (isSelected ? '#fff' : '#aaa') }
+                      ]}>
+                        {date.day}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }}
+              theme={{
+                backgroundColor: 'transparent',
+                calendarBackground: 'transparent',
+                textSectionTitleColor: '#888',
+                monthTextColor: '#fff',
+                textMonthFontWeight: 'bold',
+                textMonthFontSize: 18,
+                arrowColor: colors.text || '#fff',
+                todayTextColor: colors.accent || '#00D4FF',
+              }}
+            />
+          </View>
+        </View>
+
       </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  statsCard: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 8,
+  container: {
+    flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? 40 : 60, // Safe area
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    justifyContent: 'flex-start', // Start from top, let cards push down
+  },
+  headerContainer: {
+    marginBottom: 20, // Reduced margin slightly to save space
+  },
+  // --- Cards Styling ---
+  mainCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: 20,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  statsText: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: colors.text,
+  cardLabel: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
-  streakText: {
-    fontSize: 16,
-    color: colors.text,
+  mainStatText: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
-  day: {
-    width: 40,
-    height: 50,
+  iconContainer: {
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4,
+    width: 50,
+    height: 50,
   },
-  streakBorder: {
+  iconGlow: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6a5acd',
+    opacity: 0.4,
+    shadowColor: '#6a5acd',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  smallCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  subStatText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+
+  // --- Calendar Styling ---
+  calendarContainer: {
+    flex: 1, // Take up remaining space
+    justifyContent: 'center', // Center vertically in remaining space
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    marginLeft: 4,
+  },
+  calendarWrapper: {
+    backgroundColor: 'rgba(30, 30, 50, 0.5)',
+    borderRadius: 24,
+    padding: 10,
+    paddingBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  dayContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  todayBorder: {
     borderWidth: 2,
-    borderColor: colors.gradientbottom,
+    borderColor: '#00D4FF',
+    shadowColor: '#00D4FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
+    backgroundColor: 'transparent',
   },
   dayText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  time: {
-    fontSize: 10,
-    marginTop: 2,
-    color: colors.text,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
