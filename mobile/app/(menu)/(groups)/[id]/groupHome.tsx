@@ -43,31 +43,31 @@ export default function GroupHome() {
             />
           </View>
 
-          <View style={styles.gridCol}>
-            <View style={{ width: '100%' }}>
-              <View style={[{ height: 110, justifyContent: 'center' }]}>
-                <TouchableOpacity style={groupCardStyles.shadowWrap} activeOpacity={0.7} onPress={() => {}}>
-                  <View style={[groupCardStyles.row, { paddingVertical: 12 }]}> 
-                    <View style={groupCardStyles.content}>
-                      <Text numberOfLines={1} style={groupCardStyles.name}>{groupId}</Text>
-                      <Text style={{ color: '#6B7280', fontSize: 13 }}>ID: {id}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+          <View style={styles.gridCol} />
+        </View>
+
+        {/* Row: Leaderboard and Group side-by-side, equal widths and heights */}
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 18 }}>
+          <View style={{ width: '49%' }}>
+            <LeaderboardCard
+              onPress={() => router.push(`/(groups)/${id}/leaderboard` as any)}
+              style={{ width: '100%' }}
+              height={120}
+            />
+          </View>
+
+          <View style={{ width: '49%' }}>
+            <BaseCard width={'100%'} height={120} onPress={() => {}} style={{ padding: 12, borderRadius: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="people" size={18} color="#342A5f" />
+                <Text style={{ fontWeight: '700', color: '#342A5f', marginLeft: 8 }}>{groupId}</Text>
               </View>
-            </View>
+              <Text style={{ color: '#666', marginTop: 8 }}>ID: {id}</Text>
+            </BaseCard>
           </View>
         </View>
 
-        {/* Bottom rows: full-width Leaderboard then full-width Quiz */}
-        <View style={{ width: '70%', alignSelf: 'flex-start', marginTop: 18 }}>
-          <LeaderboardCard
-            onPress={() => router.push(`/(groups)/${id}/leaderboard` as any)}
-            style={{ width: '100%' }}
-            height={120}
-          />
-        </View>
-
+        {/* Quiz below (left-aligned under Leaderboard) */}
         <View style={{ width: '70%', alignSelf: 'flex-start', marginTop: 12 }}>
           <QuizCard
             onPress={() => router.push(`/(groups)/${id}/quiz` as any)}

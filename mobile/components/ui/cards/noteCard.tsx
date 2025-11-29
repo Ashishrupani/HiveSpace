@@ -28,7 +28,7 @@ export default function NoteCard({
     return (
         <BaseCard onPress={onPress} width={width} height={height}  >
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={[cardStyles.labelBold, { flex: 1 }, { color: "#fff" }]} numberOfLines={1}>
+                <Text style={[cardStyles.labelBold, { flex: 1 }, { color: "#100101" }]} numberOfLines={1}>
                     {note.title}
                 </Text>
 
