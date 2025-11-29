@@ -1,13 +1,29 @@
-import { Stack } from "expo-router";
+import { HapticTab } from "@/components/haptic-tab";
+import { Colors } from "@/constants/theme";
+import { Tabs } from "expo-router";
 
 export default function GroupSettingsStackLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_left", // adds the animation
-        gestureEnabled: true,          // enables swipe back on iOS
-      }}
-    />
+    <Tabs screenOptions={{ 
+      tabBarActiveTintColor: Colors.light.tint,
+      headerShown: false,
+      tabBarButton: HapticTab, }
+    }
+    >
+      <Tabs.Screen
+        name="createGroup"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+      <Tabs.Screen
+        name="joinGroup"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
+    </Tabs>
   );
 }
