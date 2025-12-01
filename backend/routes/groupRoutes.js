@@ -7,11 +7,25 @@ const router = express.Router();
 
 // Route handler for group dashboard
 router.get("/groupDashboard", groupDashboardHandler);
+
+// Create a new group
 router.post("/createGroup", createGroupHandler);
 
 
 // Fetch group details by groupId
-router.get("/group/:groupId", getGroupDetailsHandler);
+router.get("/groups/:id", getGroupDetailsHandler); //inner group details (shows the posts inside the group)
+
+// join a group
+router.get("/groups/:id/join", null);
+
+// leave a group
+router.get("/groups/:id/leave", null);
+
+// get user's joined groups
+router.get("/groups/my-groups", null); //outer group details (shows the groups the user has joined)
+
+// get all groups with optional search query
+router.get("/groups", null);
 
 
 
