@@ -6,6 +6,9 @@ import BackButton from '@/components/ui/BackButton';
 import colors from '@/constants/theme';
 import axios from 'axios';
 import { useUser } from '@clerk/clerk-expo';
+import showErrorToast from '@/components/ui/toast/ErrorToast';
+import showSuccessToast from '@/components/ui/toast/SuccessToast';
+import showInfoToast from '@/components/ui/toast/InfoToast';
 
 
 export default function CreateGroup() {
@@ -21,14 +24,29 @@ export default function CreateGroup() {
     }
 
     //sending post request to /api/groups/createGroup
+    try{
     const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about, user });
 
-    if (response.status !== 200) {
-      Alert.alert('Error', 'Failed to create group. Please try again.', response.data.message);
+    //messy handle response but okay for now
+    if (response.data.success === false) {
+
+      if (response.data.error == 'group-name-exists'){
+        showInfoToast('Group name already exists. Please choose another name.');
+      }
+      else {
+        showErrorToast(`Failed to create group: ${response.data.error}`);
+      }
     }
-    else{
-    Alert.alert('Success', `Group "${groupName}" created!`);
+    else {
+      showSuccessToast(`Group "${groupName}" created successfully!`);
     }
+  }
+    catch (error){
+      showErrorToast('Failed to create group.');
+      return;
+    }
+
+    
 
     setGroupName('');
     setAbout('');

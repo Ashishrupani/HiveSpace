@@ -28,7 +28,7 @@ These error codes help in identifying specific issues during API operations and 
 
 export const groupDashboardHandler = (req, res) => {
   // Logic for handling group dashboard
-  res.status(200).json({ success: true, message: 'Group dashboard data' , error: null });
+  res.status(200).json({ success: true, message: 'Group dashboard data', error: null });
 
   // WIP -- will implement later
   // This is crucial so have to be careful while implementing
@@ -43,7 +43,7 @@ export const findGroupHandler = async (req, res) => {
 
   // Error handling for missing search query
   if (!find) {
-    return  res.status(400).json({ success: false, message: 'Search query parameter "find" is required' , error: 'missing-search-query' });
+    return res.status(400).json({ success: false, message: 'Search query parameter "find" is required', error: 'missing-search-query' });
   }
 
   try {
@@ -54,7 +54,7 @@ export const findGroupHandler = async (req, res) => {
 
     // Error handling for no groups found ("it's not really an error, but we handle it nicely" --Ashish)
     if (groups.length === 0) {
-      return res.status(404).json({ success: false, message: 'No groups found matching the query' , error: 'no-groups-found' });
+      return res.status(404).json({ success: false, message: 'No groups found matching the query', error: 'no-groups-found' });
     }
 
     // only send necessary group data such as id and group name
@@ -71,25 +71,25 @@ export const findGroupHandler = async (req, res) => {
 export const createGroupHandler = async (req, res) => {
   // Logic for creating a group
   // Extract group details from request body
-  const { groupName, about , user} = req.body;
+  const { groupName, about, user } = req.body;
   const userId = user.id;
-  
+
   try {
     // Normalize group name to lowercase
     const lowerCasedGroupName = groupName.toLowerCase();
     const group = await Group.findOne({ name: lowerCasedGroupName });
     // Check if group with the same name already exists
     if (group) {
-      return res.status(400).json({ success: false, message: 'Group name already exists' , error: 'group-name-exists' });
+      return res.status(400).json({ success: false, message: 'Group name already exists', error: 'group-name-exists' });
     }
 
     // Create a new group
-    const newGroup = new Group({ name: groupName, about, UID: [userId]});
+    const newGroup = new Group({ name: groupName, about, UID: [userId] });
     await newGroup.save();
     res.status(200).json({ success: true, message: 'Group created successfully', error: null });
-    
+
   }
-  catch(err) {
+  catch (err) {
     console.error('Error creating group:', err);
     res.status(500).json({ success: false, message: 'Failed to create group', error: err.message });
   }
@@ -97,7 +97,7 @@ export const createGroupHandler = async (req, res) => {
 
 export const getGroupDetailsHandler = async (req, res) => {
   // Logic for fetching group details by groupId
-  const { groupId , user } = req.params;
+  const { groupId, user } = req.body;
 
   // Error handling for missing groupId
   if (!groupId || !user) {
@@ -112,7 +112,7 @@ export const getGroupDetailsHandler = async (req, res) => {
 
     // Error handling for group not found
     if (!groupDetails) {
-      return res.status(404).json({ success: false, message: 'Group not found' , error: 'group-not-found' });
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
     }
 
     // Check if the user is a member of the group
@@ -120,11 +120,11 @@ export const getGroupDetailsHandler = async (req, res) => {
 
     // If the user is not a member, restrict access
     if (!isMember) {
-      return res.status(403).json({ success: false, message: 'Access denied: User is not a member of the group' , error: 'not-a-member'});
+      return res.status(403).json({ success: false, message: 'Access denied: User is not a member of the group', error: 'not-a-member' });
     }
 
     // Return group details if the user is a member and group is found
-    res.status(200).json({ success: true, groupDetails , message: 'Group details fetched successfully' , error: null });
+    res.status(200).json({ success: true, groupDetails, message: 'Group details fetched successfully', error: null });
   }
   catch (err) {
 
@@ -138,11 +138,11 @@ export const joinGroupHandler = async (req, res) => {
   // Logic for joining a group
 
   // extract groupId from request parameter
-  const { groupId, user} = req.params;
+  const { groupId, user } = req.body;
 
   // Error handling for missing groupId
   if (!groupId || !userId) {
-    return res.status(400).json({ success: false, message: 'No such group exists or userId is missing' , error: 'no-such-group-or-userId' });
+    return res.status(400).json({ success: false, message: 'No such group exists or userId is missing', error: 'no-such-group-or-userId' });
   }
 
   const userId = user.id;
@@ -153,13 +153,13 @@ export const joinGroupHandler = async (req, res) => {
 
     // Error handling for group not found
     if (!group) {
-      return res.status(404).json({ success: false, message: 'Group not found' , error: 'group-not-found' });
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
     }
 
     //Extract userId's from the group to see if the user is already a member
     const { UID } = group;
     if (UID.includes(userId)) {
-      return res.status(400).json({ success: false, message: 'User is already a member of the group' , error: 'already-a-member' });
+      return res.status(400).json({ success: false, message: 'User is already a member of the group', error: 'already-a-member' });
     }
     // Add userId to the group's UID array
     group.UID.push(userId);
@@ -168,7 +168,7 @@ export const joinGroupHandler = async (req, res) => {
     await group.save();
 
     // Return success response because user joined the group successfully
-    res.status(200).json({ success: true, message: 'Joined group successfully' , error: null });
+    res.status(200).json({ success: true, message: 'Joined group successfully', error: null });
 
   }
   catch (err) {
@@ -177,18 +177,18 @@ export const joinGroupHandler = async (req, res) => {
     console.error('Error joining group:', err);
     res.status(500).json({ success: false, message: 'Failed to join group', error: err.message });
   }
-    
+
 }
 
 export const leaveGroupHandler = async (req, res) => {
   // Logic for leaving a group
 
   // extract groupId from request parameter
-  const { groupId, user } = req.params;
+  const { groupId, user } = req.body;
 
   // Error handling for missing groupId
   if (!groupId || !user) {
-    return res.status(400).json({ success: false, message: 'Missing groupId or user object' , error: 'missing-params' });
+    return res.status(400).json({ success: false, message: 'Missing groupId or user object', error: 'missing-params' });
   }
 
   const userId = user.id;
@@ -199,7 +199,7 @@ export const leaveGroupHandler = async (req, res) => {
 
     // Error handling for group not found
     if (!group) {
-      return res.status(404).json({ success: false, message: 'Group not found' , error: 'group-not-found' });
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
     }
 
     // Remove userId from the group's UID array
@@ -209,10 +209,10 @@ export const leaveGroupHandler = async (req, res) => {
     await group.save();
 
     // Return success response because user left the group successfully
-    res.status(200).json({ success: true, message: 'Left group successfully' , error: null });
+    res.status(200).json({ success: true, message: 'Left group successfully', error: null });
 
   }
-  catch(err) {
+  catch (err) {
 
     // Log the error for debugging
     console.error('Error leaving group:', err);
@@ -222,16 +222,16 @@ export const leaveGroupHandler = async (req, res) => {
 
 export const getUserJoinedGroupsHandler = async (req, res) => {
   // Logic for fetching user's joined groups
-  const { user } = req.query;
+  const { user } = req.body;
 
   // Error handling for missing userId
   if (!user) {
-    return res.status(400).json({ success: false, message: 'Missing userId parameter' , error: 'missing-userId' });
+    return res.status(400).json({ success: false, message: 'Missing userId parameter', error: 'missing-userId' });
   }
 
   const userId = user.id;
 
-  try{
+  try {
     // Find groups where the userId is in the UID array
     /** --Ashish
      Notes: We can optimize this later by simply looking in the USER model for the list of joined groups
