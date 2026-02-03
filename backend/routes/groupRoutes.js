@@ -1,30 +1,35 @@
 import express from 'express';
+
+// Import authentication middleware //WIP -- haven't implemented yet but will do later
 import { requireAuth } from '@clerk/express';
-import { groupDashboardHandler, createGroupHandler, getGroupDetailsHandler } from '../controllers/groupControllers.js';
+
+import { groupHomeHandler, findGroupHandler, createGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler} from '../controllers/groupControllers.js';
+
 
 const router = express.Router();
 
 
 // Route handler for group dashboard
-router.get("/groupDashboard", groupDashboardHandler);
+router.get("/groupDashboard", groupHomeHandler);
+
+//Get groups list (search query for a specific group name) using ?find=groupname
+router.get("/find", findGroupHandler);
+
+// Create a new group
 router.post("/createGroup", createGroupHandler);
 
-
 // Fetch group details by groupId
-router.get("/group/:groupId", getGroupDetailsHandler);
+router.get("/:id", getGroupDetailsHandler); //inner group details (shows the posts inside the group)
 
+// Join a group
+router.post("/:id/join", joinGroupHandler);
 
+//Leave a joined group
+router.post("/:id/leave", leaveGroupHandler);
+
+//Get user's joined groups
+router.get("/my-groups", getUserJoinedGroupsHandler); //(shows the groups the user has joined)
 
 
 export default router;
 
-
-//WIP 
-/*
-GET    /groups                    # Get all groups (with optional ?q= search)
-GET    /groups/:id                # Get single group details
-POST   /groups/:id/join           # Join a group
-POST   /groups/:id/leave          # Leave a group
-POST   /groups                    # Create new group
-GET    /groups/my-groups          # Get user's joined groups
- */
