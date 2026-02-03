@@ -27,7 +27,7 @@ These error codes help in identifying specific issues during API operations and 
 
 
 export const groupDashboardHandler = (req, res) => {
-  // Logic for handling group dashboard
+  // Logic for handling group dashboard (inside groups view with posts etc.)
   res.status(200).json({ success: true, message: 'Group dashboard data', error: null });
 
   // WIP -- will implement later
@@ -39,18 +39,18 @@ export const findGroupHandler = async (req, res) => {
   // Logic for finding groups based on search query
 
   // Extract search query from request
-  const { find } = req.query;
+  const { search } = req.query;
 
   // Error handling for missing search query
-  if (!find) {
-    return res.status(400).json({ success: false, message: 'Search query parameter "find" is required', error: 'missing-search-query' });
+  if (!search) {
+    return res.status(400).json({ success: false, message: 'Search query parameter "search" is required', error: 'missing-search-query' });
   }
 
   try {
     // Normalize search query to lowercase
-    const normalizedFind = find.toLowerCase();
+    const normalizedSearch = search.toLowerCase();
     // Search for groups with names matching the query (case-insensitive) for partial matches
-    const groups = await Group.find({ name: { $regex: normalizedFind, $options: 'i' } });
+    const groups = await Group.find({ name: { $regex: normalizedSearch, $options: 'i' } });
 
     // Error handling for no groups found ("it's not really an error, but we handle it nicely" --Ashish)
     if (groups.length === 0) {
