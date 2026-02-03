@@ -26,7 +26,7 @@ These error codes help in identifying specific issues during API operations and 
 
 
 
-export const groupDashboardHandler = (req, res) => {
+export const groupHomeHandler = (req, res) => {
   // Logic for handling group dashboard (inside groups view with posts etc.)
   res.status(200).json({ success: true, message: 'Group dashboard data', error: null });
 

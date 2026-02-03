@@ -5,9 +5,9 @@ export default function showErrorToast(message: string) {
     type: 'error',
     text1: 'Error',
     text2: message,
-    position: 'bottom',
+    position: 'top',
     visibilityTime: 3000,
     autoHide: true,
-    bottomOffset: 40,
+    topOffset: 50,
   });
 }

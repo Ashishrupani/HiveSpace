@@ -3,14 +3,14 @@ import express from 'express';
 // Import authentication middleware //WIP -- haven't implemented yet but will do later
 import { requireAuth } from '@clerk/express';
 
-import { groupDashboardHandler, findGroupHandler, createGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler} from '../controllers/groupControllers.js';
+import { groupHomeHandler, findGroupHandler, createGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler} from '../controllers/groupControllers.js';
 
 
 const router = express.Router();
 
 
 // Route handler for group dashboard
-router.get("/groupDashboard", groupDashboardHandler);
+router.get("/groupDashboard", groupHomeHandler);
 
 //Get groups list (search query for a specific group name) using ?find=groupname
 router.get("/find", findGroupHandler);

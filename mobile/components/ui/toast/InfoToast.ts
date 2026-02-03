@@ -5,9 +5,9 @@ export default function showInfoToast(message: string) {
     type: 'info',
     text1: 'Info',
     text2: message,
-    position: 'bottom',
+    position: 'top',
     visibilityTime: 3000,
     autoHide: true,
-    bottomOffset: 40,
+    topOffset: 50,
   });
 }
