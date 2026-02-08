@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
 import colors from '@/constants/theme';
 import axios from 'axios';
-import { useUser } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/clerk-expo';
 import showErrorToast from '@/components/ui/toast/ErrorToast';
 import showSuccessToast from '@/components/ui/toast/SuccessToast';
 import showInfoToast from '@/components/ui/toast/InfoToast';
@@ -14,7 +14,7 @@ import Toast from 'react-native-toast-message';
 
 export default function GroupSetting() {
   const router = useRouter();
-  const { user } = useUser();
+  const { getToken } = useAuth();
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
   
@@ -57,11 +57,17 @@ export default function GroupSetting() {
       showInfoToast('Group name is required.');
       return;
     }
+    
+    const token = await getToken();
 
     try {
-      const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about, user });
+      const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (response.data.success === false) {
+      if (response.data.success == false) {
         if (response.data.error == 'group-name-exists'){
           showInfoToast('Group name already exists. Please choose another name.');
         } else {
