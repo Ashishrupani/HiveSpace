@@ -5,6 +5,7 @@ import cors from 'cors';
 import { clerkMiddleware , clerkClient } from '@clerk/express'
 import mongoose from "mongoose";
 import groupRoutes from './routes/groupRoutes.js';
+import ragRoutes from "./routes/ragRoutes.js";
 
 //load environmental variables
 dotenv.config();
@@ -33,6 +34,7 @@ app.get("/", (req, res) => {
 })
 
 app.use("/api/groups", groupRoutes);
+app.use("/api/rag", ragRoutes);
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {
