@@ -39,18 +39,20 @@ export const findGroupHandler = async (req, res) => {
   // Logic for finding groups based on search query
 
   // Extract search query from request
-  const { search } = req.query;
-
-  // Error handling for missing search query
-  if (!search) {
-    return res.status(400).json({ success: false, message: 'Search query parameter "search" is required', error: 'missing-search-query' });
-  }
+  const { search, q } = req.query;
+  const searchQuery = search ?? q;
 
   try {
-    // Normalize search query to lowercase
-    const normalizedSearch = search.toLowerCase();
-    // Search for groups with names matching the query (case-insensitive) for partial matches
-    const groups = await Group.find({ name: { $regex: normalizedSearch, $options: 'i' } });
+    let groups = [];
+    if (searchQuery) {
+      // Normalize search query to lowercase
+      const normalizedSearch = searchQuery.toLowerCase();
+      // Search for groups with names matching the query (case-insensitive) for partial matches
+      groups = await Group.find({ name: { $regex: normalizedSearch, $options: 'i' } });
+    } else {
+      // If no query provided, return all groups
+      groups = await Group.find({});
+    }
 
     // Error handling for no groups found ("it's not really an error, but we handle it nicely" --Ashish)
     if (groups.length === 0) {
@@ -58,7 +60,7 @@ export const findGroupHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name
-    const groupData = groups.map(group => ({ id: group._id, name: group.name }));
+    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 }));
 
     res.status(200).json({ success: true, groups: groupData, error: null });
   } catch (err) {
@@ -71,8 +73,15 @@ export const findGroupHandler = async (req, res) => {
 export const createGroupHandler = async (req, res) => {
   // Logic for creating a group
   // Extract group details from request body
-  const { groupName, about, user } = req.body;
-  const userId = user.id;
+  const { groupName, about, user, userId: bodyUserId } = req.body;
+  const userId = bodyUserId ?? user?.id;
+
+  if (!groupName || !userId) {
+    console.log('Create group missing params:', { groupName, userId });
+    return res.status(400).json({ success: false, message: 'Missing group name or userId', error: 'missing-params' });
+  }
+
+  console.log('Create group request:', { groupName, userId, about });
 
   try {
     // Normalize group name to lowercase
@@ -84,9 +93,9 @@ export const createGroupHandler = async (req, res) => {
     }
 
     // Create a new group
-    const newGroup = new Group({ name: groupName, about, UID: [userId] });
+    const newGroup = new Group({ name: groupName, about, UID: [] });
     await newGroup.save();
-    res.status(200).json({ success: true, message: 'Group created successfully', error: null });
+    res.status(200).json({ success: true, message: 'Group created successfully', groupId: newGroup._id, error: null });
 
   }
   catch (err) {
@@ -97,14 +106,14 @@ export const createGroupHandler = async (req, res) => {
 
 export const getGroupDetailsHandler = async (req, res) => {
   // Logic for fetching group details by groupId
-  const { groupId, user } = req.body;
+  const { groupId: bodyGroupId, user, userId: bodyUserId } = req.body;
+  const groupId = req.params?.id ?? bodyGroupId;
+  const userId = bodyUserId ?? user?.id;
 
   // Error handling for missing groupId
-  if (!groupId || !user) {
+  if (!groupId || !userId) {
     return res.status(400).json({ success: false, message: 'Error: No such group exists or user is missing', error: 'no-such-group-or-user' });
   }
-
-  const userId = user.id;
 
   try {
     // Find the group by ID
@@ -138,14 +147,16 @@ export const joinGroupHandler = async (req, res) => {
   // Logic for joining a group
 
   // extract groupId from request parameter
-  const { groupId, user } = req.body;
+  const { groupId: bodyGroupId, user, userId: bodyUserId } = req.body;
+  const groupId = req.params?.id ?? bodyGroupId;
+  const userId = bodyUserId ?? user?.id;
 
   // Error handling for missing groupId
   if (!groupId || !userId) {
     return res.status(400).json({ success: false, message: 'No such group exists or userId is missing', error: 'no-such-group-or-userId' });
   }
 
-  const userId = user.id;
+  console.log('Join group request:', { groupId, userId });
 
   try {
     // Find the group by ID
@@ -159,7 +170,7 @@ export const joinGroupHandler = async (req, res) => {
     //Extract userId's from the group to see if the user is already a member
     const { UID } = group;
     if (UID.includes(userId)) {
-      return res.status(400).json({ success: false, message: 'User is already a member of the group', error: 'already-a-member' });
+      return res.status(200).json({ success: true, message: 'User is already a member of the group', error: 'already-a-member' });
     }
     // Add userId to the group's UID array
     group.UID.push(userId);
@@ -184,14 +195,14 @@ export const leaveGroupHandler = async (req, res) => {
   // Logic for leaving a group
 
   // extract groupId from request parameter
-  const { groupId, user } = req.body;
+  const { groupId: bodyGroupId, user, userId: bodyUserId } = req.body;
+  const groupId = req.params?.id ?? bodyGroupId;
+  const userId = bodyUserId ?? user?.id;
 
   // Error handling for missing groupId
-  if (!groupId || !user) {
+  if (!groupId || !userId) {
     return res.status(400).json({ success: false, message: 'Missing groupId or user object', error: 'missing-params' });
   }
-
-  const userId = user.id;
 
   try {
     // Find the group by ID
@@ -222,14 +233,13 @@ export const leaveGroupHandler = async (req, res) => {
 
 export const getUserJoinedGroupsHandler = async (req, res) => {
   // Logic for fetching user's joined groups
-  const { user } = req.body;
+  const { user, userId: bodyUserId } = req.body;
+  const userId = bodyUserId ?? user?.id;
 
   // Error handling for missing userId
-  if (!user) {
+  if (!userId) {
     return res.status(400).json({ success: false, message: 'Missing userId parameter', error: 'missing-userId' });
   }
-
-  const userId = user.id;
 
   try {
     // Find groups where the userId is in the UID array
@@ -241,7 +251,7 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
     const joinedGroups = await Group.find({ UID: userId });
 
     // only send necessary group data such as id and group name
-    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name }));
+    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 }));
 
     // Return the list of joined groups
     res.status(200).json({ success: true, groups: groupData, error: null });
