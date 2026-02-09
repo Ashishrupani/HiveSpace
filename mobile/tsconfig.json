@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "api/test.api.ts"  ]
+, "api/test.api.ts", "components/ui/toast/ErrorToast.ts", "components/ui/toast/InfoToast.ts", "components/ui/toast/SuccessToast.ts"  ]
 }
