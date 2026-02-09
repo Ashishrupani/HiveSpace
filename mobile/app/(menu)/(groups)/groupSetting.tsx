@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
 import colors from '@/constants/theme';
 import axios from 'axios';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import showErrorToast from '@/components/ui/toast/ErrorToast';
 import showSuccessToast from '@/components/ui/toast/SuccessToast';
 import showInfoToast from '@/components/ui/toast/InfoToast';
@@ -15,7 +15,13 @@ import Toast from 'react-native-toast-message';
 export default function GroupSetting() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
+  // For Expo Go app testing on physical iPhone, use the local network IP address instead of localhost
+  // Replace baseUrl with iphoneTesting when running on Expo Go on iOS
+  const iphoneTesting = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
+  // Only use Iphone testing URL if running on Expo Go on iOS, otherwise use the standard base URL
+  
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
   const [groups, setGroups] = React.useState<Array<{ id: string; name: string; members: number; iconName?: string; logoUri?: string }>>([]);
@@ -34,10 +40,16 @@ export default function GroupSetting() {
       return;
     }
 
+    const token = await getToken();
+
     try {
       const response = await axios.post(
         `${baseUrl}/api/groups/${id}/join`,
-        { userId: user.id }
+        { groupId: id }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
       );
 
       if (response.status !== 200) {
@@ -61,11 +73,18 @@ export default function GroupSetting() {
   }
 
   const handleFindGroup = async () => {
+
+    const token = await getToken();
     try {
       const response = await axios.get(
         `${baseUrl}/api/groups/find`,
-        { params: query.trim() ? { search: query.trim() } : undefined }
-      );
+        { 
+          params: query.trim() ? { search: query.trim() } : undefined,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+        );
 
       const payload = response.data;
       const results = Array.isArray(payload)
@@ -120,8 +139,14 @@ export default function GroupSetting() {
       return;
     }
 
+    const token = await getToken();
+
     try {
-      const response = await axios.post(`${baseUrl}/api/groups/createGroup`, { groupName, about, userId: user.id });
+      const response = await axios.post(`${baseUrl}/api/groups/createGroup`, { groupName, about}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
 
       if (response.data.success == false) {
         if (response.data.error == 'group-name-exists'){

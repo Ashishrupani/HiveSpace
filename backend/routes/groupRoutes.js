@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/groupDashboard", verifyAuth, groupHomeHandler);
 
 //Get groups list (search query for a specific group name) using ?find=groupname
-router.get("/find", findGroupHandler);
+router.get("/find", verifyAuth,findGroupHandler);
 
 // Create a new group
 router.post("/createGroup", verifyAuth, createGroupHandler);
