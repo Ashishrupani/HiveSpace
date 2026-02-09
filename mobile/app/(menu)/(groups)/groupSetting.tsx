@@ -4,92 +4,53 @@ import groupSettingsStyles from '@/constants/styles/group-settings.styles';
 import colors from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
+import colors from '@/constants/theme';
 import axios from 'axios';
 import { useUser } from '@clerk/clerk-expo';
+import showErrorToast from '@/components/ui/toast/ErrorToast';
+import showSuccessToast from '@/components/ui/toast/SuccessToast';
+import showInfoToast from '@/components/ui/toast/InfoToast';
+import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 export default function GroupSetting() {
   const router = useRouter();
+  const { user } = useUser();
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
-  const { user, isLoaded } = useUser();
-  const [groups, setGroups] = React.useState<Array<{ id: string; name: string; members: number; iconName?: string; logoUri?: string }>>([]);
-  const searchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Modal states
+  const [createModalVisible, setCreateModalVisible] = React.useState(false);
+  
+  // Create group form states
+  const [groupName, setGroupName] = React.useState('');
+  const [about, setAbout] = React.useState('');
 
-  const fetchGroups = React.useCallback(async (searchText: string) => {
-    const response = await axios.get(
-      `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups`,
-      { params: searchText.trim() ? { q: searchText.trim() } : undefined }
-    );
+  // Sample groups - replace with API data
+  const groups = React.useMemo(() => [
+      { id: '1', name: 'Study Buddies', members: 24, iconName: 'timer' },
+      { id: '2', name: 'React Learners', members: 12, iconName: 'note.fill' },
+      { id: '3', name: 'Design Crew', members: 8, iconName: 'person.crop.circle' },
+      { id: '4', name: 'Productivity Champs', members: 42, iconName: 'chart.bar.fill' },
+  ], []);
 
-    const payload = response.data;
-    const results = Array.isArray(payload)
-      ? payload
-      : payload?.groups ?? payload?.data ?? [];
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return groups;
+    return groups.filter(g => g.name.toLowerCase().includes(q));
+  }, [groups, query]);
 
-    setGroups(
-      results.map((group: any) => ({
-        id: String(group.id ?? group._id ?? ''),
-        name: group.name ?? '',
-        members: Number(group.members ?? group.memberCount ?? 0),
-        iconName: group.iconName,
-        logoUri: group.logoUri,
-      }))
-    );
-  }, []);
-
-  React.useEffect(() => {
-    if (searchTimer.current) {
-      clearTimeout(searchTimer.current);
-    }
-
-    searchTimer.current = setTimeout(async () => {
-      try {
-        await fetchGroups(query);
-      } catch (error: any) {
-        const message = error?.response?.data?.message ?? 'Failed to load groups.';
-        Alert.alert('Error', message);
-      }
-    }, 350);
-
-    return () => {
-      if (searchTimer.current) {
-        clearTimeout(searchTimer.current);
-      }
-    };
-  }, [query]);
-
-  const handleJoin = async (id: string, name: string) => {
-    if (!isLoaded || !user?.id) {
-      Alert.alert('Error', 'Please sign in to join a group.');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/${id}/join`,
-        { groupId: id, userId: user.id }
-      );
-
-      if (response.status !== 200) {
-        Alert.alert('Error', 'Failed to join group. Please try again.');
-        return;
-      }
-
-      setJoined(prev => ({ ...prev, [id]: true }));
-      Alert.alert('Success!', `You joined ${name}`);
-    } catch (error: any) {
-      const message = error?.response?.data?.message ?? 'Failed to join group. Please try again.';
-      Alert.alert('Error', message);
-    }
+  const handleJoin = (id: string, name: string) => {
+    // TODO: call real API to join group
+    // Example: axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/join`, { groupId: id, user })
+    setJoined(prev => ({ ...prev, [id]: true }));
+    showSuccessToast(`You joined ${name}`);
   }
 
-  const handleFindGroup = async () => {
-    try {
-      await fetchGroups(query);
-    } catch (error: any) {
-      const message = error?.response?.data?.message ?? 'Failed to load groups.';
-      Alert.alert('Error', message);
-    }
+  const handleFindGroup = () => {
+              // TODO: Call backend API to search for groups
+              // Example: axios.get(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/find?search=${query}`)
+              showInfoToast(`Searching for groups matching "${query}"`);
   }
 
   const handleCreateGroup = async () => {
@@ -120,7 +81,8 @@ export default function GroupSetting() {
   };
 
   return (
-    <ScrollView style={groupSettingsStyles.container}>
+    <>
+      <ScrollView style={groupSettingsStyles.container}>
         <View style={[groupSettingsStyles.navRow, { marginBottom: 28 }]}> 
           <TouchableOpacity 
             style={groupSettingsStyles.navButton} 
@@ -149,19 +111,76 @@ export default function GroupSetting() {
           </TouchableOpacity>
         </View>
 
-      {groups.map((item) => (
-        <GroupCardWithJoin
-          key={item.id}
-          id={item.id}
-          name={item.name}
-          members={item.members}
-          iconName={item.iconName}
-          isJoined={!!joined[item.id]}
-          onJoin={handleJoin}
-        />
-      ))}
-      <View style={{ height: 24 }} />
-    </ScrollView>
+        {filtered.map((item) => (
+          <GroupCardWithJoin
+            key={item.id}
+            id={item.id}
+            name={item.name}
+            members={item.members}
+            iconName={item.iconName}
+            isJoined={!!joined[item.id]}
+            onJoin={handleJoin}
+          />
+        ))}
+        <View style={{ height: 24 }} />
+      </ScrollView>
+
+      {/* Create Group Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={createModalVisible}
+        onRequestClose={() => setCreateModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={modalStyles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Toast  />
+          <View style={modalStyles.modalContent}>
+            {/* Header */}
+            <View style={modalStyles.modalHeader}>
+              <Text style={modalStyles.modalTitle}>Create a New Group</Text>
+              <TouchableOpacity 
+                onPress={() => setCreateModalVisible(false)}
+                style={modalStyles.closeButton}
+              >
+                <Ionicons name="close" size={28} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Form */}
+            <View style={modalStyles.modalBody}>
+              <TextInput
+                placeholder="Group Name"
+                value={groupName}
+                onChangeText={setGroupName}
+                style={modalStyles.input}
+                placeholderTextColor="#b0b0b0"
+                autoCapitalize="words"
+                returnKeyType="done"
+              />
+              <TextInput
+                placeholder="About this group (optional)"
+                value={about}
+                onChangeText={setAbout}
+                style={[modalStyles.input, modalStyles.textArea]}
+                placeholderTextColor="#b0b0b0"
+                multiline
+                maxLength={300}
+                textAlignVertical="top"
+              />
+              <TouchableOpacity 
+                style={modalStyles.button} 
+                onPress={handleCreateGroup}
+              >
+                <Text style={modalStyles.buttonText}>Create Group</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }
 
