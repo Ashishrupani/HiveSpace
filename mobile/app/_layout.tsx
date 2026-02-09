@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/clerk-expo'
 import { Slot } from 'expo-router'
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
 
 
 
@@ -16,6 +17,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache}>
         <Slot/>
+        <Toast />
       </ClerkProvider>
     </GestureHandlerRootView>
   );
