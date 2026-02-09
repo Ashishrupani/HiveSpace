@@ -75,7 +75,7 @@ export const createGroupHandler = async (req, res) => {
   // Extract group details from request body
   // Extract userId from the request object (set by verifyAuth middleware)
   const userId = req.userId;
-  const { groupName, about} = req.body;
+  const { groupName, about } = req.body;
 
   console.log(`Received request to create group with name: ${groupName} by userId: ${userId}`);
 
@@ -105,7 +105,7 @@ export const getGroupDetailsHandler = async (req, res) => {
 
   const userId = req.userId;
   // Logic for fetching group details by groupId
-  const { groupId} = req.body;
+  const { groupId } = req.body;
 
   // Error handling for missing groupId
   if (!groupId || !userId) {
@@ -225,6 +225,7 @@ export const leaveGroupHandler = async (req, res) => {
 export const getUserJoinedGroupsHandler = async (req, res) => {
   // Logic for fetching user's joined groups
   const userId = req.userId;
+  console.log(`Fetching joined groups for userId: ${userId}`);
 
   // Error handling for missing userId
   if (!userId) {

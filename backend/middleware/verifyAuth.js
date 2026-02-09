@@ -12,7 +12,6 @@ export const verifyAuth = (req, res, next) => {
     }
 
     req.userId = auth.userId; // Attach the user ID to the request object for use in subsequent middleware or route handlers
-
     //User is authenticated, proceed to the next middleware or route handler
     next()
 

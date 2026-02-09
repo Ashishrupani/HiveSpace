@@ -61,7 +61,8 @@ export default function GroupSetting() {
     const token = await getToken();
 
     try {
-      const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about }, {
+      const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about }, 
+        {
         headers: {
           Authorization: `Bearer ${token}`,
         },
