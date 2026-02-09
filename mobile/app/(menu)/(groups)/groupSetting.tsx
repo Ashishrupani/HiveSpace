@@ -1,7 +1,6 @@
 import React from 'react'
 import { View, ScrollView, TextInput, TouchableOpacity, Text, Alert, Modal, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import groupSettingsStyles from '@/constants/styles/group-settings.styles';
-import colors from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
 import colors from '@/constants/theme';
@@ -15,9 +14,11 @@ import Toast from 'react-native-toast-message';
 
 export default function GroupSetting() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
+  const [groups, setGroups] = React.useState<Array<{ id: string; name: string; members: number; iconName?: string; logoUri?: string }>>([]);
+  const searchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Modal states
   const [createModalVisible, setCreateModalVisible] = React.useState(false);
@@ -26,32 +27,75 @@ export default function GroupSetting() {
   const [groupName, setGroupName] = React.useState('');
   const [about, setAbout] = React.useState('');
 
-  // Sample groups - replace with API data
-  const groups = React.useMemo(() => [
-      { id: '1', name: 'Study Buddies', members: 24, iconName: 'timer' },
-      { id: '2', name: 'React Learners', members: 12, iconName: 'note.fill' },
-      { id: '3', name: 'Design Crew', members: 8, iconName: 'person.crop.circle' },
-      { id: '4', name: 'Productivity Champs', members: 42, iconName: 'chart.bar.fill' },
-  ], []);
+  const handleJoin = async (id: string, name: string) => {
+    if (!isLoaded || !user?.id) {
+      Alert.alert('Error', 'Please sign in to join a group.');
+      return;
+    }
 
-  const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return groups;
-    return groups.filter(g => g.name.toLowerCase().includes(q));
-  }, [groups, query]);
+    try {
+      const response = await axios.post(
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/${id}/join`,
+        { groupId: id, userId: user.id }
+      );
 
-  const handleJoin = (id: string, name: string) => {
-    // TODO: call real API to join group
-    // Example: axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/join`, { groupId: id, user })
-    setJoined(prev => ({ ...prev, [id]: true }));
-    showSuccessToast(`You joined ${name}`);
+      if (response.status !== 200) {
+        Alert.alert('Error', 'Failed to join group. Please try again.');
+        return;
+      }
+
+      setJoined(prev => ({ ...prev, [id]: true }));
+      Alert.alert('Success!', `You joined ${name}`);
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'Failed to join group. Please try again.';
+      Alert.alert('Error', message);
+    }
   }
 
-  const handleFindGroup = () => {
-              // TODO: Call backend API to search for groups
-              // Example: axios.get(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/find?search=${query}`)
-              showInfoToast(`Searching for groups matching "${query}"`);
+  const handleFindGroup = async () => {
+    try {
+      const response = await axios.get(
+        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups`,
+        { params: query.trim() ? { q: query.trim() } : undefined }
+      );
+
+      const payload = response.data;
+      const results = Array.isArray(payload)
+        ? payload
+        : payload?.groups ?? payload?.data ?? [];
+
+      setGroups(
+        results.map((group: any) => ({
+          id: String(group.id ?? group._id ?? ''),
+          name: group.name ?? '',
+          members: Number(group.members ?? group.memberCount ?? 0),
+          iconName: group.iconName,
+          logoUri: group.logoUri,
+        }))
+      );
+    } catch (error: any) {
+      const message = error?.response?.data?.message ?? 'Failed to load groups.';
+      showErrorToast(message);
+    }
   }
+
+  React.useEffect(() => {
+    if (searchTimer.current) {
+      clearTimeout(searchTimer.current);
+    }
+
+    searchTimer.current = setTimeout(() => {
+      if (query.trim()) {
+        handleFindGroup();
+      }
+    }, 350);
+
+    return () => {
+      if (searchTimer.current) {
+        clearTimeout(searchTimer.current);
+      }
+    };
+  }, [query]);
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -111,7 +155,7 @@ export default function GroupSetting() {
           </TouchableOpacity>
         </View>
 
-        {filtered.map((item) => (
+        {groups.map((item) => (
           <GroupCardWithJoin
             key={item.id}
             id={item.id}
@@ -303,6 +347,5 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 });
-
 
 
