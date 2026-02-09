@@ -8,11 +8,11 @@ export type GroupSummary = {
 	logoUri?: string;
 };
 
-const baseUrl = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
+const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
 
 export const searchGroups = async (query: string): Promise<GroupSummary[]> => {
-	const response = await axios.get(`${baseUrl}/api/groups`, {
-		params: query ? { q: query } : undefined,
+	const response = await axios.get(`${baseUrl}/api/groups/find`, {
+		params: query ? { search: query } : undefined,
 	});
 
 	const payload = response.data;

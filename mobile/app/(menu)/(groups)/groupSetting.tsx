@@ -15,6 +15,7 @@ import Toast from 'react-native-toast-message';
 export default function GroupSetting() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
   const [groups, setGroups] = React.useState<Array<{ id: string; name: string; members: number; iconName?: string; logoUri?: string }>>([]);
@@ -35,8 +36,8 @@ export default function GroupSetting() {
 
     try {
       const response = await axios.post(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/${id}/join`,
-        { groupId: id, userId: user.id }
+        `${baseUrl}/api/groups/${id}/join`,
+        { userId: user.id }
       );
 
       if (response.status !== 200) {
@@ -47,7 +48,14 @@ export default function GroupSetting() {
       setJoined(prev => ({ ...prev, [id]: true }));
       Alert.alert('Success!', `You joined ${name}`);
     } catch (error: any) {
-      const message = error?.response?.data?.message ?? 'Failed to join group. Please try again.';
+      const payload = error?.response?.data;
+      if (payload?.error === 'already-a-member') {
+        setJoined(prev => ({ ...prev, [id]: true }));
+        Alert.alert('Info', `You are already a member of ${name}`);
+        return;
+      }
+
+      const message = payload?.message ?? 'Failed to join group. Please try again.';
       Alert.alert('Error', message);
     }
   }
@@ -55,8 +63,8 @@ export default function GroupSetting() {
   const handleFindGroup = async () => {
     try {
       const response = await axios.get(
-        `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups`,
-        { params: query.trim() ? { q: query.trim() } : undefined }
+        `${baseUrl}/api/groups/find`,
+        { params: query.trim() ? { search: query.trim() } : undefined }
       );
 
       const payload = response.data;
@@ -78,6 +86,10 @@ export default function GroupSetting() {
       showErrorToast(message);
     }
   }
+
+  React.useEffect(() => {
+    handleFindGroup();
+  }, []);
 
   React.useEffect(() => {
     if (searchTimer.current) {
@@ -103,8 +115,13 @@ export default function GroupSetting() {
       return;
     }
 
+    if (!isLoaded || !user?.id) {
+      showInfoToast('Please sign in to create a group.');
+      return;
+    }
+
     try {
-      const response = await axios.post(`http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000/api/groups/createGroup`, { groupName, about, user });
+      const response = await axios.post(`${baseUrl}/api/groups/createGroup`, { groupName, about, userId: user.id });
 
       if (response.data.success === false) {
         if (response.data.error == 'group-name-exists'){
@@ -114,12 +131,17 @@ export default function GroupSetting() {
         }
       } else {
         showSuccessToast(`Group "${groupName}" created successfully!`);
+        if (response.data?.groupId) {
+          setJoined(prev => ({ ...prev, [response.data.groupId]: true }));
+        }
+        handleFindGroup();
         setCreateModalVisible(false);
         setGroupName('');
         setAbout('');
       }
     } catch (error) {
-      showErrorToast('Failed to create group.');
+      const message = (error as any)?.response?.data?.message ?? 'Failed to create group.';
+      showErrorToast(message);
       return;
     }
   };
