@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '@clerk/express';
+import { verifyAuth } from '../middleware/verifyAuth.js';
 import { dashboardHandler, profileHandler } from '../controllers/homeControllers.js';
 
 const router = express.Router();

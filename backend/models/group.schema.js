@@ -10,6 +10,8 @@ const groupSchema = new Schema(
         //group icons
         icon: { type: String },
         color: { type: String },
+        //admin user ID
+        adminUID: { type: String, required: true },
         //User IDs of group members
         UID: { type: [String], required: true },
         //group's shared goals
