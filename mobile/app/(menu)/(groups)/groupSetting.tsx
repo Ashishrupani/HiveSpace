@@ -44,7 +44,7 @@ export default function GroupSetting() {
 
     try {
       const response = await axios.post(
-        `${iphoneTesting}/api/groups/${id}/join`,
+        `${baseUrl}/api/groups/${id}/join`,
         { groupId: id }, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ export default function GroupSetting() {
     const token = await getToken();
     try {
       const response = await axios.get(
-        `${iphoneTesting}/api/groups/find`,
+        `${baseUrl}/api/groups/find`,
         { 
           params: query.trim() ? { search: query.trim() } : undefined,
           headers: {
@@ -96,7 +96,7 @@ export default function GroupSetting() {
           id: String(group.id ?? group._id ?? ''),
           name: group.name ?? '',
           members: Number(group.members ?? group.memberCount ?? 0),
-          iconName: group.iconName,
+          iconName: group.iconName ?? 'person.3.fill',
           logoUri: group.logoUri,
         }))
       );
@@ -142,7 +142,7 @@ export default function GroupSetting() {
     const token = await getToken();
 
     try {
-      const response = await axios.post(`${iphoneTesting}/api/groups/createGroup`, { groupName, about}, {
+      const response = await axios.post(`${baseUrl}/api/groups/createGroup`, { groupName, about}, {
         headers: {
           Authorization: `Bearer ${token}`,
         }
