@@ -96,7 +96,7 @@ export default function GroupSetting() {
           id: String(group.id ?? group._id ?? ''),
           name: group.name ?? '',
           members: Number(group.members ?? group.memberCount ?? 0),
-          iconName: group.iconName,
+          iconName: group.iconName ?? 'person.3.fill',
           logoUri: group.logoUri,
         }))
       );

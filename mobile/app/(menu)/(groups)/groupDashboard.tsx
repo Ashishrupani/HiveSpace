@@ -60,7 +60,7 @@ export default function GroupDashboard() {
       // ✅ THIS matches your groupRoutes.js:
       // router.post("/my-groups", verifyAuth, getUserJoinedGroupsHandler);
       const response = await axios.post(
-        `${iphoneTesting}/api/groups/my-groups`,
+        `${baseUrl}/api/groups/my-groups`,
         {}, // no body needed; userId comes from verifyAuth middleware
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -96,7 +96,7 @@ export default function GroupDashboard() {
 
   const onGroupPress = (id: string) => {
     // If you don’t have this route yet, you can comment this out.
-    // router.push(`/(groups)/${id}/groupHome` as any);
+     router.push(`/(groups)/${id}/groupHome` as any);
 
     // Optional: if you want to navigate somewhere else, change it here.
     console.log('Pressed group:', id);
