@@ -20,7 +20,8 @@ export default function GroupDashboard() {
   const { getToken } = useAuth();
 
   // matches the rest of your app (GroupSetting.tsx)
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5050';
+  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
+  const iphoneTesting = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
 
   const [groups, setGroups] = React.useState<JoinedGroup[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -59,7 +60,7 @@ export default function GroupDashboard() {
       // ✅ THIS matches your groupRoutes.js:
       // router.post("/my-groups", verifyAuth, getUserJoinedGroupsHandler);
       const response = await axios.post(
-        `${baseUrl}/api/groups/my-groups`,
+        `${iphoneTesting}/api/groups/my-groups`,
         {}, // no body needed; userId comes from verifyAuth middleware
         { headers: { Authorization: `Bearer ${token}` } }
       );
