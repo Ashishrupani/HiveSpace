@@ -61,7 +61,7 @@ export const findGroupHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name
-    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 }));
+    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0, color: group.color, icon: group.icon }));
 
     res.status(200).json({ success: true, groups: groupData, error: null });
   } catch (err) {
@@ -74,7 +74,7 @@ export const findGroupHandler = async (req, res) => {
 export const createGroupHandler = async (req, res) => {
   // Logic for creating a group
   // Extract group details from request body
-  const { groupName, about} = req.body;
+  const { groupName, about, iconName, color } = req.body;
   const userId = req.userId;
 
   if (!groupName || !userId) {
@@ -82,7 +82,7 @@ export const createGroupHandler = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Missing group name or userId', error: 'missing-params' });
   }
 
-  console.log('Create group request:', { groupName, userId, about });
+  console.log('Create group request:', { groupName, userId, about, iconName, color });
 
   try {
     // Normalize group name to lowercase
@@ -95,7 +95,7 @@ export const createGroupHandler = async (req, res) => {
     }
 
     // Create a new group
-    const newGroup = new Group({ name: groupName, about, adminUID: userId, UID: [userId] });
+    const newGroup = new Group({ name: groupName, about, adminUID: userId, UID: [userId], icon: iconName, color });
     await newGroup.save();
     res.status(200).json({ success: true, message: 'Group created successfully', groupId: newGroup._id, error: null });
 
@@ -256,8 +256,8 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
       return res.status(200).json({ success: true, groups: [], error: null });
     }
 
-    // only send necessary group data such as id and group name
-    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 }));
+    // only send necessary group data such as id and group name, and number of members (length of UID array), color and icon for the group
+    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 , color: group.color, icon: group.icon }));
 
     // Return the list of joined groups
     res.status(200).json({ success: true, groups: groupData, error: null });

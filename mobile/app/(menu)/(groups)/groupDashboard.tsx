@@ -12,6 +12,7 @@ type JoinedGroup = {
   members: number;
   iconName?: string;
   logoUri?: string;
+  color?: string;
 };
 
 export default function GroupDashboard() {
@@ -39,8 +40,9 @@ export default function GroupDashboard() {
         id: String(g.id ?? g._id ?? ''),
         name: String(g.name ?? ''),
         members: Number(g.members ?? g.memberCount ?? g.UID?.length ?? 0),
-        iconName: g.iconName,
+        iconName: g.icon ?? g.iconName ?? 'person.3.fill', // Map 'icon' from backend to 'iconName'
         logoUri: g.logoUri,
+        color: g.color ?? '#342A5f', // Add color mapping with default
       }))
       .filter((g: JoinedGroup) => !!g.id);
   };
@@ -95,7 +97,7 @@ export default function GroupDashboard() {
   };
 
   const onGroupPress = (id: string) => {
-    // If you don’t have this route yet, you can comment this out.
+    // If you don't have this route yet, you can comment this out.
      router.push(`/(groups)/${id}/groupHome` as any);
 
     // Optional: if you want to navigate somewhere else, change it here.
@@ -125,7 +127,7 @@ export default function GroupDashboard() {
 
         {!error && groups.length === 0 && (
           <Text style={{ marginBottom: 12 } as any}>
-            You’re not in any groups yet. Join one from Group Settings.
+            You're not in any groups yet. Join one from Group Settings.
           </Text>
         )}
 
@@ -134,8 +136,9 @@ export default function GroupDashboard() {
             key={g.id}
             name={g.name}
             members={g.members}
-            iconName={g.iconName ?? 'person.3.fill'}
+            iconName={g.iconName}
             logoUri={g.logoUri}
+            color={g.color}
             onPress={() => onGroupPress(g.id)}
           />
         ))}

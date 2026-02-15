@@ -4,6 +4,7 @@ import cors from 'cors';
 //importing clerk
 import { clerkMiddleware , clerkClient } from '@clerk/express'
 import mongoose from "mongoose";
+import homeRoutes from './routes/homeRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import ragRoutes from "./routes/ragRoutes.js";
 
@@ -33,17 +34,16 @@ app.get("/", (req, res) => {
     res.status(200).json({ sucess: 'true', message: 'hello from backend' });
 })
 
+app.use("/api/home", homeRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/rag", ragRoutes);
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {
     console.log("Health check route accessed");
+    const response = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    console.log(`MongoDB connection status: ${response}`);
     res.status(200).json({ sucess: 'true', status: 'UP', message: 'API is healthy' });
-})
-
-app.post("/", (req, res) => {
-    res.status(200).json({ sucess: 'true', message: 'POST request received' });
 })
 
 
