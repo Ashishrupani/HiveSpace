@@ -269,3 +269,63 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
   }
 
 }
+
+export const saveQuizHandler = async (req, res) => {
+  // Logic for saving a quiz to a group
+  const { groupId, quiz } = req.body;
+  const userId = req.userId;
+
+  if (!groupId || !quiz) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or quiz data', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    // Add quiz to savedQuizzes array
+    if (!group.savedQuizzes) {
+      group.savedQuizzes = [];
+    }
+
+    group.savedQuizzes.push({
+      ...quiz,
+      savedBy: userId,
+      savedAt: new Date()
+    });
+
+    await group.save();
+
+    res.status(200).json({ success: true, message: 'Quiz saved successfully', error: null });
+  } catch (err) {
+    console.error('Error saving quiz:', err);
+    res.status(500).json({ success: false, message: 'Failed to save quiz', error: err.message });
+  }
+}
+
+export const getSavedQuizzesHandler = async (req, res) => {
+  // Logic for fetching saved quizzes for a group
+  const { groupId } = req.params;
+
+  if (!groupId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    const savedQuizzes = group.savedQuizzes || [];
+
+    res.status(200).json({ success: true, quizzes: savedQuizzes, error: null });
+  } catch (err) {
+    console.error('Error fetching saved quizzes:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch saved quizzes', error: err.message });
+  }
+}
