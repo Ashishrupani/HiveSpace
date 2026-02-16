@@ -5,6 +5,7 @@ import GroupCard from '@/components/ui/cards/groupCard';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useAuth, useUser } from '@clerk/clerk-expo';
+import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
 
 type JoinedGroup = {
   id: string;
@@ -21,8 +22,10 @@ export default function GroupDashboard() {
   const { getToken } = useAuth();
 
   // matches the rest of your app (GroupSetting.tsx)
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
-  const iphoneTesting = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
+ /*IMPORTANT- Please do not change these URLs */
+   const baseUrl = API_BASE_URL;
+   const iphoneTesting = IPHONE_TESTING_URL;
+/* If you want to change them go to the file named constants.ts it is in the api folder. (mobile/api) */
 
   const [groups, setGroups] = React.useState<JoinedGroup[]>([]);
   const [loading, setLoading] = React.useState(true);

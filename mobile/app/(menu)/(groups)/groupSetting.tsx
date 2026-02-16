@@ -12,6 +12,7 @@ import showInfoToast from '@/components/ui/toast/InfoToast';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
 
 //available group icons
 const GROUP_ICONS = [
@@ -37,18 +38,19 @@ const GROUP_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', 
   '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
   '#F8B739', '#52B788', '#E76F51', '#2A9D8F', 
-  '#342A5f', '#6c5ce7'
+  '#342A5f', '#6c5ce7', '#da07bddc'
 ];
 
 export default function GroupSetting() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
-  // For Expo Go app testing on physical iPhone, use the local network IP address instead of localhost
-  // Replace baseUrl with iphoneTesting when running on Expo Go on iOS
-  const iphoneTesting = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
-  // Only use Iphone testing URL if running on Expo Go on iOS, otherwise use the standard base URL
+
+  /*IMPORTANT- Please do not change these URLs */
+  const baseUrl = API_BASE_URL;
+  const iphoneTesting = IPHONE_TESTING_URL;
+  /* If you want to change them go to the file named constants.ts it is in the api folder. (mobile/api) */
+  
   
   const [query, setQuery] = React.useState('');
   const [joined, setJoined] = React.useState<Record<string, boolean>>({});
