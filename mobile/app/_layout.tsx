@@ -28,7 +28,7 @@ export default function RootLayout() {
     };
 
     checkBackend();
-    const interval = setInterval(checkBackend, 10000); // Check every 10 seconds
+    const interval = setInterval(checkBackend, 60000); // Check every 60 seconds
 
     return () => clearInterval(interval);
   }, []);
