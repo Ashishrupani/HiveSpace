@@ -18,6 +18,20 @@ const groupSchema = new Schema(
         goals: { type: [String] },
         //group's chat history
         chat: { type: [{ senderUID: String, message: String, timestamp: Date }] },
+        //saved quizzes from AI
+        savedQuizzes: { type: [{ 
+            title: String,
+            questions: [{
+                id: String,
+                question: String,
+                choices: [{ id: String, text: String }],
+                answer: String,
+                difficulty: String,
+                explanation: String
+            }],
+            savedBy: String,
+            savedAt: { type: Date, default: Date.now }
+        }] }
 
     },
     { timestamps: true }
