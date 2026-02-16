@@ -7,7 +7,9 @@ import BaseCard from '@/components/ui/cards/baseCard';
 import LeaderboardCard from '@/components/ui/cards/LeaderboardCard';
 import QuizCard from '@/components/ui/cards/QuizCard';
 import GoalsCard from '@/components/ui/cards/goalsCard';
+import SavedQuizzesCard from '@/components/ui/cards/SavedQuizzesCard';
 import { useGroupGoals } from '@/contexts/GroupGoalsContext';
+import { SavedQuiz } from '@/api/ragApi';
 
 export default function GroupHome() {
     const {id} = useLocalSearchParams();
@@ -62,13 +64,19 @@ export default function GroupHome() {
           </View>
         </View>
 
-        {/* Quiz below (left-aligned under Leaderboard) */}
-        <View style={{ width: '70%', alignSelf: 'flex-start', marginTop: 12 }}>
-          <QuizCard
-            onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
-            style={{ width: '100%' }}
-            height={120}
-          />
+        {/* Quiz and Saved Quizzes side-by-side below Goals */}
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+          <View style={{ width: '49%' }}>
+            <QuizCard
+              onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
+              style={{ width: '100%' }}
+              height={120}
+            />
+          </View>
+
+          <View style={{ width: '49%' }}>
+            <SavedQuizzesCard groupId={groupId} width={'100%'} height={120} />
+          </View>
         </View>
 
     </ScrollView>
