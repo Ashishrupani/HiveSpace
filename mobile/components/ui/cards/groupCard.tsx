@@ -11,13 +11,14 @@ interface GroupCardProps {
   logoUri?: string;
   /** Fallback icon name (SF Symbol key used by IconSymbol) */
   iconName?: string;
+  color?: string;
   onPress?: () => void;
 }
 
-export default function GroupCard({ name, members, logoUri, iconName = 'chevron.left.forwardslash.chevron.right', onPress }: GroupCardProps) {
+export default function GroupCard({ name, members, logoUri, iconName = 'person.3.fill', color, onPress }: GroupCardProps) {
   return (
     <TouchableOpacity
-      style={[groupCardStyles.shadowWrap, { backgroundColor: '#F6F7F9', height: 110 }]}
+      style={[groupCardStyles.shadowWrap, { backgroundColor: color || '#F6F7F9', height: 110 }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
@@ -26,7 +27,7 @@ export default function GroupCard({ name, members, logoUri, iconName = 'chevron.
           {logoUri ? (
             <Image source={{ uri: logoUri }} style={groupCardStyles.logoImage} resizeMode="cover" />
           ) : (
-            <View style={groupCardStyles.iconCircle}>
+            <View style={[groupCardStyles.iconCircle, { backgroundColor: color || '#342A5f' }]}>
               <IconSymbol name={iconName as any} size={32} color="#fff" />
             </View>
           )}
