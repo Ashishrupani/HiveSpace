@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from './constants';
 
-const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
+const baseUrl = API_BASE_URL;
 
 export type RAGSummary = {
   title: string;
