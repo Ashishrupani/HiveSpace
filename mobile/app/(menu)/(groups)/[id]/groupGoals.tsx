@@ -356,9 +356,18 @@ export default function GroupGoals() {
                 animationType="slide"
                 onRequestClose={() => setShowUpdateModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Update Progress</Text>
+                <TouchableOpacity 
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => {
+                        setShowUpdateModal(false);
+                        setUpdateValue('');
+                        setSelectedGoal(null);
+                    }}
+                >
+                    <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Update Progress</Text>
                         <Text style={styles.modalSubtitle}>{selectedGoal?.label}</Text>
                         
                         <TextInput
@@ -388,8 +397,9 @@ export default function GroupGoals() {
                                 <Text style={[styles.modalButtonText, styles.addButtonText]}>Update</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             </Modal>
 
             {/* Edit Goal Details Modal */}
