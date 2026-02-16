@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_BASE_URL } from './constants';
 
 export type GroupSummary = {
 	id: string;
@@ -8,7 +9,7 @@ export type GroupSummary = {
 	logoUri?: string;
 };
 
-const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
+const baseUrl = API_BASE_URL;
 
 export const searchGroups = async (query: string): Promise<GroupSummary[]> => {
 	const response = await axios.get(`${baseUrl}/api/groups/find`, {
