@@ -19,6 +19,21 @@ export const quizStyles = StyleSheet.create({
   reviewQuestion: { fontWeight: '600' },
   reviewAnswer: { color: '#333' },
   reviewCorrect: { color: '#0a7ea4' },
+  tryAgainButton: {
+    marginTop: 24,
+    backgroundColor: '#342A5f',
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  tryAgainText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default quizStyles;

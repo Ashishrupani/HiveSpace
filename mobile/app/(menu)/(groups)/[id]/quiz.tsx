@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup } from '@/api/ragApi';
+import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup, QuizOptions } from '@/api/ragApi';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
 
 type AIMode = 'upload' | 'summary' | 'quiz';
@@ -24,6 +24,10 @@ export default function AIPage() {
   const [quizData, setQuizData] = useState<RAGQuiz | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [savingQuiz, setSavingQuiz] = useState(false);
+  const [showQuizOptions, setShowQuizOptions] = useState(false);
+  const [quizOptions, setQuizOptions] = useState<QuizOptions>({ numQuestions: 10, difficulty: 'medium' });
+  const [pendingQuizContent, setPendingQuizContent] = useState<string>('');
+  const [generationsRemaining, setGenerationsRemaining] = useState(4);
 
   const pickAndUploadDocument = async () => {
     try {
@@ -70,8 +74,20 @@ export default function AIPage() {
     if (type === 'summary') {
       generateSummary(combinedContent);
     } else {
-      generateQuiz(combinedContent);
+      // Show quiz options modal
+      setPendingQuizContent(combinedContent);
+      setShowQuizOptions(true);
     }
+  };
+
+  const proceedWithQuizGeneration = async () => {
+    setShowQuizOptions(false);
+    await generateQuiz(pendingQuizContent, quizOptions);
+  };
+
+  const skipAndGenerateQuiz = async () => {
+    setShowQuizOptions(false);
+    await generateQuiz(pendingQuizContent, { numQuestions: 10, difficulty: 'medium' });
   };
 
   const generateSummary = async (content: string) => {
@@ -80,22 +96,52 @@ export default function AIPage() {
       const result = await uploadNotesForSummary(content);
       setSummaryData(result);
       setMode('summary');
+      setGenerationsRemaining(prev => Math.max(0, prev - 1));
       setLoading(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to generate summary');
+    } catch (error: any) {
+      console.error('Summary generation error:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      
+      // Check for quota exceeded error
+      const errorData = error.response?.data;
+      if (errorData?.details?.includes('quota') || errorData?.details?.includes('RESOURCE_EXHAUSTED')) {
+        Alert.alert(
+          'API Quota Exceeded',
+          'You\'ve hit the Gemini API daily limit (20 requests/day for free tier). Please wait 24 hours or upgrade your API plan.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        const errorMessage = errorData?.message || error.message || 'Failed to generate summary';
+        Alert.alert('Error', `Failed to generate summary: ${errorMessage}`);
+      }
       setLoading(false);
     }
   };
 
-  const generateQuiz = async (content: string) => {
+  const generateQuiz = async (content: string, options?: QuizOptions) => {
     try {
       setLoading(true);
-      const result = await uploadNotesForQuiz(content);
+      const result = await uploadNotesForQuiz(content, options);
       setQuizData(result);
       setMode('quiz');
+      setGenerationsRemaining(prev => Math.max(0, prev - 1));
       setLoading(false);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to generate quiz');
+    } catch (error: any) {
+      console.error('Quiz generation error:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      
+      // Check for quota exceeded error
+      const errorData = error.response?.data;
+      if (errorData?.details?.includes('quota') || errorData?.details?.includes('RESOURCE_EXHAUSTED')) {
+        Alert.alert(
+          'API Quota Exceeded',
+          'You\'ve hit the Gemini API daily limit (20 requests/day for free tier). Please wait 24 hours or upgrade your API plan.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        const errorMessage = errorData?.message || error.message || 'Failed to generate quiz';
+        Alert.alert('Error', `Failed to generate quiz: ${errorMessage}`);
+      }
       setLoading(false);
     }
   };
@@ -121,6 +167,88 @@ export default function AIPage() {
     }
   };
 
+  if (showQuizOptions) {
+    return (
+      <Modal transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Customize Quiz</Text>
+              <TouchableOpacity onPress={() => setShowQuizOptions(false)}>
+                <Ionicons name="close" size={24} color="#342A5f" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              {/* Number of Questions */}
+              <View style={styles.optionSection}>
+                <Text style={styles.optionLabel}>Number of Questions: {quizOptions.numQuestions}</Text>
+                <View style={styles.sliderContainer}>
+                  {[5, 10, 15, 20].map((num) => (
+                    <TouchableOpacity
+                      key={num}
+                      style={[
+                        styles.optionButton,
+                        quizOptions.numQuestions === num && styles.optionButtonActive,
+                      ]}
+                      onPress={() => setQuizOptions({ ...quizOptions, numQuestions: num })}
+                    >
+                      <Text
+                        style={[
+                          styles.optionButtonText,
+                          quizOptions.numQuestions === num && styles.optionButtonTextActive,
+                        ]}
+                      >
+                        {num}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Difficulty Level */}
+              <View style={styles.optionSection}>
+                <Text style={styles.optionLabel}>Difficulty Level</Text>
+                <View style={styles.difficultyContainer}>
+                  {(['easy', 'medium', 'hard'] as const).map((level) => (
+                    <TouchableOpacity
+                      key={level}
+                      style={[
+                        styles.difficultyButton,
+                        quizOptions.difficulty === level && styles.difficultyButtonActive,
+                      ]}
+                      onPress={() => setQuizOptions({ ...quizOptions, difficulty: level })}
+                    >
+                      <Text
+                        style={[
+                          styles.difficultyButtonText,
+                          quizOptions.difficulty === level && styles.difficultyButtonTextActive,
+                        ]}
+                      >
+                        {level.charAt(0).toUpperCase() + level.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.skipButton} onPress={skipAndGenerateQuiz}>
+                <Text style={styles.skipButtonText}>Skip (Default: 10 Questions, Medium)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.generateButton} onPress={proceedWithQuizGeneration}>
+                <Ionicons name="play" size={18} color="#fff" />
+                <Text style={styles.generateButtonText}>Generate Quiz</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   if (mode === 'quiz' && quizData) {
     const questions: QType[] = quizData.questions.map((q) => ({
       id: q.id,
@@ -132,9 +260,7 @@ export default function AIPage() {
     return (
       <View style={styles.container}>
         <View style={styles.quizHeaderContainer}>
-          <TouchableOpacity onPress={() => setMode('upload')} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#342A5f" />
-          </TouchableOpacity>
+          <View style={{ flex: 1 }} />
           <TouchableOpacity 
             style={[styles.saveQuizButton, savingQuiz && styles.saveQuizButtonDisabled]}
             onPress={handleSaveQuiz}
@@ -204,6 +330,13 @@ export default function AIPage() {
         <Text style={styles.description}>
           Upload your notes and let AI generate summaries or quizzes to help you learn.
         </Text>
+
+        <View style={styles.generationCounter}>
+          <Ionicons name="flash" size={18} color={generationsRemaining > 0 ? "#4CAF50" : "#d32f2f"} />
+          <Text style={[styles.counterText, generationsRemaining === 0 && styles.counterTextZero]}>
+            {generationsRemaining} {generationsRemaining === 1 ? 'generation' : 'generations'} available today
+          </Text>
+        </View>
 
         <TouchableOpacity
           style={[styles.uploadButton, loading && styles.uploadButtonDisabled]}
@@ -294,6 +427,26 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 24,
     lineHeight: 20,
+  },
+  generationCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    gap: 8,
+  },
+  counterText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  counterTextZero: {
+    color: '#d32f2f',
   },
   uploadButton: {
     backgroundColor: '#342A5f',
@@ -459,7 +612,7 @@ const styles = StyleSheet.create({
   quizHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
@@ -482,6 +635,127 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#342A5f',
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  optionSection: {
+    marginBottom: 28,
+  },
+  optionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#342A5f',
+    marginBottom: 12,
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  optionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+  },
+  optionButtonActive: {
+    backgroundColor: '#342A5f',
+    borderColor: '#342A5f',
+  },
+  optionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  optionButtonTextActive: {
+    color: '#fff',
+  },
+  difficultyContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  difficultyButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+  },
+  difficultyButtonActive: {
+    backgroundColor: '#342A5f',
+    borderColor: '#342A5f',
+  },
+  difficultyButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  difficultyButtonTextActive: {
+    color: '#fff',
+  },
+  modalActions: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  skipButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#342A5f',
+    alignItems: 'center',
+  },
+  skipButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#342A5f',
+  },
+  generateButton: {
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: '#342A5f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  generateButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 
