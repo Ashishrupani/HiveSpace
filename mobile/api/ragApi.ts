@@ -26,6 +26,11 @@ export type SavedQuiz = RAGQuiz & {
   savedAt: string;
 };
 
+export type QuizOptions = {
+  numQuestions: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+};
+
 export const uploadNotesForSummary = async (noteText: string): Promise<RAGSummary> => {
   const response = await axios.post(`${baseUrl}/api/rag/summary`, {
     note: { text: noteText },
@@ -33,9 +38,10 @@ export const uploadNotesForSummary = async (noteText: string): Promise<RAGSummar
   return response.data.summary;
 };
 
-export const uploadNotesForQuiz = async (noteText: string): Promise<RAGQuiz> => {
+export const uploadNotesForQuiz = async (noteText: string, options?: QuizOptions): Promise<RAGQuiz> => {
   const response = await axios.post(`${baseUrl}/api/rag/quiz`, {
     note: { text: noteText },
+    options: options || { numQuestions: 10, difficulty: 'medium' },
   });
   return response.data.quiz;
 };

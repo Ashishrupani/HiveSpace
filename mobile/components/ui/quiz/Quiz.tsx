@@ -81,7 +81,6 @@ export default function Quiz({ questions, groupId, onFinish }: QuizProps) {
   if (completed) {
     return (
       <View style={{ flex: 1 }}>
-        <BackButton onPress={handleReset} />
         <ScrollView contentContainerStyle={quizStyles.container}>
           <View style={quizStyles.card}>
             <Text style={quizStyles.resultTitle}>You scored {score} / {questions.length}</Text>
@@ -94,6 +93,13 @@ export default function Quiz({ questions, groupId, onFinish }: QuizProps) {
               </View>
             ))}
 
+            <TouchableOpacity 
+              style={quizStyles.tryAgainButton}
+              onPress={handleReset}
+            >
+              <Ionicons name="refresh" size={20} color="#fff" />
+              <Text style={quizStyles.tryAgainText}>Try Again</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
