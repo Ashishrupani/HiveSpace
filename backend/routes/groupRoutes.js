@@ -2,7 +2,7 @@ import express from 'express';
 import { debugMiddleware } from '../middleware/debug.js';
 // Import authentication middleware //WIP -- haven't implemented yet but will do later
 import { verifyAuth } from "../middleware/verifyAuth.js";
-import { groupHomeHandler, findGroupHandler, createGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, getSavedQuizzesHandler} from '../controllers/groupControllers.js';
+import { groupHomeHandler, findGroupHandler, createGroupHandler, updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler} from '../controllers/groupControllers.js';
 
 
 const router = express.Router();
@@ -17,14 +17,25 @@ router.get("/find", debugMiddleware, verifyAuth, findGroupHandler);
 // Create a new group
 router.post("/createGroup", debugMiddleware, verifyAuth, createGroupHandler);
 
+// Update group details (name/about/icon/color)
+router.post("/:id/update", debugMiddleware, verifyAuth, updateGroupHandler);
+router.post("/update/:id", debugMiddleware, verifyAuth, updateGroupHandler);
+router.post("/updateGroup", debugMiddleware, verifyAuth, updateGroupHandler);
+
 //Get user's joined groups
 router.post("/my-groups", debugMiddleware, verifyAuth, getUserJoinedGroupsHandler); //(shows the groups the user has joined)
 
 // Save a quiz to a group (MUST COME BEFORE /:id route)
 router.post("/:id/save-quiz", debugMiddleware, verifyAuth, saveQuizHandler);
 
+// Save a summary to a group (MUST COME BEFORE /:id route)
+router.post("/:id/save-summary", debugMiddleware, verifyAuth, saveSummaryHandler);
+
 // Get saved quizzes for a group (MUST COME BEFORE /:id route)
 router.get("/:id/saved-quizzes", debugMiddleware, verifyAuth, getSavedQuizzesHandler);
+
+// Get saved summaries for a group (MUST COME BEFORE /:id route)
+router.get("/:id/saved-summaries", debugMiddleware, verifyAuth, getSavedSummariesHandler);
 
 // Join a group
 router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);

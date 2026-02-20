@@ -3,6 +3,27 @@ import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
 import User from "../models/user.schema.js";
 
+const getDefaultGroupAbout = (groupName = '') => {
+  const normalized = String(groupName).trim().toLowerCase();
+
+  if (normalized === 'creativity') return 'where we get creative';
+  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
+  if (normalized === 'book club') return 'where we read';
+
+  return 'A place to collaborate and grow together.';
+};
+
+const withDefaultAbout = (groupName, about) => {
+  const normalized = String(groupName).trim().toLowerCase();
+  // Always enforce agreed descriptions for specific groups, even if old text exists in DB
+  if (normalized === 'creativity') return 'where we get creative';
+  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
+  if (normalized === 'book club') return 'where we read';
+
+  const trimmedAbout = typeof about === 'string' ? about.trim() : '';
+  return trimmedAbout || getDefaultGroupAbout(groupName);
+};
+
 /** Important Note **
 List of error codes used in this file for various error scenarios:
 
@@ -61,7 +82,7 @@ export const findGroupHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name
-    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0, color: group.color, icon: group.icon }));
+    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0, color: group.color, icon: group.icon, about: withDefaultAbout(group.name, group.about) }));
 
     res.status(200).json({ success: true, groups: groupData, error: null });
   } catch (err) {
@@ -95,7 +116,8 @@ export const createGroupHandler = async (req, res) => {
     }
 
     // Create a new group
-    const newGroup = new Group({ name: groupName, about, adminUID: userId, UID: [userId], icon: iconName, color });
+    const resolvedAbout = withDefaultAbout(groupName, about);
+    const newGroup = new Group({ name: groupName, about: resolvedAbout, adminUID: userId, UID: [userId], icon: iconName, color });
     await newGroup.save();
     res.status(200).json({ success: true, message: 'Group created successfully', groupId: newGroup._id, error: null });
 
@@ -103,6 +125,65 @@ export const createGroupHandler = async (req, res) => {
   catch (err) {
     console.error('Error creating group:', err);
     res.status(500).json({ success: false, message: 'Failed to create group', error: err.message });
+  }
+}
+
+export const updateGroupHandler = async (req, res) => {
+  const groupId = req.params.id || req.body.groupId;
+  const { groupName, about, iconName, color } = req.body;
+  const userId = req.userId;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or userId', error: 'missing-params' });
+  }
+
+  if (!groupName || !groupName.trim()) {
+    return res.status(400).json({ success: false, message: 'Group name is required', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can edit group settings', error: 'not-authorized' });
+    }
+
+    const normalizedName = groupName.trim().toLowerCase();
+    const existingGroup = await Group.findOne({
+      name: { $regex: `^${normalizedName}$`, $options: 'i' },
+      _id: { $ne: group._id },
+    });
+
+    if (existingGroup) {
+      return res.status(400).json({ success: false, message: 'Group name already exists', error: 'group-name-exists' });
+    }
+
+    group.name = groupName.trim();
+    group.about = withDefaultAbout(group.name, typeof about === 'string' ? about : '');
+    group.icon = iconName || group.icon;
+    group.color = color || group.color;
+
+    await group.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Group updated successfully',
+      group: {
+        id: group._id,
+        name: group.name,
+        about: withDefaultAbout(group.name, group.about),
+        icon: group.icon,
+        color: group.color,
+      },
+      error: null,
+    });
+  } catch (err) {
+    console.error('Error updating group:', err);
+    return res.status(500).json({ success: false, message: 'Failed to update group', error: err.message });
   }
 }
 
@@ -135,7 +216,9 @@ export const getGroupDetailsHandler = async (req, res) => {
     }
 
     // Return group details if the user is a member and group is found
-    res.status(200).json({ success: true, groupDetails, message: 'Group details fetched successfully', error: null });
+    const groupDetailsData = groupDetails.toObject ? groupDetails.toObject() : groupDetails;
+    groupDetailsData.about = withDefaultAbout(groupDetailsData.name, groupDetailsData.about);
+    res.status(200).json({ success: true, groupDetails: groupDetailsData, message: 'Group details fetched successfully', error: null });
   }
   catch (err) {
 
@@ -257,7 +340,7 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name, and number of members (length of UID array), color and icon for the group
-    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 , color: group.color, icon: group.icon }));
+    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 , color: group.color, icon: group.icon, about: withDefaultAbout(group.name, group.about) }));
 
     // Return the list of joined groups
     res.status(200).json({ success: true, groups: groupData, error: null });
@@ -272,7 +355,8 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
 
 export const saveQuizHandler = async (req, res) => {
   // Logic for saving a quiz to a group
-  const { groupId, quiz } = req.body;
+  const groupId = req.params.id || req.body.groupId;
+  const { quiz } = req.body;
   const userId = req.userId;
 
   if (!groupId || !quiz) {
@@ -306,9 +390,45 @@ export const saveQuizHandler = async (req, res) => {
   }
 }
 
+export const saveSummaryHandler = async (req, res) => {
+  // Logic for saving a summary to a group
+  const groupId = req.params.id || req.body.groupId;
+  const { summary } = req.body;
+  const userId = req.userId;
+
+  if (!groupId || !summary) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or summary data', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (!group.savedSummaries) {
+      group.savedSummaries = [];
+    }
+
+    group.savedSummaries.push({
+      ...summary,
+      savedBy: userId,
+      savedAt: new Date()
+    });
+
+    await group.save();
+
+    res.status(200).json({ success: true, message: 'Summary saved successfully', error: null });
+  } catch (err) {
+    console.error('Error saving summary:', err);
+    res.status(500).json({ success: false, message: 'Failed to save summary', error: err.message });
+  }
+}
+
 export const getSavedQuizzesHandler = async (req, res) => {
   // Logic for fetching saved quizzes for a group
-  const { groupId } = req.params;
+  const groupId = req.params.id || req.params.groupId;
 
   if (!groupId) {
     return res.status(400).json({ success: false, message: 'Missing groupId', error: 'missing-params' });
@@ -327,5 +447,29 @@ export const getSavedQuizzesHandler = async (req, res) => {
   } catch (err) {
     console.error('Error fetching saved quizzes:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch saved quizzes', error: err.message });
+  }
+}
+
+export const getSavedSummariesHandler = async (req, res) => {
+  // Logic for fetching saved summaries for a group
+  const groupId = req.params.id || req.params.groupId;
+
+  if (!groupId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    const savedSummaries = group.savedSummaries || [];
+
+    res.status(200).json({ success: true, summaries: savedSummaries, error: null });
+  } catch (err) {
+    console.error('Error fetching saved summaries:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch saved summaries', error: err.message });
   }
 }
