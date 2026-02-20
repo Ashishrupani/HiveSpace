@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Keyboard, InputAccessoryView, Platform } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
 import GoalProgressBar from '@/components/ui/goalsProgressbar';
 import { colors } from "../../../constants/theme";
@@ -27,6 +27,8 @@ export default function Goals() {
     const [editTarget, setEditTarget] = useState('');
     const [editColor, setEditColor] = useState('#4CAF50');
     const [editDueDate, setEditDueDate] = useState('');
+    const addTargetInputAccessoryId = 'addTargetInputAccessory-home-goals';
+    const editTargetInputAccessoryId = 'editTargetInputAccessory-home-goals';
 
     const colors_palette = ['#4CAF50', '#FF5722', '#2196F3', '#9C27B0', '#FF9800', '#00BCD4'];
 
@@ -155,7 +157,7 @@ export default function Goals() {
     return (
         <View style={styles.container}>
             <BackButton />
-            <Text style={pageStyles.title}>My Goals</Text>
+            <Text style={[pageStyles.title, styles.pageTitle]}>My Goals</Text>
             
             <View style={styles.toggleContainer}>
                 <TouchableOpacity 
@@ -283,7 +285,18 @@ export default function Goals() {
                             keyboardType="numeric"
                             value={newGoalTarget}
                             onChangeText={setNewGoalTarget}
+                            inputAccessoryViewID={addTargetInputAccessoryId}
                         />
+
+                        {Platform.OS === 'ios' && (
+                            <InputAccessoryView nativeID={addTargetInputAccessoryId}>
+                                <View style={styles.keyboardAccessory}>
+                                    <TouchableOpacity onPress={Keyboard.dismiss}>
+                                        <Text style={styles.keyboardAccessoryDone}>Done</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </InputAccessoryView>
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -412,7 +425,18 @@ export default function Goals() {
                             keyboardType="numeric"
                             value={editTarget}
                             onChangeText={setEditTarget}
+                            inputAccessoryViewID={editTargetInputAccessoryId}
                         />
+
+                        {Platform.OS === 'ios' && (
+                            <InputAccessoryView nativeID={editTargetInputAccessoryId}>
+                                <View style={styles.keyboardAccessory}>
+                                    <TouchableOpacity onPress={Keyboard.dismiss}>
+                                        <Text style={styles.keyboardAccessoryDone}>Done</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </InputAccessoryView>
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -466,6 +490,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f7f8fa',
         paddingTop: 60,
+    },
+    pageTitle: {
+        marginLeft: 10,
     },
     scrollView: {
         flex: 1,
@@ -626,6 +653,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
+    },
+    keyboardAccessory: {
+        backgroundColor: '#f2f2f2',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        alignItems: 'flex-end',
+    },
+    keyboardAccessoryDone: {
+        color: '#342A5f',
+        fontSize: 16,
+        fontWeight: '600',
     },
     addButtonText: {
         color: '#fff',

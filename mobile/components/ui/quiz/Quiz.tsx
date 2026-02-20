@@ -16,9 +16,10 @@ type QuizProps = {
   questions: Question[];
   groupId?: string;
   onFinish?: (result: { score: number; total: number; answers: (number | null)[] }) => void;
+  onBackToFileUpload?: () => void;
 };
 
-export default function Quiz({ questions, groupId, onFinish }: QuizProps) {
+export default function Quiz({ questions, groupId, onFinish, onBackToFileUpload }: QuizProps) {
   const [index, setIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<(number | null)[]>(Array(questions.length).fill(null));
   const [completed, setCompleted] = React.useState(false);
@@ -83,6 +84,12 @@ export default function Quiz({ questions, groupId, onFinish }: QuizProps) {
       <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={quizStyles.container}>
           <View style={quizStyles.card}>
+            {onBackToFileUpload && (
+              <TouchableOpacity style={quizStyles.fileUploadBackButton} onPress={onBackToFileUpload}>
+                <Ionicons name="arrow-back" size={18} color="#342A5f" />
+                <Text style={quizStyles.fileUploadBackText}>File Upload</Text>
+              </TouchableOpacity>
+            )}
             <Text style={quizStyles.resultTitle}>You scored {score} / {questions.length}</Text>
 
             {questions.map((q, i) => (

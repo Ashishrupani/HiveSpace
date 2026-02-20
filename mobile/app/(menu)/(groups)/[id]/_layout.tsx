@@ -43,6 +43,12 @@ export default function GroupLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="saved"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }
