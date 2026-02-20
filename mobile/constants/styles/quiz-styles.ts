@@ -14,6 +14,18 @@ export const quizStyles = StyleSheet.create({
   navButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#342A5f' },
   navButtonDisabled: { backgroundColor: '#ddd', opacity: 0.7 },
   navText: { color: '#fff', fontWeight: '600' },
+  fileUploadBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    gap: 4,
+  },
+  fileUploadBackText: {
+    color: '#342A5f',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   resultTitle: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
   reviewRow: { marginBottom: 12 },
   reviewQuestion: { fontWeight: '600' },

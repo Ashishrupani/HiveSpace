@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup, QuizOptions } from '@/api/ragApi';
+import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup, saveSummaryToGroup, QuizOptions } from '@/api/ragApi';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
 
 type AIMode = 'upload' | 'summary' | 'quiz';
@@ -24,6 +24,7 @@ export default function AIPage() {
   const [quizData, setQuizData] = useState<RAGQuiz | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [savingQuiz, setSavingQuiz] = useState(false);
+  const [savingSummary, setSavingSummary] = useState(false);
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const [quizOptions, setQuizOptions] = useState<QuizOptions>({ numQuestions: 10, difficulty: 'medium' });
   const [pendingQuizContent, setPendingQuizContent] = useState<string>('');
@@ -167,6 +168,25 @@ export default function AIPage() {
     }
   };
 
+  const handleSaveSummary = async () => {
+    if (!summaryData || !groupId) {
+      Alert.alert('Error', 'Unable to save summary - Missing summary data or group ID');
+      return;
+    }
+
+    setSavingSummary(true);
+    try {
+      await saveSummaryToGroup(groupId, summaryData);
+      Alert.alert('Success', 'Summary saved to group!');
+      setSavingSummary(false);
+    } catch (error: any) {
+      console.error('Save summary error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to save summary';
+      Alert.alert('Error', errorMsg);
+      setSavingSummary(false);
+    }
+  };
+
   if (showQuizOptions) {
     return (
       <Modal transparent animationType="slide">
@@ -276,7 +296,11 @@ export default function AIPage() {
             )}
           </TouchableOpacity>
         </View>
-        <QuizComponent questions={questions} groupId={groupId} />
+        <QuizComponent
+          questions={questions}
+          groupId={groupId}
+          onBackToFileUpload={() => setMode('upload')}
+        />
       </View>
     );
   }
@@ -293,33 +317,53 @@ export default function AIPage() {
 
   if (mode === 'summary' && summaryData) {
     return (
-      <ScrollView style={styles.container}>
-        <TouchableOpacity onPress={() => setMode('upload')} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#342A5f" />
-        </TouchableOpacity>
-        <View style={styles.contentPadding}>
-          <Text style={styles.title}>{summaryData.title}</Text>
-          <View style={styles.bulletContainer}>
-            {summaryData.bullets.map((bullet, idx) => (
-              <View key={idx} style={styles.bulletPoint}>
-                <Text style={styles.bulletDot}>•</Text>
-                <Text style={styles.bulletText}>{bullet}</Text>
-              </View>
-            ))}
-          </View>
-          {summaryData.keyTerms.length > 0 && (
-            <View style={styles.termsContainer}>
-              <Text style={styles.termsTitle}>Key Terms</Text>
-              {summaryData.keyTerms.map((item, idx) => (
-                <View key={idx} style={styles.termItem}>
-                  <Text style={styles.termName}>{item.term}</Text>
-                  <Text style={styles.termDef}>{item.definition}</Text>
+      <View style={styles.container}>
+        <View style={styles.quizHeaderContainer}>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity
+            style={[styles.saveQuizButton, savingSummary && styles.saveQuizButtonDisabled]}
+            onPress={handleSaveSummary}
+            disabled={savingSummary}
+          >
+            {savingSummary ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="bookmark" size={18} color="#fff" />
+                <Text style={styles.saveQuizButtonText}>Save Summary</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView>
+          <TouchableOpacity onPress={() => setMode('upload')} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#342A5f" />
+          </TouchableOpacity>
+          <View style={styles.contentPadding}>
+            <Text style={styles.title}>{summaryData.title}</Text>
+            <View style={styles.bulletContainer}>
+              {summaryData.bullets.map((bullet, idx) => (
+                <View key={idx} style={styles.bulletPoint}>
+                  <Text style={styles.bulletDot}>•</Text>
+                  <Text style={styles.bulletText}>{bullet}</Text>
                 </View>
               ))}
             </View>
-          )}
-        </View>
-      </ScrollView>
+            {summaryData.keyTerms.length > 0 && (
+              <View style={styles.termsContainer}>
+                <Text style={styles.termsTitle}>Key Terms</Text>
+                {summaryData.keyTerms.map((item, idx) => (
+                  <View key={idx} style={styles.termItem}>
+                    <Text style={styles.termName}>{item.term}</Text>
+                    <Text style={styles.termDef}>{item.definition}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 

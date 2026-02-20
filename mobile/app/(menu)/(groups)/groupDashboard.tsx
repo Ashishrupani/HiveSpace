@@ -11,9 +11,21 @@ type JoinedGroup = {
   id: string;
   name: string;
   members: number;
+  about?: string;
   iconName?: string;
   logoUri?: string;
   color?: string;
+};
+
+const getHardcodedGroupDescription = (groupName?: string, about?: string) => {
+  const normalized = String(groupName ?? '').trim().toLowerCase();
+
+  if (normalized === 'creativity') return 'where we get creative';
+  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
+  if (normalized === 'book club') return 'where we read';
+
+  const trimmedAbout = String(about ?? '').trim();
+  return trimmedAbout || 'A place to collaborate and grow together.';
 };
 
 export default function GroupDashboard() {
@@ -43,6 +55,7 @@ export default function GroupDashboard() {
         id: String(g.id ?? g._id ?? ''),
         name: String(g.name ?? ''),
         members: Number(g.members ?? g.memberCount ?? g.UID?.length ?? 0),
+        about: getHardcodedGroupDescription(g.name, g.about),
         iconName: g.icon ?? g.iconName ?? 'person.3.fill', // Map 'icon' from backend to 'iconName'
         logoUri: g.logoUri,
         color: g.color ?? '#342A5f', // Add color mapping with default
@@ -75,7 +88,36 @@ export default function GroupDashboard() {
       }
 
       const joined = normalizeGroups(response.data);
-      setGroups(joined);
+
+      const enrichedGroups = await Promise.all(
+        joined.map(async (group) => {
+          try {
+            const detailsResponse = await axios.post(
+              `${baseUrl}/api/groups/${group.id}`,
+              { groupId: group.id },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const details = detailsResponse?.data?.groupDetails;
+
+            if (!details) return group;
+
+            return {
+              ...group,
+              name: String(details.name ?? group.name),
+              members: Number(details.UID?.length ?? group.members),
+              iconName: details.icon ?? details.iconName ?? group.iconName,
+              logoUri: details.logoUri ?? group.logoUri,
+              color: details.color ?? group.color,
+              about: getHardcodedGroupDescription(details.name ?? group.name, details.about ?? group.about),
+            };
+          } catch {
+            return group;
+          }
+        })
+      );
+
+      setGroups(enrichedGroups);
     } catch (e: any) {
       const message =
         e?.response?.data?.message ??
@@ -126,6 +168,8 @@ export default function GroupDashboard() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={groupDashboardStyles.scrollContent}>
+        <Text style={groupDashboardStyles.pageTitle}>My Groups</Text>
+
         {!!error && <Text style={{ marginBottom: 12 } as any}>{error}</Text>}
 
         {!error && groups.length === 0 && (
@@ -139,6 +183,7 @@ export default function GroupDashboard() {
             key={g.id}
             name={g.name}
             members={g.members}
+            about={g.about}
             iconName={g.iconName}
             logoUri={g.logoUri}
             color={g.color}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { getSavedQuizzes, SavedQuiz } from '@/api/ragApi';
+import { getSavedQuizzes, getSavedSummaries, SavedQuiz, SavedSummary } from '@/api/ragApi';
 import BaseCard from './baseCard';
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
 
 export default function SavedQuizzesCard({ groupId, width = 140, height = 150, onSelectQuiz }: Props) {
   const [quizzes, setQuizzes] = useState<SavedQuiz[]>([]);
+  const [summaries, setSummaries] = useState<SavedSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,10 +23,15 @@ export default function SavedQuizzesCard({ groupId, width = 140, height = 150, o
   const fetchSavedQuizzes = async () => {
     try {
       setLoading(true);
-      const data = await getSavedQuizzes(groupId);
-      setQuizzes(data || []);
+      const [quizData, summaryData] = await Promise.all([
+        getSavedQuizzes(groupId),
+        getSavedSummaries(groupId),
+      ]);
+      setQuizzes(quizData || []);
+      setSummaries(summaryData || []);
     } catch (err) {
       setQuizzes([]);
+      setSummaries([]);
     } finally {
       setLoading(false);
     }
@@ -49,8 +55,14 @@ export default function SavedQuizzesCard({ groupId, width = 140, height = 150, o
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.quizCount}>{quizzes.length}</Text>
-        <Text style={styles.quizMeta}>Saved Quizzes</Text>
+        <View style={styles.metricColumn}>
+          <Text style={styles.metricCount}>{quizzes.length}</Text>
+          <Text style={styles.metricLabel}>Saved quizzes</Text>
+        </View>
+        <View style={styles.metricColumn}>
+          <Text style={styles.metricCount}>{summaries.length}</Text>
+          <Text style={styles.metricLabel}>Saved summaries</Text>
+        </View>
       </View>
     </BaseCard>
   );
@@ -83,19 +95,24 @@ const styles = StyleSheet.create({
   },
   body: {
     marginTop: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-around',
     flex: 1,
   },
-  quizCount: {
-    fontSize: 28,
+  metricColumn: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  metricCount: {
+    fontSize: 24,
     fontWeight: '700',
     color: '#342A5f',
   },
-  quizMeta: {
+  metricLabel: {
     color: '#666',
     marginTop: 4,
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center',
   },
 });

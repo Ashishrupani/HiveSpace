@@ -26,6 +26,11 @@ export type SavedQuiz = RAGQuiz & {
   savedAt: string;
 };
 
+export type SavedSummary = RAGSummary & {
+  savedBy: string;
+  savedAt: string;
+};
+
 export type QuizOptions = {
   numQuestions: number;
   difficulty: 'easy' | 'medium' | 'hard';
@@ -70,4 +75,21 @@ export const saveQuizToGroup = async (groupId: string, quiz: RAGQuiz): Promise<v
 export const getSavedQuizzes = async (groupId: string): Promise<SavedQuiz[]> => {
   const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-quizzes`);
   return response.data.quizzes;
+};
+
+export const getSavedSummaries = async (groupId: string): Promise<SavedSummary[]> => {
+  const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-summaries`);
+  return response.data.summaries;
+};
+
+export const saveSummaryToGroup = async (groupId: string, summary: RAGSummary): Promise<void> => {
+  try {
+    const response = await axios.post(`${baseUrl}/api/groups/${groupId}/save-summary`, {
+      summary,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error saving summary:', error.response?.data || error.message);
+    throw error;
+  }
 };
