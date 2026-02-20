@@ -81,6 +81,10 @@ export default function GroupHome() {
       return Array.from(new Set(raw));
     }, []);
 
+    // Add refs to prevent duplicate API calls
+    const savedCountsFetchedRef = React.useRef<string | null>(null);
+    const groupMetaFetchedRef = React.useRef<string | null>(null);
+
     const postWithBaseFallback = React.useCallback(
       async (path: string, body: any, token: string) => {
         let lastError: any = null;
@@ -129,7 +133,8 @@ export default function GroupHome() {
 
     React.useEffect(() => {
       const fetchSavedCounts = async () => {
-        if (!groupId) return;
+        if (!groupId || savedCountsFetchedRef.current === groupId) return;
+        savedCountsFetchedRef.current = groupId;
         try {
           const [quizzes, summaries] = await Promise.all([
             getSavedQuizzes(groupId),
@@ -148,8 +153,8 @@ export default function GroupHome() {
 
     React.useEffect(() => {
       const fetchGroupMeta = async () => {
-        if (!groupId || !isLoaded || !user?.id) return;
-
+        if (!groupId || !isLoaded || !user?.id || groupMetaFetchedRef.current === groupId) return;
+        groupMetaFetchedRef.current = groupId;
         try {
           const token = await getToken();
           if (!token) return;
