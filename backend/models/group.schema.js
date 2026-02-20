@@ -31,6 +31,17 @@ const groupSchema = new Schema(
             }],
             savedBy: String,
             savedAt: { type: Date, default: Date.now }
+        }] },
+        //saved summaries from AI
+        savedSummaries: { type: [{
+            title: String,
+            bullets: [String],
+            keyTerms: [{
+                term: String,
+                definition: String
+            }],
+            savedBy: String,
+            savedAt: { type: Date, default: Date.now }
         }] }
 
     },
