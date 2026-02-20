@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import homeRoutes from './routes/homeRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import ragRoutes from "./routes/ragRoutes.js";
+import app from "./app.js";
 
 //load environmental variables
 dotenv.config();
@@ -19,9 +20,6 @@ mongoose.connect(process.env.MONGO_DB_URI).then(()=>{
 }).catch((err)=>{
     console.log(err.message);
 });
-
-//express app
-const app = express();
 
 app.use(clerkMiddleware());
 
