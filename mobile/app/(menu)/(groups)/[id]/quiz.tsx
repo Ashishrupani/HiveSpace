@@ -6,6 +6,7 @@ import * as FileSystem from 'expo-file-system';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup, saveSummaryToGroup, QuizOptions } from '@/api/ragApi';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 
 type AIMode = 'upload' | 'summary' | 'quiz';
 
@@ -29,6 +30,7 @@ export default function AIPage() {
   const [quizOptions, setQuizOptions] = useState<QuizOptions>({ numQuestions: 10, difficulty: 'medium' });
   const [pendingQuizContent, setPendingQuizContent] = useState<string>('');
   const [generationsRemaining, setGenerationsRemaining] = useState(4);
+  const { getToken } = useAuth();
 
   const pickAndUploadDocument = async () => {
     try {
@@ -148,6 +150,8 @@ export default function AIPage() {
   };
 
   const handleSaveQuiz = async () => {
+    const token = await getToken();
+
     if (!quizData || !groupId) {
       console.log('Save quiz - Missing data:', { quizData: !!quizData, groupId });
       Alert.alert('Error', 'Unable to save quiz - Missing quiz data or group ID');
@@ -157,7 +161,7 @@ export default function AIPage() {
     setSavingQuiz(true);
     try {
       console.log('Saving quiz to group:', groupId);
-      await saveQuizToGroup(groupId, quizData);
+      await saveQuizToGroup(groupId, quizData, token);
       Alert.alert('Success', 'Quiz saved to group!');
       setSavingQuiz(false);
     } catch (error: any) {
@@ -169,6 +173,8 @@ export default function AIPage() {
   };
 
   const handleSaveSummary = async () => {
+    const token = await getToken();
+
     if (!summaryData || !groupId) {
       Alert.alert('Error', 'Unable to save summary - Missing summary data or group ID');
       return;
@@ -176,7 +182,7 @@ export default function AIPage() {
 
     setSavingSummary(true);
     try {
-      await saveSummaryToGroup(groupId, summaryData);
+      await saveSummaryToGroup(groupId, summaryData, token);
       Alert.alert('Success', 'Summary saved to group!');
       setSavingSummary(false);
     } catch (error: any) {
