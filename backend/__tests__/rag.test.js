@@ -1,18 +1,5 @@
 import { jest } from '@jest/globals';
 
-// ---------------------------------------------------------------------------
-// Mock @google/genai BEFORE any controller import.
-//
-// IMPORTANT: `jest.mock()` is hoisted to the top of the file by Jest at
-// compile time, which means any variables defined in the outer scope (e.g.
-// `const mockGenerateContent = jest.fn()`) are in the temporal dead zone
-// when the factory runs and will throw:
-//   "Cannot access 'mockGenerateContent' before initialization"
-//
-// The fix: define the mock fn INSIDE the factory, then retrieve it
-// afterward by importing the mocked module and reading it off the instance.
-// ---------------------------------------------------------------------------
-
 beforeAll(() => {
   jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -22,6 +9,8 @@ afterAll(() => {
   jest.restoreAllMocks();
 });
 
+// With Babel, jest.mock IS hoisted, so we define mockGenerateContent
+// inside the factory and retrieve it afterward via the mocked module instance
 jest.mock('@google/genai', () => ({
   GoogleGenAI: jest.fn().mockImplementation(() => ({
     models: {
@@ -30,16 +19,14 @@ jest.mock('@google/genai', () => ({
   })),
 }));
 
-// Import controllers AFTER the mock is registered
 import { ragSummaryHandler, ragQuizHandler, ragHealthHandler } from '../controllers/ragControllers.js';
 import { GoogleGenAI } from '@google/genai';
 
-// ---------------------------------------------------------------------------
-// Grab the shared mock fn from the instance the controller already created.
-// GoogleGenAI was called once at module load time; its return value is the
-// `ai` object the controller holds, so we reach in and get generateContent.
-// ---------------------------------------------------------------------------
-const mockGenerateContent = GoogleGenAI.mock.results[0].value.models.generateContent;
+// Retrieve the mock from the instance the controller already created at module load
+let mockGenerateContent;
+beforeAll(() => {
+  mockGenerateContent = GoogleGenAI.mock.results[0].value.models.generateContent;
+});
 
 // ---------------------------------------------------------------------------
 // Canned LLM responses
@@ -297,7 +284,6 @@ describe('ragSummaryHandler – LLM behaviour', () => {
     const res = makeMockRes();
     await ragSummaryHandler({ body: { note: SAMPLE_NOTE_SUMMARY } }, res);
 
-    // JSON.parse throws → caught by the try/catch → llm-failed
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'llm-failed' })
@@ -492,7 +478,7 @@ describe('ragQuizHandler – LLM behaviour', () => {
 
   it('returns 500 + invalid-llm-json when the LLM returns a valid JSON object missing the questions array', async () => {
     mockGenerateContent.mockResolvedValueOnce({
-      text: JSON.stringify({ title: 'Broken quiz' }), // missing `questions`
+      text: JSON.stringify({ title: 'Broken quiz' }),
     });
 
     const res = makeMockRes();
