@@ -11,15 +11,38 @@ import User from '../models/user.schema.js';
 7. - goal-not-found: The specified goal to update or delete does not exist in the user's goals array.
 8. - failed-to-update-goal: An error occurred while trying to update an existing goal for the user.
 9. - invalid-goal-data: The data provided for creating or updating a goal is invalid or incomplete.
+10.- user-manager-failed: The user manager failed with fetching or creating a user.
 
  */
 
-export const dashboardHandler = (req, res) => {
-    res.send("Welcome to the dashboard!")
-};
 
-export const profileHandler = (req, res) => {
-    res.send("This is your profile page!")
+
+export const dashboardHandler = async (req, res) => {
+    // Populate user's dashboard
+    const userId = req.userId;
+
+    try{
+    // Verify that the user exists in the system
+    const isUser = await User.findOne({UID : userId});
+
+    // if no such user exists create an entry
+    if (!isUser){
+        const newUser = new User({UID : userId})
+        await newUser.save();
+
+        //Send the data to populate dashboard
+        res.status(200).json({ success: true, user : newUser , err: null });
+        
+    }
+
+        //Send the data to populate dashboard
+        res.status(200).json({ success: true, user : isUser , err: null });
+
+    }
+    catch(err){
+        console.error("Error with managing User:", err);
+        res.status(500).json({ success: false, message: "Failed in User manager", err: "user-manager-failed" });
+    }
 };
 
 export const createGoalHandler = async (req, res) => {
