@@ -1,0 +1,23 @@
+# backend/Dockerfile
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files for deterministic installs
+COPY package*.json ./
+
+# Install production dependencies only (skips jest, nodemon, babel, etc.)
+RUN npm ci --omit=dev
+
+# Copy only what's needed to run the app
+COPY controllers/ ./controllers/
+COPY middleware/ ./middleware/
+COPY models/ ./models/
+COPY routes/ ./routes/
+COPY app.js .
+COPY server.js .
+
+EXPOSE 5000
+
+CMD ["node", "server.js"]
