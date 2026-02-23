@@ -68,7 +68,7 @@ export const findGroupHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name
-    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0, color: group.color, icon: group.icon, about: withDefaultAbout(group.name, group.about) }));
+    const groupData = groups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0, color: group.color, icon: group.icon, about: group.about }));
 
     res.status(200).json({ success: true, groups: groupData, error: null });
   } catch (err) {
@@ -102,8 +102,7 @@ export const createGroupHandler = async (req, res) => {
     }
 
     // Create a new group
-    const resolvedAbout = withDefaultAbout(groupName, about);
-    const newGroup = new Group({ name: groupName, about: resolvedAbout, adminUID: userId, UID: [userId], icon: iconName, color });
+    const newGroup = new Group({ name: groupName, about , adminUID: userId, UID: [userId], icon: iconName, color });
     await newGroup.save();
     res.status(200).json({ success: true, message: 'Group created successfully', groupId: newGroup._id, error: null });
 
@@ -115,8 +114,7 @@ export const createGroupHandler = async (req, res) => {
 }
 
 export const updateGroupHandler = async (req, res) => {
-  const groupId = req.params.id || req.body.groupId;
-  const { groupName, about, iconName, color } = req.body;
+  const { groupId, groupName, about, iconName, color } = req.body;
   const userId = req.userId;
 
   if (!groupId || !userId) {
@@ -149,7 +147,7 @@ export const updateGroupHandler = async (req, res) => {
     }
 
     group.name = groupName.trim();
-    group.about = withDefaultAbout(group.name, typeof about === 'string' ? about : '');
+    group.about = about ? about.trim() : group.about;
     group.icon = iconName || group.icon;
     group.color = color || group.color;
 
@@ -161,7 +159,7 @@ export const updateGroupHandler = async (req, res) => {
       group: {
         id: group._id,
         name: group.name,
-        about: withDefaultAbout(group.name, group.about),
+        about: group.about,
         icon: group.icon,
         color: group.color,
       },
@@ -202,9 +200,7 @@ export const getGroupDetailsHandler = async (req, res) => {
     }
 
     // Return group details if the user is a member and group is found
-    const groupDetailsData = groupDetails.toObject ? groupDetails.toObject() : groupDetails;
-    groupDetailsData.about = withDefaultAbout(groupDetailsData.name, groupDetailsData.about);
-    res.status(200).json({ success: true, groupDetails: groupDetailsData, message: 'Group details fetched successfully', error: null });
+    res.status(200).json({ success: true, groupDetails: groupDetails, message: 'Group details fetched successfully', error: null });
   }
   catch (err) {
 
@@ -326,7 +322,7 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
     }
 
     // only send necessary group data such as id and group name, and number of members (length of UID array), color and icon for the group
-    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 , color: group.color, icon: group.icon, about: withDefaultAbout(group.name, group.about) }));
+    const groupData = joinedGroups.map(group => ({ id: group._id, name: group.name, members: group.UID?.length ?? 0 , color: group.color, icon: group.icon, about: group.about }));
 
     // Return the list of joined groups
     res.status(200).json({ success: true, groups: groupData, error: null });

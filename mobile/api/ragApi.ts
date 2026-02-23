@@ -60,10 +60,15 @@ export const checkRagHealth = async (): Promise<boolean> => {
   }
 };
 
-export const saveQuizToGroup = async (groupId: string, quiz: RAGQuiz): Promise<void> => {
+export const saveQuizToGroup = async (groupId: string, quiz: RAGQuiz, token : string | null): Promise<void> => {
+
   try {
     const response = await axios.post(`${baseUrl}/api/groups/${groupId}/save-quiz`, {
       quiz,
+    }, {
+      headers: {
+            Authorization: `Bearer ${token}`,
+          }
     });
     return response.data;
   } catch (error: any) {
@@ -72,17 +77,17 @@ export const saveQuizToGroup = async (groupId: string, quiz: RAGQuiz): Promise<v
   }
 };
 
-export const getSavedQuizzes = async (groupId: string): Promise<SavedQuiz[]> => {
+export const getSavedQuizzes = async (groupId: string, token : string | null): Promise<SavedQuiz[]> => {
   const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-quizzes`);
   return response.data.quizzes;
 };
 
-export const getSavedSummaries = async (groupId: string): Promise<SavedSummary[]> => {
+export const getSavedSummaries = async (groupId: string, token : string | null): Promise<SavedSummary[]> => {
   const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-summaries`);
   return response.data.summaries;
 };
 
-export const saveSummaryToGroup = async (groupId: string, summary: RAGSummary): Promise<void> => {
+export const saveSummaryToGroup = async (groupId: string, summary: RAGSummary, token : string | null): Promise<void> => {
   try {
     const response = await axios.post(`${baseUrl}/api/groups/${groupId}/save-summary`, {
       summary,

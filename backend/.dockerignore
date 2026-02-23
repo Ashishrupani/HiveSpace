@@ -1,0 +1,51 @@
+# backend/.dockerignore
+
+# Dependencies (will be reinstalled in container)
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Tests
+*.test.js
+*.spec.js
+__tests__/
+coverage/
+.nyc_output/
+
+# Environment files (keep secrets out of the image)
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker itself
+Dockerfile
+.dockerignore
+
+# Docs
+README.md
+docs/
+
+babel.config.js  
+setup.txt          

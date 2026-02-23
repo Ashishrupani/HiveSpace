@@ -98,25 +98,17 @@ export default function GroupHome() {
 
     const updateGroupWithFallback = React.useCallback(
       async (groupIdValue: string, payload: any, token: string) => {
-        const paths = [
-          `/api/groups/${groupIdValue}/update`,
-          `/api/groups/update/${groupIdValue}`,
-          `/api/groups/updateGroup`,
-        ];
+        const path = `/api/groups/updateGroup`;
 
         let lastError: any = null;
-        for (const path of paths) {
           try {
-            const body = path.endsWith('/updateGroup')
-              ? { ...payload, groupId: groupIdValue }
-              : payload;
+            const body = path ? { ...payload, groupId: groupIdValue } : payload;
 
             const response = await postWithBaseFallback(path, body, token);
             return response;
           } catch (error: any) {
             lastError = error;
           }
-        }
 
         throw lastError;
       },

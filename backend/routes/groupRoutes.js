@@ -1,8 +1,11 @@
 import express from 'express';
 import { debugMiddleware } from '../middleware/debug.js';
-// Import authentication middleware //WIP -- haven't implemented yet but will do later
 import { verifyAuth } from "../middleware/verifyAuth.js";
-import { groupHomeHandler, findGroupHandler, createGroupHandler, updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler} from '../controllers/groupControllers.js';
+import { groupHomeHandler, findGroupHandler, createGroupHandler, 
+         updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, 
+         leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
+         getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler} 
+from '../controllers/groupControllers.js';
 
 
 const router = express.Router();
@@ -18,8 +21,6 @@ router.get("/find", debugMiddleware, verifyAuth, findGroupHandler);
 router.post("/createGroup", debugMiddleware, verifyAuth, createGroupHandler);
 
 // Update group details (name/about/icon/color)
-router.post("/:id/update", debugMiddleware, verifyAuth, updateGroupHandler);
-router.post("/update/:id", debugMiddleware, verifyAuth, updateGroupHandler);
 router.post("/updateGroup", debugMiddleware, verifyAuth, updateGroupHandler);
 
 //Get user's joined groups

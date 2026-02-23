@@ -11,7 +11,7 @@ const userSchema = new Schema(
         //user's stats and streaks
         stats: {
             time: Date,
-            straks: Number,
+            streaks: Number,
             personalBest: Number,
         },
         //user's goals and progress
