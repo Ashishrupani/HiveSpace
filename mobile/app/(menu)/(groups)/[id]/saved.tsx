@@ -5,6 +5,7 @@ import BackButton from '@/components/ui/BackButton';
 import BaseCard from '@/components/ui/cards/baseCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getSavedQuizzes, getSavedSummaries, SavedQuiz, SavedSummary } from '@/api/ragApi';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function SavedItemsPage() {
   const { id } = useLocalSearchParams();
@@ -13,14 +14,18 @@ export default function SavedItemsPage() {
   const [loading, setLoading] = React.useState(true);
   const [quizzes, setQuizzes] = React.useState<SavedQuiz[]>([]);
   const [summaries, setSummaries] = React.useState<SavedSummary[]>([]);
+  const { getToken } = useAuth();
 
   React.useEffect(() => {
     const loadSavedItems = async () => {
+
+      const token = await getToken();
+
       try {
         setLoading(true);
         const [savedQuizzes, savedSummaries] = await Promise.all([
-          getSavedQuizzes(groupId),
-          getSavedSummaries(groupId),
+          getSavedQuizzes(groupId, token),
+          getSavedSummaries(groupId, token),
         ]);
         setQuizzes(savedQuizzes || []);
         setSummaries(savedSummaries || []);

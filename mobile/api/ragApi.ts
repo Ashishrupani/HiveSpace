@@ -78,12 +78,20 @@ export const saveQuizToGroup = async (groupId: string, quiz: RAGQuiz, token : st
 };
 
 export const getSavedQuizzes = async (groupId: string, token : string | null): Promise<SavedQuiz[]> => {
-  const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-quizzes`);
+  const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-quizzes`, {
+      headers: {
+            Authorization: `Bearer ${token}`,
+          }
+    });
   return response.data.quizzes;
 };
 
 export const getSavedSummaries = async (groupId: string, token : string | null): Promise<SavedSummary[]> => {
-  const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-summaries`);
+  const response = await axios.get(`${baseUrl}/api/groups/${groupId}/saved-summaries`, {
+      headers: {
+            Authorization: `Bearer ${token}`,
+          }
+    });
   return response.data.summaries;
 };
 
@@ -91,6 +99,10 @@ export const saveSummaryToGroup = async (groupId: string, summary: RAGSummary, t
   try {
     const response = await axios.post(`${baseUrl}/api/groups/${groupId}/save-summary`, {
       summary,
+    }, {
+      headers: {
+            Authorization: `Bearer ${token}`,
+          }
     });
     return response.data;
   } catch (error: any) {
