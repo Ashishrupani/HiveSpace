@@ -15,30 +15,36 @@ type Player = {
   points: number;
 };
 
-const MOCK_PLAYERS: Player[] = [
-  { id: '1', name: 'Prakriti', points: 1280 },
-  { id: '2', name: 'Natalia', points: 1100 },
-  { id: '3', name: 'Maki', points: 980 },
-  { id: '4', name: 'Ashish', points: 850 },
-  { id: '5', name: 'Aaron', points: 720 },
-  { id: '6', name: "Abraham", points: 610 },
-  { id: '7', name: 'Dr. Wang', points: 520 },
-  { id: '8', name: 'Queen Bee', points: 450 },
-  { id: '9', name: 'Red Pepper', points: 390 },
-  { id: '10', name: 'Bee Astronaut', points: 330 },
-];
+type LeaderboardTab = 'Daily' | 'Weekly' | 'All time';
+
+type LeaderboardFeedState = {
+  players: Player[];
+  isConnected: boolean;
+};
+
+function useLeaderboardFeed(groupId: string | undefined, tab: LeaderboardTab): LeaderboardFeedState {
+  void groupId;
+  void tab;
+
+  return {
+    players: [],
+    isConnected: false,
+  };
+}
 
 export default function Leaderboard() {
   const { id } = useLocalSearchParams();
-  const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
+  const groupId = Array.isArray(id) ? id[0] : id;
+  const [tab, setTab] = useState<LeaderboardTab>('Daily');
+  const { players, isConnected } = useLeaderboardFeed(groupId, tab);
 
   const sorted = useMemo(() => {
-    // For now tabs don't change the mocked data, but we keep hook so it's easy to plug in real backend.
-    return MOCK_PLAYERS.slice().sort((a, b) => b.points - a.points);
-  }, [tab]);
+    return players.slice().sort((a, b) => b.points - a.points);
+  }, [players]);
 
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
+  const hasPlayers = sorted.length > 0;
 
   return (
     <LinearGradient
@@ -51,7 +57,7 @@ export default function Leaderboard() {
         <ThemedText type="title" style={styles.header}>
           Leaderboard
         </ThemedText>
-        <ThemedText style={styles.subheader}>Group ID: {id}</ThemedText>
+        <ThemedText style={styles.subheader}>Group ID: {groupId}</ThemedText>
 
         <View style={styles.tabRow}>
           {(['Daily', 'Weekly', 'All time'] as const).map((t) => (
@@ -65,7 +71,6 @@ export default function Leaderboard() {
           ))}
         </View>
 
-        {/* Podium */}
         <View style={styles.podiumRow}>
           <View style={styles.podiumSide}>
             {top3[1] && (
@@ -104,29 +109,39 @@ export default function Leaderboard() {
           </View>
         </View>
 
-        {/* List of remaining players in dark cards */}
-        <View style={styles.listWrap}>
-          <FlatList
-            data={rest}
-            keyExtractor={(p) => p.id}
-            renderItem={({ item, index }) => (
-              <View style={styles.listCard}>
-                <View style={styles.listLeft}>
-                  <View style={styles.avatarSmall}>
-                    <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
+        {hasPlayers ? (
+          <View style={styles.listWrap}>
+            <FlatList
+              data={rest}
+              keyExtractor={(p) => p.id}
+              renderItem={({ item }) => (
+                <View style={styles.listCard}>
+                  <View style={styles.listLeft}>
+                    <View style={styles.avatarSmall}>
+                      <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
+                    </View>
+                    <View style={styles.nameCol}>
+                      <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
+                      <ThemedText style={styles.username}>@username</ThemedText>
+                    </View>
                   </View>
-                  <View style={styles.nameCol}>
-                    <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
-                    <ThemedText style={styles.username}>@username</ThemedText>
-                  </View>
+                  <ThemedText style={styles.points}>{item.points}</ThemedText>
                 </View>
-                <ThemedText style={styles.points}>{item.points}</ThemedText>
-              </View>
-            )}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            contentContainerStyle={{ paddingBottom: 80 }}
-          />
-        </View>
+              )}
+              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+              contentContainerStyle={{ paddingBottom: 80 }}
+            />
+          </View>
+        ) : (
+          <View style={styles.emptyStateCard}>
+            <ThemedText style={styles.emptyStateTitle}>Leaderboard coming soon</ThemedText>
+            <ThemedText style={styles.emptyStateText}>
+              {isConnected
+                ? 'No rankings yet for this timeframe.'
+                : 'Live rankings will appear here once the WebSocket feed is connected.'}
+            </ThemedText>
+          </View>
+        )}
       </ScrollView>
     </LinearGradient>
   );
@@ -327,6 +342,23 @@ const styles = StyleSheet.create({
   points: {
     color: '#fff',
     fontWeight: '700',
+  },
+  emptyStateCard: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 10,
+    marginBottom: 80,
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    color: '#fff',
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  emptyStateText: {
+    color: 'rgba(255,255,255,0.75)',
+    textAlign: 'center',
   },
   separator: {
     height: 1,
