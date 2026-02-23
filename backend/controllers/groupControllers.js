@@ -449,3 +449,19 @@ export const getSavedSummariesHandler = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch saved summaries', error: err.message });
   }
 }
+
+export const getGroupLeaderboardHandler = async (req, res) => {
+  const groupId = req.params.id || req.params.groupId;
+
+  if (!groupId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId', error: 'missing-params' });
+  }
+
+  return res.status(200).json({
+    success: true,
+    groupId,
+    leaderboard: [],
+    message: 'Leaderboard controller placeholder. WebSocket integration pending.',
+    error: null,
+  });
+}
