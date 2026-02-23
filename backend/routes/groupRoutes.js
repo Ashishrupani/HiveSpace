@@ -4,7 +4,8 @@ import { verifyAuth } from "../middleware/verifyAuth.js";
 import { groupHomeHandler, findGroupHandler, createGroupHandler, 
          updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, 
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
-         getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler} 
+         getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
+         getGroupLeaderboardHandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -37,6 +38,9 @@ router.get("/:id/saved-quizzes", debugMiddleware, verifyAuth, getSavedQuizzesHan
 
 // Get saved summaries for a group (MUST COME BEFORE /:id route)
 router.get("/:id/saved-summaries", debugMiddleware, verifyAuth, getSavedSummariesHandler);
+
+// Get leaderboard for a group (placeholder until websocket is integrated)
+router.get("/:id/leaderboard", debugMiddleware, verifyAuth, getGroupLeaderboardHandler);
 
 // Join a group
 router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);
