@@ -5,19 +5,35 @@
 2. npm start or npm run start
 -> Make sure you see "Server running on port 5000"
 
+#run backend server
+1. npm run start (This will run the server)
+
 
 
 #Clerk info: https://clerk.com/docs/expressjs/getting-started/quickstart
 import { clerkClient, requireAuth, getAuth } from '@clerk/express'
 
-#run backend server
-1. npm run start (This will run the server)
+/-> We are using clerk for authentication.
+This is primarily done by the verifyAuth middleware which requires a JWT token in the request header.
+
+////------------------------------------------////
+/* Frontend */
+-An example of how the frontend sends the token
+axios.get(https://www.somewebsite.com, {
+    headers : {
+        Authorization : `Bearer ${token}`
+    }
+})
+
+/* Backend */
+-The verifyAuth will extract the token via the getAuth function provided by Clerk.
+////-------------------------------------------////
 
 
 #dev tools
 -> I have installed nodemon for this project(for backend)
--> Nodemon allows us to run the server while coding so we don't have to restart every time we make changes.
+-> Nodemon allows us to run the server while coding so we don't have to restart the server every time we make changes.
 
 1. npm run dev (This will start nodemon)
 
--Edited by Ashish R.
+-Edited by Ashish R. updated on 02/23/2026
