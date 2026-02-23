@@ -3,23 +3,9 @@ import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
 import User from "../models/user.schema.js";
 
-const getDefaultGroupAbout = (groupName = '') => {
-  const normalized = String(groupName).trim().toLowerCase();
-
-  if (normalized === 'creativity') return 'where we get creative';
-  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
-  if (normalized === 'book club') return 'where we read';
-
-  return 'A place to collaborate and grow together.';
-};
+const getDefaultGroupAbout = () => 'A place to collaborate and grow together.';
 
 const withDefaultAbout = (groupName, about) => {
-  const normalized = String(groupName).trim().toLowerCase();
-  // Always enforce agreed descriptions for specific groups, even if old text exists in DB
-  if (normalized === 'creativity') return 'where we get creative';
-  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
-  if (normalized === 'book club') return 'where we read';
-
   const trimmedAbout = typeof about === 'string' ? about.trim() : '';
   return trimmedAbout || getDefaultGroupAbout(groupName);
 };
