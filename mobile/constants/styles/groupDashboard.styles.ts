@@ -10,6 +10,12 @@ const groupDashboardStyles = StyleSheet.create({
     paddingTop: 24,
     gap: 18,
   },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#342A5f',
+    marginBottom: 2,
+  },
 });
 
 export default groupDashboardStyles;

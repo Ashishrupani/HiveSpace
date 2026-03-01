@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Keyboard, InputAccessoryView, Platform } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
 import GoalProgressBar from '@/components/ui/goalsProgressbar';
 import { colors } from "../../../../constants/theme";
@@ -44,6 +44,8 @@ export default function GroupGoals() {
     const [editTarget, setEditTarget] = useState('');
     const [editColor, setEditColor] = useState('#4CAF50');
     const [editDueDate, setEditDueDate] = useState('');
+    const addTargetInputAccessoryId = 'addTargetInputAccessory-group-goals';
+    const editTargetInputAccessoryId = 'editTargetInputAccessory-group-goals';
 
     const colors_palette = ['#4CAF50', '#FF5722', '#2196F3', '#9C27B0', '#FF9800', '#00BCD4'];
 
@@ -171,7 +173,7 @@ export default function GroupGoals() {
     return (
         <View style={styles.container}>
             <BackButton />
-            <Text style={pageStyles.title}>Group Goals</Text>
+            <Text style={[pageStyles.title, styles.pageTitle]}>Group Goals</Text>
             
             <View style={styles.toggleContainer}>
                 <TouchableOpacity 
@@ -299,7 +301,18 @@ export default function GroupGoals() {
                             keyboardType="numeric"
                             value={newGoalTarget}
                             onChangeText={setNewGoalTarget}
+                            inputAccessoryViewID={addTargetInputAccessoryId}
                         />
+
+                        {Platform.OS === 'ios' && (
+                            <InputAccessoryView nativeID={addTargetInputAccessoryId}>
+                                <View style={styles.keyboardAccessory}>
+                                    <TouchableOpacity onPress={Keyboard.dismiss}>
+                                        <Text style={styles.keyboardAccessoryDone}>Done</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </InputAccessoryView>
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -356,9 +369,18 @@ export default function GroupGoals() {
                 animationType="slide"
                 onRequestClose={() => setShowUpdateModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Update Progress</Text>
+                <TouchableOpacity 
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => {
+                        setShowUpdateModal(false);
+                        setUpdateValue('');
+                        setSelectedGoal(null);
+                    }}
+                >
+                    <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Update Progress</Text>
                         <Text style={styles.modalSubtitle}>{selectedGoal?.label}</Text>
                         
                         <TextInput
@@ -388,8 +410,9 @@ export default function GroupGoals() {
                                 <Text style={[styles.modalButtonText, styles.addButtonText]}>Update</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
+                        </View>
+                    </TouchableOpacity>
+                </TouchableOpacity>
             </Modal>
 
             {/* Edit Goal Details Modal */}
@@ -418,7 +441,18 @@ export default function GroupGoals() {
                             keyboardType="numeric"
                             value={editTarget}
                             onChangeText={setEditTarget}
+                            inputAccessoryViewID={editTargetInputAccessoryId}
                         />
+
+                        {Platform.OS === 'ios' && (
+                            <InputAccessoryView nativeID={editTargetInputAccessoryId}>
+                                <View style={styles.keyboardAccessory}>
+                                    <TouchableOpacity onPress={Keyboard.dismiss}>
+                                        <Text style={styles.keyboardAccessoryDone}>Done</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </InputAccessoryView>
+                        )}
 
                         <TextInput
                             style={styles.input}
@@ -472,6 +506,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f7f8fa',
         paddingTop: 60,
+    },
+    pageTitle: {
+        marginLeft: 10,
     },
     scrollView: {
         flex: 1,
@@ -632,6 +669,19 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
+    },
+    keyboardAccessory: {
+        backgroundColor: '#f2f2f2',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        alignItems: 'flex-end',
+    },
+    keyboardAccessoryDone: {
+        color: '#342A5f',
+        fontSize: 16,
+        fontWeight: '600',
     },
     addButtonText: {
         color: '#fff',

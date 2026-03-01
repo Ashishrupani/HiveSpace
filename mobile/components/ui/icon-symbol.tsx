@@ -26,6 +26,87 @@ const MAPPING: IconMapping = {
   'chart.bar.fill': 'bar-chart',
   'person.crop.circle': 'account-circle',
   'note.fill': 'note',
+  
+  // Group/Team Icons
+  'person.3.fill': 'group',
+  'person.2.fill': 'people',
+  'person.2.square.stack': 'groups',
+  'heart.circle.fill': 'favorite',
+  'star.fill': 'star',
+  
+  // Study/Education
+  'book.fill': 'book',
+  'graduationcap.fill': 'school',
+  'pencil': 'edit',
+  'lightbulb.fill': 'lightbulb',
+  'brain': 'psychology',
+  
+  // Space/Science
+  'sparkles': 'auto-awesome',
+  'moon.stars.fill': 'nights-stay',
+  'sun.max.fill': 'wb-sunny',
+  'globe': 'public',
+  'atom': 'science',
+  
+  // Activities/Hobbies
+  'music.note': 'music-note',
+  'gamecontroller.fill': 'sports-esports',
+  'dumbbell.fill': 'fitness-center',
+  'camera.fill': 'photo-camera',
+  'paintbrush.fill': 'brush',
+  'flag.fill': 'flag',
+  
+  // Work/Professional
+  'briefcase.fill': 'work',
+  'building.2.fill': 'business',
+  'chart.line.uptrend': 'trending-up',
+  'lightbulb.slash': 'tips-and-updates',
+  'hammer.fill': 'build',
+  
+  // Social/Community
+  'heart.fill': 'favorite',
+  'bubble.left.and.bubble.right.fill': 'chat',
+  'megaphone.fill': 'campaign',
+  'hands.sparkles.fill': 'volunteer-activism',
+  'gift.fill': 'card-giftcard',
+  
+  // Nature/Outdoor
+  'leaf.fill': 'eco',
+  'tree.fill': 'park',
+  'mountain.2.fill': 'terrain',
+  'flame.fill': 'local-fire-department',
+  'drop.fill': 'water-drop',
+  
+  // Food/Social
+  'cup.and.saucer.fill': 'local-cafe',
+  'fork.knife': 'restaurant',
+  'birthday.cake.fill': 'cake',
+  'mug.fill': 'local-bar',
+  
+  // Tech/Gaming
+  'cpu': 'developer-board',
+  'antenna.radiowaves.left.and.right': 'wifi',
+  'command': 'keyboard-command-key',
+  'shield.fill': 'security',
+  
+  // Creative
+  'wand.and.stars': 'auto-fix-high',
+  'theatermasks.fill': 'theater-comedy',
+  'film.fill': 'movie',
+  'mic.fill': 'mic',
+  
+  // Travel/Adventure
+  'airplane': 'flight',
+  'car.fill': 'directions-car',
+  'map.fill': 'map',
+  'compass.fill': 'explore',
+  
+  // Misc Cool Icons
+  'bolt.fill': 'bolt',
+  'crown.fill': 'workspace-premium',
+  'shield.checkered': 'verified',
+  'infinity': 'all-inclusive',
+  'target': 'gps-fixed',
 };
 
 // IconSymbolName is the union of keys actually present in MAPPING.

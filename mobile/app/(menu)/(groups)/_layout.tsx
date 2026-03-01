@@ -37,13 +37,6 @@ export default function GroupLayout() {
               tabBarStyle: { display: 'none' },
             }}
           />
-          <Tabs.Screen
-            name="groupSettings"
-            options={{
-              href: null,
-              tabBarStyle: { display: 'none' },
-            }} 
-          />
         </Tabs>
     </GroupGoalsProvider>
   )

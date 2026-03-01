@@ -60,6 +60,7 @@ const authStyles = StyleSheet.create({
 		shadowOpacity: Platform.OS === 'ios' ? 0.06 : 0.12,
 		shadowRadius: 2,
 		elevation: 2,
+		color: '#fff',
 	},
 	button: {
 		width: '100%',

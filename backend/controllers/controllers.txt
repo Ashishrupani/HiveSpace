@@ -1,6 +1,0 @@
--> This folder will be used for adding controllers
--> This file will also be deleted later.
-
-#We will use CLERK to handle a lot of logic.
-    - Still learning clerk
-    - Still learning clerks middlewares

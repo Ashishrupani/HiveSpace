@@ -11,18 +11,18 @@ type Props = {
 };
 
 export default function QuizCard({ onPress, width = 140, height = 150, nextQuiz }: Props) {
-  const sample = nextQuiz ?? { title: 'Daily Quiz', questions: 5 };
+  const sample = nextQuiz ?? { title: 'Upload Files', questions: 0 };
 
   return (
     <BaseCard width={width} height={height} onPress={onPress} style={styles.card}>
       <View style={styles.headerRow}>
         <Ionicons name="reader" size={18} color="#342A5f" />
-        <Text style={styles.headerText}> Quiz</Text>
+        <Text style={styles.headerText}> AI</Text>
       </View>
 
       <View style={styles.body}>
         <Text style={styles.quizTitle}>{sample.title}</Text>
-        <Text style={styles.quizMeta}>{sample.questions} questions</Text>
+        <Text style={styles.quizMeta}>Quiz & Summary Generation</Text>
       </View>
     </BaseCard>
   );

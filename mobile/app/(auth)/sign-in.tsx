@@ -2,175 +2,377 @@ import { useSignIn } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useNavigation, useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import { Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Animated,
+} from "react-native";
 import authStyles from "../../constants/styles/auth.styles";
-import colors from '../../constants/theme';
+import colors from "../../constants/theme";
+import showErrorToast from "../../components/ui/toast/ErrorToast";
 
 export default function Page() {
   const router = useRouter();
   const navigation = useNavigation();
+  const { signIn, setActive, isLoaded } = useSignIn();
+
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
     navigation.setOptions({
-      title: "",
-      headerStyle: { backgroundColor: "#08082B" },
-      headerTintColor: "#fff",
-      headerTitleAlign: "center",
-      headerShadowVisible: false,
-      headerLeft: () => (
-        <Pressable onPress={() => router.push("/")} style={{ marginLeft: 18 }}>
-          <Ionicons name="arrow-back" size={30} color="#fff" />
-        </Pressable>
-      ),
+      headerShown: false,
     });
+
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, [navigation]);
 
-  const { signIn, setActive, isLoaded } = useSignIn();
-
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-
-  // to handle the submission of the sign-in form
   const onSignInPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isLoading) return;
 
-    // Start the sign-in using email and password
+    if (!emailAddress.trim() || !password.trim()) {
+      showErrorToast("Please enter both email and password");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
       });
 
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/");
       } else {
-        // If not, check why. User might need to complete more steps.
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        
+        showErrorToast("Unable to complete sign in. Please try again.");
       }
-    } catch (err) {
-      // See https://clerk.com/docs/guides/development/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+    } catch (err: any) {
+
+      if (err.errors) {
+        const errorMessage =
+          err.errors[0]?.longMessage ||
+          err.errors[0]?.message ||
+          "Invalid email or password";
+        showErrorToast(errorMessage);
+      } else {
+        showErrorToast("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <LinearGradient
       colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
-      style={authStyles.container}
+      style={{ flex: 1 }}
     >
-      {/* Title and subtitle - top left corner, closer to arrow */}
-      <View
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 50,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <Text
-          style={[
-            authStyles.title,
-            {
-              marginTop: 20,
-              textAlign: "left",
-              alignSelf: "flex-start",
-              fontSize: 35,
-            },
-          ]}
-        >
-          Login
-        </Text>
-
-        <Text
-          style={[
-            authStyles.subtitle,
-            {
-              textAlign: "left",
-              alignSelf: "flex-start",
-              marginTop: 4,
-              fontSize: 14,
-            },
-          ]}
-        >
-          Please login or sign up to continue using our app
-        </Text>
-      </View>
-
-      {/* Cute image placeholder */}
-      <Text
-        style={{
-          color: colors.text,
-          fontSize: 15,
-          marginTop: 100,
-          marginBottom: 70,
-        }}
-      >
-        cute image
-      </Text>
-
-      {/* Input container (light background---shadow) */}
-      <View
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          backgroundColor: "rgba(255,255,255,0.08)",
-          borderRadius: 15,
-          padding: 25,
-          marginTop: 20,
-          marginBottom: 10,
-        }}
-      >
-        {/* email address input with (with shadow) */}
-        <TextInput
-          style={[authStyles.input, { marginBottom: 35, marginTop: 10 }]}
-          placeholder="Email address"
-          placeholderTextColor={colors.subtext}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={emailAddress}
-          onChangeText={setEmailAddress}
-        />
-
-        {/* Password input (with shadow) */}
-        <TextInput
-          style={[authStyles.input, { marginBottom: 50 }]}
-          placeholder="Password"
-          placeholderTextColor={colors.subtext}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {/* Forgot Password link */}
-        <Link
-          href="/reset-password"
+        {/* Header with back button */}
+        <View
           style={{
-            color: colors.subtext,
-            alignSelf: "flex-end",
-            marginBottom: 30,
-            marginTop: -48,
+            paddingTop: Platform.OS === "ios" ? 60 : 40,
+            paddingHorizontal: 20,
+            paddingBottom: 20,
           }}
         >
-          Forgot Password?
-        </Link>
+          <Pressable
+            onPress={() => router.push("/")}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: "rgba(255,255,255,0.1)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </Pressable>
+        </View>
 
-        {/* Login button */}
-        <TouchableOpacity style={authStyles.button} onPress={onSignInPress}>
-          <Text style={authStyles.buttonText}>Login</Text>
-        </TouchableOpacity>
-      </View>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 24,
+            paddingBottom: 40,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View style={{ opacity: fadeAnim, flex: 1 }}>
+            {/* Title Section */}
+            <View style={{ marginBottom: 40 }}>
+              <Text
+                style={{
+                  fontSize: 36,
+                  fontWeight: "bold",
+                  color: colors.text,
+                  marginBottom: 8,
+                  letterSpacing: 0.5,
+                }}
+              >
+                Welcome Back
+              </Text>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.subtext,
+                  lineHeight: 24,
+                }}
+              >
+                Sign in to continue your journey
+              </Text>
+            </View>
 
-      {/* Sign up link */}
-      <Text style={authStyles.footerText}>
-        Don’t have an account?{" "}
-        <Link href="/sign-up" style={{ color: colors.link }}>
-          Sign up
-        </Link>
-      </Text>
+            {/* Form Container */}
+            <View
+              style={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderRadius: 20,
+                padding: 24,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 5,
+              }}
+            >
+              {/* Email Input */}
+              <View style={{ marginBottom: 20 }}>
+                <Text
+                  style={{
+                    color: colors.subtext,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    marginLeft: 4,
+                  }}
+                >
+                  Email Address
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor:
+                      focusedInput === "email"
+                        ? colors.link
+                        : "rgba(255,255,255,0.1)",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    height: 56,
+                    shadowColor: colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                >
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={colors.subtext}
+                    style={{ marginRight: 12 }}
+                  />
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      fontSize: 16,
+                      color: "#fff",
+                    }}
+                    placeholder="Enter your email"
+                    placeholderTextColor={colors.subtext}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    value={emailAddress}
+                    onChangeText={setEmailAddress}
+                    onFocus={() => setFocusedInput("email")}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{
+                    color: colors.subtext,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 8,
+                    marginLeft: 4,
+                  }}
+                >
+                  Password
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor:
+                      focusedInput === "password"
+                        ? colors.link
+                        : "rgba(255,255,255,0.1)",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    height: 56,
+                    shadowColor: colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                >
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color={colors.subtext}
+                    style={{ marginRight: 12 }}
+                  />
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      fontSize: 16,
+                      color: "#fff",
+                    }}
+                    placeholder="Enter your password"
+                    placeholderTextColor={colors.subtext}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocusedInput("password")}
+                    onBlur={() => setFocusedInput(null)}
+                    editable={!isLoading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color={colors.subtext}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Forgot Password */}
+              <Link
+                href="/reset-password"
+                style={{
+                  color: colors.link,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  alignSelf: "flex-end",
+                  marginBottom: 24,
+                }}
+              >
+                Forgot Password?
+              </Link>
+
+              {/* Login Button */}
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.link,
+                  borderRadius: 12,
+                  height: 56,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  shadowColor: colors.link,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 5,
+                  opacity: isLoading ? 0.7 : 1,
+                }}
+                onPress={onSignInPress}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 18,
+                      fontWeight: "700",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Sign In
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Spacer to push footer to bottom */}
+            <View style={{ flex: 1, minHeight: 40 }} />
+
+            {/* Sign up link */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                paddingTop: 20,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.subtext,
+                  fontSize: 15,
+                }}
+              >
+                Don't have an account?{" "}
+              </Text>
+              <Link
+                href="/sign-up"
+                style={{
+                  color: colors.link,
+                  fontSize: 15,
+                  fontWeight: "700",
+                }}
+              >
+                Sign Up
+              </Link>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }

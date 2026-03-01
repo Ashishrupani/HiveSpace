@@ -11,11 +11,11 @@ const userSchema = new Schema(
         //user's stats and streaks
         stats: {
             time: Date,
-            straks: Number,
+            streaks: Number,
             personalBest: Number,
         },
         //user's goals and progress
-        Goals: { type: [String], progress: [Number] },
+        Goals: { id : String, label: String, progress: Number, target: Number, color : String, deadline: String },
     },
     { timestamps: true }
 );

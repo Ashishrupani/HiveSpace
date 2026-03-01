@@ -26,8 +26,8 @@ export default function GroupLayout() {
       <Tabs.Screen
         name="quiz"
         options={{
-          title: 'Quiz',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="questionmark.circle.fill" color={color} />,
+          title: 'AI',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -37,8 +37,21 @@ export default function GroupLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
         }}
       />
+      {/* <Tabs.Screen
+        name="info"
+        options={{
+          title: 'Info',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="info.circle.fill" color={color} />,
+        }}
+      /> */}
       <Tabs.Screen
         name="groupGoals"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="saved"
         options={{
           href: null,
         }}
