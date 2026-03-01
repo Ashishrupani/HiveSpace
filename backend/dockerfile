@@ -1,6 +1,6 @@
 # backend/Dockerfile
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -10,6 +10,9 @@ COPY package*.json ./
 # Install production dependencies only (skips jest, nodemon, babel, etc.)
 RUN npm ci --omit=dev
 
+# Adding a block to have root only in app
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copy only what's needed to run the app
 COPY controllers/ ./controllers/
 COPY middleware/ ./middleware/
@@ -17,6 +20,11 @@ COPY models/ ./models/
 COPY routes/ ./routes/
 COPY app.js .
 COPY server.js .
+
+# Lock down file ownership
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 5000
 
