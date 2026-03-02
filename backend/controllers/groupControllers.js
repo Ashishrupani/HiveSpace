@@ -3,6 +3,12 @@ import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
 import User from "../models/user.schema.js";
 
+const getDefaultGroupAbout = () => 'A place to collaborate and grow together.';
+
+const withDefaultAbout = (groupName, about) => {
+  const trimmedAbout = typeof about === 'string' ? about.trim() : '';
+  return trimmedAbout || getDefaultGroupAbout(groupName);
+};
 
 /** Important Note **
 List of error codes used in this file for various error scenarios:
