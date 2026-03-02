@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
-
 const userSchema = new Schema(
     {
         //user Id from Clerk
@@ -19,7 +18,5 @@ const userSchema = new Schema(
     },
     { timestamps: true }
 );
-
 const User = mongoose.model('User', userSchema);
-
 export default User;
