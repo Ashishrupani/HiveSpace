@@ -1,52 +1,162 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
-import { Calendar } from 'react-native-calendars';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import colors from '@/constants/theme'; // Assuming this path exists based on your snippet
+import React from "react";
+import { View, Text, StyleSheet, Platform, Pressable } from "react-native";
+import { Calendar } from "react-native-calendars";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import colors from "@/constants/theme";
 
-// Helper to get screen width for responsive sizing
-const { width, height } = Dimensions.get('window');
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-expo";
+
+type Marking = {
+  bgColor?: string;
+  textColor?: string;
+  score?: number; // minutes (optional)
+};
+
+const formatDuration = (totalSeconds: number) => {
+  const secs = Math.max(0, Math.floor(totalSeconds || 0));
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
+
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 export default function StatsScreen() {
-  // FIXED: Updated data to actually reflect a 2-day streak (Today + Yesterday)
-  // and removed the contradiction.
-  const data = {
-    '2025-10-27': { bgColor: 'rgba(112, 96, 165, 0.4)', textColor: '#fff', score: 2 },
-    '2025-10-28': { bgColor: 'rgba(131, 114, 186, 0.6)', textColor: '#fff', score: 4 },
-    '2025-10-29': { bgColor: 'rgba(157, 137, 222, 0.8)', textColor: '#fff', score: 6 },
-    '2025-10-30': { bgColor: '#8372ba', textColor: '#fff', score: 8 },
-    '2025-10-31': { bgColor: 'rgba(112, 96, 165, 0.4)', textColor: '#fff', score: 3 },
+  const { getToken } = useAuth();
 
-    // Previous cluster
-    '2025-11-02': { bgColor: 'rgba(112, 96, 165, 0.5)', textColor: '#fff', score: 5 },
-    '2025-11-03': { bgColor: 'rgba(112, 96, 165, 0.5)', textColor: '#fff', score: 5 },
+  const [markedDates, setMarkedDates] = React.useState<Record<string, Marking>>({});
+  const [dailyTotals, setDailyTotals] = React.useState<Record<string, number>>({});
 
-    // Current Week Streak (Yesterday + Today)
-    '2025-11-25': { bgColor: 'rgba(131, 114, 186, 0.6)', textColor: '#fff', score: 4 },
-    '2025-11-26': { bgColor: colors.accent || '#00D4FF', textColor: '#fff', isToday: true },
-  } as any;
+  // Default selected day = today
+  const [selectedDate, setSelectedDate] = React.useState<string>(isoDate(new Date()));
+
+  const [weeklyTotalSec, setWeeklyTotalSec] = React.useState<number>(0);
+  const [currentStreak, setCurrentStreak] = React.useState<number>(0);
+
+  const [activeYear, setActiveYear] = React.useState<number>(new Date().getFullYear());
+  const [activeMonth, setActiveMonth] = React.useState<number>(new Date().getMonth() + 1);
+
+  const API_BASE = process.env.EXPO_PUBLIC_API_URL;
+
+  const buildMarkedDates = React.useCallback(
+    (days: Array<{ date: string; totalSeconds: number }>) => {
+      const map: Record<string, Marking> = {};
+
+      for (const d of days) {
+        const totalMin = Math.floor((d.totalSeconds || 0) / 60);
+
+        // You asked: change “studied day color” to the BLUE instead of purple.
+        // So we set a blue palette for study intensity.
+        let bgColor = "rgba(255,255,255,0.05)"; // default for 0
+        if (totalMin >= 90) bgColor = "rgba(0, 212, 255, 0.85)";
+        else if (totalMin >= 30) bgColor = "rgba(0, 212, 255, 0.60)";
+        else if (totalMin > 0) bgColor = "rgba(0, 212, 255, 0.40)";
+
+        // Only mark days that actually have time
+        if (totalMin > 0) {
+          map[d.date] = {
+            bgColor,
+            textColor: "#fff",
+            score: totalMin,
+          };
+        }
+      }
+
+      return map;
+    },
+    []
+  );
+
+  const fetchMonthly = React.useCallback(
+    async (year: number, month: number) => {
+      if (!API_BASE) return;
+
+      try {
+        const token = await getToken();
+        const res = await axios.get(`${API_BASE}/api/stats/monthly?year=${year}&month=${month}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const days = Array.isArray(res.data?.days) ? res.data.days : [];
+
+        setMarkedDates(buildMarkedDates(days));
+
+        const totalsMap: Record<string, number> = {};
+        for (const d of days) totalsMap[d.date] = Number(d.totalSeconds || 0);
+        setDailyTotals(totalsMap);
+      } catch (err: any) {
+        console.log("[monthly stats error]", err?.response?.status, err?.response?.data || err?.message);
+      }
+    },
+    [API_BASE, buildMarkedDates, getToken]
+  );
+
+  const fetchWeekly = React.useCallback(async () => {
+    if (!API_BASE) return;
+
+    try {
+      const token = await getToken();
+      const res = await axios.get(`${API_BASE}/api/stats/weekly`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const total = Number(res.data?.weeklyTotalSec ?? res.data?.weeklyTotalSeconds ?? 0);
+      setWeeklyTotalSec(total);
+    } catch (err: any) {
+      console.log("[weekly stats error]", err?.response?.status, err?.response?.data || err?.message);
+    }
+  }, [API_BASE, getToken]);
+
+  const [personalBest, setPersonalBest] = React.useState<number>(0);
+
+  const fetchStreak = React.useCallback(async () => {
+    if (!API_BASE) return;
+    try {
+      const token = await getToken();
+      const res = await axios.get(`${API_BASE}/api/streak`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCurrentStreak(Number(res.data?.currentStreak ?? 0));
+      setPersonalBest(Number(res.data?.personalBest ?? 0));
+    } catch (err: any) {
+      console.log("[streak error]", err?.response?.status, err?.response?.data || err?.message);
+    }
+  }, [API_BASE, getToken]);
+
+  React.useEffect(() => {
+    fetchMonthly(activeYear, activeMonth);
+    fetchWeekly();
+    fetchStreak();
+    
+  }, [activeYear, activeMonth, fetchMonthly, fetchWeekly, fetchStreak]);
+
+  const selectedSeconds = dailyTotals[selectedDate] || 0;
 
   return (
     <LinearGradient
-      colors={[colors.gradienttop || '#0f0c29', colors.gradientmid || '#302b63', colors.gradientbottom || '#24243e']}
+      colors={[
+        colors.gradienttop || "#0f0c29",
+        colors.gradientmid || "#302b63",
+        colors.gradientbottom || "#24243e",
+      ]}
       style={styles.container}
     >
-      {/* FIXED: Removed ScrollView, using View with flex: 1 to fit on one page */}
       <View style={styles.contentContainer}>
-
-        {/* --- Top Stats Section --- */}
+        {/* --- Top Cards --- */}
         <View style={styles.headerContainer}>
-
-          {/* Main Card: Total This Week */}
+          {/* TOTAL THIS WEEK */}
           <LinearGradient
-            colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+            colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
             style={styles.mainCard}
           >
             <View>
               <Text style={styles.cardLabel}>TOTAL THIS WEEK</Text>
-              {/* FIXED: Updated time to be realistic for 2 days of activity */}
-              <Text style={styles.mainStatText}>12h 30m</Text>
+              <Text style={styles.mainStatText}>{formatDuration(weeklyTotalSec)}</Text>
             </View>
             <View style={styles.iconContainer}>
               <View style={styles.iconGlow} />
@@ -54,151 +164,164 @@ export default function StatsScreen() {
             </View>
           </LinearGradient>
 
-          {/* Row for Streak & Best */}
+          {/* CURRENT STREAK + DAY TOTAL */}
           <View style={styles.statsRow}>
             {/* Current Streak */}
             <LinearGradient
-              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+              colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
               style={styles.smallCard}
             >
               <View style={styles.cardHeaderRow}>
                 <Text style={styles.cardLabel}>CURRENT STREAK</Text>
                 <Ionicons name="flame" size={18} color="#FF6B6B" />
               </View>
-              <Text style={styles.subStatText}>2 Days</Text>
+              <Text style={styles.subStatText}>{currentStreak} Days</Text>
+              <Text style={styles.helperText}>Streak counts after 5 min/day</Text>
             </LinearGradient>
 
-            {/* Personal Best */}
+            {/* Day Total (selected date) */}
             <LinearGradient
-              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+              colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
               style={styles.smallCard}
             >
               <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardLabel}>PERSONAL BEST</Text>
-                <Ionicons name="trophy" size={18} color="#FFD93D" />
+                <Text style={styles.cardLabel}>DAY TOTAL</Text>
+                <Ionicons name="calendar" size={18} color="#FFD93D" />
               </View>
-              <Text style={styles.subStatText}>5 Days</Text>
+
+              <Text style={styles.subStatText}>{formatDuration(selectedSeconds)}</Text>
+              <Text style={styles.helperText}>{selectedDate}</Text>
             </LinearGradient>
           </View>
-
         </View>
 
-        {/* --- Calendar Section --- */}
-        {/* Added flex: 1 to fill remaining space properly without scrolling */}
+        {/* --- Calendar (no "Monthly Activity" text) --- */}
         <View style={styles.calendarContainer}>
-          <Text style={styles.sectionTitle}>Monthly Activity</Text>
-
           <View style={styles.calendarWrapper}>
             <Calendar
-              markingType={'custom'}
-              markedDates={data}
-              monthFormat={'MMMM yyyy'}
+              markingType={"custom"}
+              markedDates={markedDates}
+              monthFormat={"MMMM yyyy"}
               hideExtraDays={true}
-              firstDay={0} // Sunday
+              firstDay={0}
               enableSwipeMonths={true}
+              onMonthChange={(m) => {
+                setActiveYear(m.year);
+                setActiveMonth(m.month);
+              }}
               dayComponent={({ date, state, marking }: any) => {
-                const isSelected = !!marking;
-                const bgColor = marking?.bgColor || 'transparent';
-                const isToday = marking?.isToday;
-                const borderStyle = isToday ? styles.todayBorder : {};
+                const dateStr = date.dateString; // YYYY-MM-DD
+                const hasMark = !!marking;
+                const bgColor = marking?.bgColor || "transparent";
 
+                // Every day is clickable (even if 0m)
                 return (
                   <View style={styles.dayContainer}>
-                    <View style={[
-                      styles.dayCircle,
-                      { backgroundColor: isSelected ? bgColor : 'rgba(255,255,255,0.03)' },
-                      borderStyle
-                    ]}>
-                      <Text style={[
-                        styles.dayText,
-                        { color: state === 'disabled' ? '#444' : (isSelected ? '#fff' : '#aaa') }
-                      ]}>
-                        {date.day}
-                      </Text>
-                    </View>
+                    <Pressable
+                      onPress={() => setSelectedDate(dateStr)}
+                      disabled={state === "disabled"}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                    >
+                      <View
+                        style={[
+                          styles.dayCircle,
+                          { backgroundColor: hasMark ? bgColor : "rgba(255,255,255,0.03)" },
+                          selectedDate === dateStr ? styles.selectedBorder : null,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayText,
+                            { color: state === "disabled" ? "#444" : hasMark ? "#fff" : "#aaa" },
+                          ]}
+                        >
+                          {date.day}
+                        </Text>
+                      </View>
+                    </Pressable>
                   </View>
                 );
               }}
               theme={{
-                backgroundColor: 'transparent',
-                calendarBackground: 'transparent',
-                textSectionTitleColor: '#888',
-                monthTextColor: '#fff',
-                textMonthFontWeight: 'bold',
+                backgroundColor: "transparent",
+                calendarBackground: "transparent",
+                textSectionTitleColor: "#888",
+                monthTextColor: "#fff",
+                textMonthFontWeight: "bold",
                 textMonthFontSize: 18,
-                arrowColor: colors.text || '#fff',
-                todayTextColor: colors.accent || '#00D4FF',
+                arrowColor: colors.text || "#fff",
+
+                // Remove default “today” blue circle styling
+                todayTextColor: "#fff",
               }}
             />
           </View>
         </View>
-
       </View>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   contentContainer: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? 40 : 60, // Safe area
+    paddingTop: Platform.OS === "android" ? 40 : 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    justifyContent: 'flex-start', // Start from top, let cards push down
+    justifyContent: "flex-start",
   },
   headerContainer: {
-    marginBottom: 20, // Reduced margin slightly to save space
+    marginBottom: 20,
   },
-  // --- Cards Styling ---
+
+  // --- Cards ---
   mainCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 24,
     borderRadius: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   cardLabel: {
-    color: '#888',
+    color: "#888",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 1,
     marginBottom: 4,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   mainStatText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 36,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 0.5,
   },
   iconContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
     width: 50,
     height: 50,
   },
   iconGlow: {
-    position: 'absolute',
+    position: "absolute",
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6a5acd',
+    backgroundColor: "#6a5acd",
     opacity: 0.4,
-    shadowColor: '#6a5acd',
+    shadowColor: "#6a5acd",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 20,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
   },
   smallCard: {
@@ -206,64 +329,56 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   subStatText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+  },
+  helperText: {
+    marginTop: 6,
+    color: "#aaa",
+    fontSize: 12,
   },
 
-  // --- Calendar Styling ---
+  // --- Calendar ---
   calendarContainer: {
-    flex: 1, // Take up remaining space
-    justifyContent: 'center', // Center vertically in remaining space
-  },
-  sectionTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    marginLeft: 4,
+    flex: 1,
+    justifyContent: "center",
   },
   calendarWrapper: {
-    backgroundColor: 'rgba(30, 30, 50, 0.5)',
+    backgroundColor: "rgba(30, 30, 50, 0.5)",
     borderRadius: 24,
     padding: 10,
     paddingBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: "rgba(255,255,255,0.05)",
   },
   dayContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     width: 32,
   },
   dayCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  todayBorder: {
+  selectedBorder: {
     borderWidth: 2,
-    borderColor: '#00D4FF',
-    shadowColor: '#00D4FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 5,
-    backgroundColor: 'transparent',
+    borderColor: "#ffffff",
   },
   dayText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
