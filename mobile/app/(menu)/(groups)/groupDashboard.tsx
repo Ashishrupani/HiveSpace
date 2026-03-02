@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ScrollView, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import groupDashboardStyles from '../../../constants/styles/groupDashboard.styles';
 import GroupCard from '@/components/ui/cards/groupCard';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import axios from 'axios';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
@@ -17,13 +17,7 @@ type JoinedGroup = {
   color?: string;
 };
 
-const getHardcodedGroupDescription = (groupName?: string, about?: string) => {
-  const normalized = String(groupName ?? '').trim().toLowerCase();
-
-  if (normalized === 'creativity') return 'where we get creative';
-  if (normalized === "talia's group" || normalized === 'talias group') return 'testing stuff';
-  if (normalized === 'book club') return 'where we read';
-
+const resolveGroupDescription = (_groupName?: string, about?: string) => {
   const trimmedAbout = String(about ?? '').trim();
   return trimmedAbout || 'A place to collaborate and grow together.';
 };
@@ -55,7 +49,7 @@ export default function GroupDashboard() {
         id: String(g.id ?? g._id ?? ''),
         name: String(g.name ?? ''),
         members: Number(g.members ?? g.memberCount ?? g.UID?.length ?? 0),
-        about: getHardcodedGroupDescription(g.name, g.about),
+        about: resolveGroupDescription(g.name, g.about),
         iconName: g.icon ?? g.iconName ?? 'person.3.fill', // Map 'icon' from backend to 'iconName'
         logoUri: g.logoUri,
         color: g.color ?? '#342A5f', // Add color mapping with default
@@ -109,7 +103,7 @@ export default function GroupDashboard() {
               iconName: details.icon ?? details.iconName ?? group.iconName,
               logoUri: details.logoUri ?? group.logoUri,
               color: details.color ?? group.color,
-              about: getHardcodedGroupDescription(details.name ?? group.name, details.about ?? group.about),
+              about: resolveGroupDescription(details.name ?? group.name, details.about ?? group.about),
             };
           } catch {
             return group;
@@ -134,6 +128,12 @@ export default function GroupDashboard() {
     fetchJoinedGroups();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, user?.id]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchJoinedGroups();
+    }, [isLoaded, user?.id])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

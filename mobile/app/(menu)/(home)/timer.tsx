@@ -1,106 +1,174 @@
 import { useNavigation, useRouter } from 'expo-router';
 import HexagonDial from '@/components/ui/timerdial';
 import pageStyles from '@/constants/styles/page-styles';
-import colors, { Colors } from '@/constants/theme';
+import colors from '@/constants/theme';
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, TextInput, TouchableOpacity, View } from 'react-native';
 
-// This is adaped from this open source project 
-// https://github.com/nabendu82/TimerReactNative/blob/master/App/index.js
-const formatNumber = (number : number) => `0${number}`.slice(-2);
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-expo";
 
-const getRemaining = ( time : number) => {
+// This is adapted from this open source project
+// https://github.com/nabendu82/TimerReactNative/blob/master/App/index.js
+const formatNumber = (number: number) => `0${number}`.slice(-2);
+
+const getRemaining = (time: number) => {
   const mins = Math.floor(time / 60);
   const secs = time - mins * 60;
   return { mins: formatNumber(mins), secs: formatNumber(secs) };
 };
 
 export default function TabTwoScreen() {
-  const [remainingSecs, setremainingSecs] = useState(10*60);
+  const [remainingSecs, setremainingSecs] = useState(10 * 60);
   const [isActive, setIsActive] = useState(false);
   const [initialTime, setInitialTime] = useState(10);
-  
+
+  // Tracks if a "session attempt" has started (even if paused/resumed)
+  const [sessionStarted, setSessionStarted] = useState(false);
+
   const { mins, secs } = getRemaining(remainingSecs);
   const timeDisplay = `${mins}:${secs}`;
 
   const router = useRouter();
   const navigation = useNavigation();
-  
+
+  const { getToken } = useAuth();
+
+  const totalPlannedSec = useMemo(() => initialTime * 60, [initialTime]);
+
+  // How much time user actually studied in this run (ignores pause time)
+  const elapsedSec = useMemo(() => {
+    return Math.max(0, totalPlannedSec - remainingSecs);
+  }, [totalPlannedSec, remainingSecs]);
+
+  const saveSession = async (durationSec: number) => {
+    if (durationSec <= 0) return;
+
+    const endTime = new Date();
+    const startTime = new Date(endTime.getTime() - durationSec * 1000);
+
+    try {
+      const token = await getToken();
+
+      console.log("API BASE:", process.env.EXPO_PUBLIC_API_URL);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/sessions`,
+        {
+          startTime,
+          endTime,
+          durationSec,
+          mode: "focus",
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("✅ Session saved:", durationSec, "sec");
+    } catch (err) {
+      console.error("❌ Failed to save session:", err);
+    }
+  };
+
   const ontimerpress = () => {
+    // If starting from stopped -> mark session started
+    if (!isActive && remainingSecs > 0) {
+      setSessionStarted(true);
+    }
     setIsActive(!isActive);
   };
 
-  const onResetPress = () => {
+  const onResetPress = async () => {
+    // If user studied something, save it before resetting
+    if (sessionStarted && elapsedSec > 0) {
+      await saveSession(elapsedSec);
+    }
+
     setIsActive(false);
-    setremainingSecs(initialTime*60);
+    setSessionStarted(false);
+    setremainingSecs(totalPlannedSec);
   };
-  
+
   const onTimeChange = (text: string) => {
     const time = parseInt(text) || 0;
     setInitialTime(time);
-    setremainingSecs(time*60);
+    setremainingSecs(time * 60);
   };
 
   useEffect(() => {
     if (!isActive || remainingSecs === 0) return;
 
     const interval = setInterval(() => {
-      setremainingSecs(remainingSecs => remainingSecs - 1);
+      setremainingSecs((s) => s - 1);
     }, 1000);
 
     return () => clearInterval(interval);
   }, [isActive, remainingSecs]);
-  
+
+  // When timer finishes (hits 0), save full elapsed study time
+  useEffect(() => {
+    const finished = remainingSecs === 0 && sessionStarted;
+    if (!finished) return;
+
+    (async () => {
+      setIsActive(false);
+      await saveSession(elapsedSec); // should be totalPlannedSec if it ran fully
+      setSessionStarted(false);
+      // Optionally reset to initialTime after finishing:
+      // setremainingSecs(totalPlannedSec);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingSecs]);
+
   return (
     <View style={pageStyles.timerdial}>
-      <Pressable onPress={() => router.push("/dashboard")} style={{ ...pageStyles.button, paddingTop:10}}>
+      <Pressable onPress={() => router.push("/dashboard")} style={{ ...pageStyles.button, paddingTop: 10 }}>
         <Ionicons name="arrow-back" size={30} color="#bd5417ff" />
       </Pressable>
 
       <HexagonDial
-        progress={1 - (remainingSecs / (initialTime * 60))}
+        progress={totalPlannedSec === 0 ? 0 : 1 - (remainingSecs / totalPlannedSec)}
         timeDisplay={timeDisplay}
         size={300}
         color={colors.gradientbottom}
         backgroundColor={colors.primary}
       />
 
-      <TouchableOpacity 
-        style={[pageStyles.button,{ marginTop: 60 }]}
+      <TouchableOpacity
+        style={[pageStyles.button, { marginTop: 60 }]}
         onPress={ontimerpress}
       >
-        <Ionicons 
-          name={isActive ? 'pause' : 'play'} 
-          size={32} 
+        <Ionicons
+          name={isActive ? 'pause' : 'play'}
+          size={32}
           color={colors.gradientbottom}
         />
       </TouchableOpacity>
 
-
-      <TouchableOpacity 
+      <TouchableOpacity
         style={pageStyles.button}
         onPress={onResetPress}
       >
-        <Ionicons 
-          name="reload" 
-          size={32} 
+        <Ionicons
+          name="reload"
+          size={32}
           color={colors.gradientbottom}
         />
       </TouchableOpacity>
 
-        <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
-          <TextInput
-            style={pageStyles.input}
-            keyboardType="numeric"
-            value={String(initialTime)}
-            onChangeText={onTimeChange}
-            editable={!isActive}
-            maxLength={4}
-            selectTextOnFocus
-            returnKeyType="done"
-          />
-        </View>
+      <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+        <TextInput
+          style={pageStyles.input}
+          keyboardType="numeric"
+          value={String(initialTime)}
+          onChangeText={onTimeChange}
+          editable={!isActive}
+          maxLength={4}
+          selectTextOnFocus
+          returnKeyType="done"
+        />
+      </View>
     </View>
   );
 }
