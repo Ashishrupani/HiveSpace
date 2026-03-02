@@ -16,7 +16,7 @@ router.post("/update-goal", verifyAuth, updateGoalHandler);
 router.post("/delete-goal", verifyAuth, deleteGoalHandler);
 
 // Goals - Fetch goal
-router.get("fetch-goals", verifyAuth, fetchGoalsHandler);
+router.get("/fetch-goals", verifyAuth, fetchGoalsHandler);
 
 // Grab all user data
 router.get("/dashboard", dashboardHandler);
