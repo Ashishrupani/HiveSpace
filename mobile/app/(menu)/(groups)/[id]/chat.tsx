@@ -12,13 +12,13 @@ import {
 } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { useLocalSearchParams } from 'expo-router';
+import { useGlobalSearchParams } from 'expo-router';
 import { useGroupChat } from '@/hooks/groupChat';
 
 export default function ChatScreen() {
   const { userId } = useAuth();
   const { user } = useUser();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useGlobalSearchParams<{ id: string }>();
   const groupId = Array.isArray(id) ? id[0] : id;
 
   const [text, setText] = useState('');
@@ -59,7 +59,7 @@ export default function ChatScreen() {
           {messages.map((m) => (
             <View key={m.id} style={[styles.messageRow, m.isOwn ? styles.rowRight : styles.rowLeft]}>
               {!m.isOwn && (
-                <Text style={styles.avatar}>{m.sender.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatar}>{(m.sender ?? '?').charAt(0).toUpperCase()}</Text>
               )}
               <View style={[styles.bubble, m.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
                 {!m.isOwn && <Text style={styles.senderName}>{m.sender}</Text>}

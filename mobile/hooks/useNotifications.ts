@@ -1,42 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import Toast from 'react-native-toast-message';
 import { getSocket } from '@/lib/socket';
 
-export type AppNotification = {
-  type: string;   // e.g. 'chat', 'leaderboard', 'goal'
-  title: string;
-  body: string;
-  data?: Record<string, any>;
-  receivedAt: Date;
-};
-
 /**
- * Listens for real-time notifications from the server.
- *
- * The server emits 'notification' events via the 'sendNotification' socket event.
- * Shape: { type, title, body, data }
- *
- * TODO: wire up to in-app notification UI / push notifications.
+ * Listens for 'notification' events from the server and shows a toast.
+ * Server sends: { type, title, body, data? }
+ * Mount this once at the top of the authenticated layout.
  */
-export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-
+export const useNotifications = (userId: string | null | undefined) => {
   useEffect(() => {
+    if (!userId) return;
     const socket = getSocket();
     if (!socket) return;
 
-    const handleNotification = (payload: Omit<AppNotification, 'receivedAt'>) => {
-      const notification: AppNotification = { ...payload, receivedAt: new Date() };
-      console.log('[notification]', notification);
-      setNotifications((prev) => [notification, ...prev]);
+    const handleNotification = ({ title, body }: { type: string; title: string; body: string }) => {
+      Toast.show({ type: 'info', text1: title, text2: body });
     };
 
     socket.on('notification', handleNotification);
-    return () => {
-      socket.off('notification', handleNotification);
-    };
-  }, []);
-
-  const clearNotifications = () => setNotifications([]);
-
-  return { notifications, clearNotifications };
+    return () => { socket.off('notification', handleNotification); };
+  }, [userId]);
 };

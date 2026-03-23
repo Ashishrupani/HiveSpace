@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { getSocket, emit } from '@/lib/socket';
+import { connectSocket, getSocket, emit } from '@/lib/socket';
 import { ScrollView } from 'react-native';
 
 export type Message = {
@@ -11,11 +11,6 @@ export type Message = {
   isOwn?: boolean;
 };
 
-/**
- * Manages group chat for a single group room.
- * Socket lifecycle (connect/disconnect) is handled by _layout.tsx.
- * This hook only manages room membership and messages.
- */
 export const useGroupChat = (groupId: string, userId: string, userName: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const scrollRef = useRef<ScrollView>(null);
@@ -23,17 +18,17 @@ export const useGroupChat = (groupId: string, userId: string, userName: string) 
   useEffect(() => {
     if (!groupId || !userId) return;
 
-    const socket = getSocket();
-    if (!socket) return;
+    connectSocket(userId);
+    const socket = getSocket()!;
 
-    setMessages([]);
+    setMessages([]);// clear messages when  changing groups
 
     const joinAndLoad = () => {
       emit('joinGroup', { groupId, userId });
       emit('getGroupMessages', { groupId });
     };
 
-    // Socket may already be connected (managed by _layout.tsx)
+    //wait for socket connect 
     if (socket.connected) {
       joinAndLoad();
     } else {
@@ -42,28 +37,31 @@ export const useGroupChat = (groupId: string, userId: string, userName: string) 
 
     const handleHistory = (data: any) => {
       if (data.groupId !== groupId) return;
-      const loaded = data.messages.map((msg: any) => ({
-        id: msg.id,
-        text: msg.text,
-        sender: msg.senderName,
-        senderId: msg.senderId,
-        time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isOwn: msg.senderId === userId,
-      }));
-      setMessages(loaded);
+      setMessages(
+        data.messages.map((msg: any) => ({
+          id: msg.id,
+          text: msg.text,
+          sender: msg.senderName ?? msg.senderId ?? 'User',
+          senderId: msg.senderId,
+          time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOwn: msg.senderId === userId,
+        }))
+      );
     };
 
     const handleNewMessage = (data: any) => {
       if (data.groupId !== groupId) return;
-      const msg: Message = {
-        id: data.id,
-        text: data.text,
-        sender: data.senderName || 'User',
-        senderId: data.senderId,
-        time: new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isOwn: data.senderId === userId,
-      };
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: data.id,
+          text: data.text,
+          sender: data.senderName ?? data.senderId ?? 'User',
+          senderId: data.senderId,
+          time: new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOwn: data.senderId === userId,
+        },
+      ]);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     };
 
@@ -71,6 +69,7 @@ export const useGroupChat = (groupId: string, userId: string, userName: string) 
     socket.on('groupMessage', handleNewMessage);
 
     return () => {
+      //clean up when leaving the chat 
       emit('leaveGroup', { groupId, userId });
       socket.off('connect', joinAndLoad);
       socket.off('groupMessagesHistory', handleHistory);
@@ -78,6 +77,7 @@ export const useGroupChat = (groupId: string, userId: string, userName: string) 
     };
   }, [groupId, userId]);
 
+  // braodcast the message 
   const sendMessage = useCallback(
     (text: string) => {
       if (!text.trim()) return;

@@ -2,11 +2,11 @@ import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
-// NOTE: 10.0.2.2 is Android emulator localhost. Update for physical device or prod.
-const SOCKET_URL = 'http://10.0.2.2:5000';
+// Falls back to Android emulator localhost if env var is not set.
+const SOCKET_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:5000';
 
 export const connectSocket = (userId: string): Socket => {
-  if (socket?.connected) {
+  if (socket) {
     return socket;
   }
 
@@ -19,7 +19,7 @@ export const connectSocket = (userId: string): Socket => {
 
   socket.on('connect', () => console.log('[socket] connected:', socket?.id));
   socket.on('disconnect', (reason) => console.log('[socket] disconnected:', reason));
-  socket.on('connect_error', (err) => console.error('[socket] connection error:', err.message));
+  socket.on('connect_error', (err: Error) => console.error('[socket] connection error:', err.message));
 
   return socket;
 };

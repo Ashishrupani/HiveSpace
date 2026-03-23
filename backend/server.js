@@ -1,4 +1,6 @@
 import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
 //importing clerk
@@ -7,12 +9,19 @@ import mongoose from "mongoose";
 import homeRoutes from './routes/homeRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import ragRoutes from "./routes/ragRoutes.js";
+import { initializeSocketHandlers } from './socket/socketHandlers.js';
 import app from "./app.js";
 
 //load environmental variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
+
+const httpServer = createServer(app);
+export const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
+initializeSocketHandlers(io);
 
 //connect to database
 mongoose.connect(process.env.MONGO_DB_URI).then(()=>{
@@ -46,7 +55,7 @@ app.get("/api/health", (req, res) => {
 
 
 //Setting up the server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
 

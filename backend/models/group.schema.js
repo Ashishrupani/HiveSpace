@@ -17,7 +17,7 @@ const groupSchema = new Schema(
         //group's shared goals
         goals: { type: [String] },
         //group's chat history
-        chat: { type: [{ senderUID: String, message: String, timestamp: Date }] },
+        chat: { type: [{ senderUID: String, senderName: String, message: String, timestamp: Date }] },
         //saved quizzes from AI
         savedQuizzes: { type: [{ 
             title: String,
