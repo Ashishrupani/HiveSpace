@@ -20,13 +20,7 @@ type GroupMeta = {
   logoUri?: string;
 };
 
-const getHardcodedGroupDescription = (groupName?: string, about?: string) => {
-  const normalized = String(groupName ?? '').trim().toLowerCase();
-
-  if (normalized === 'creativity') return 'Where we get creative';
-  if (normalized === "talia's group" || normalized === 'talias group') return 'Testing stuff';
-  if (normalized === 'book club') return 'Where we read';
-
+const resolveGroupDescription = (_groupName?: string, about?: string) => {
   const trimmedAbout = String(about ?? '').trim();
   return trimmedAbout || 'A place to collaborate and grow together.';
 };
@@ -81,6 +75,7 @@ export default function GroupHome() {
       return Array.from(new Set(raw));
     }, []);
 
+    
     // Add refs to prevent duplicate API calls
     const savedCountsFetchedRef = React.useRef<string | null>(null);
     const groupMetaFetchedRef = React.useRef<string | null>(null);
@@ -125,12 +120,14 @@ export default function GroupHome() {
 
     React.useEffect(() => {
       const fetchSavedCounts = async () => {
+        const token = await getToken();
+
         if (!groupId || savedCountsFetchedRef.current === groupId) return;
         savedCountsFetchedRef.current = groupId;
         try {
           const [quizzes, summaries] = await Promise.all([
-            getSavedQuizzes(groupId),
-            getSavedSummaries(groupId),
+            getSavedQuizzes(groupId, token),
+            getSavedSummaries(groupId, token),
           ]);
           setSavedQuizCount(quizzes?.length ?? 0);
           setSavedSummaryCount(summaries?.length ?? 0);
@@ -163,7 +160,7 @@ export default function GroupHome() {
               name: currentGroup.name ?? `Group ${groupId}`,
               color,
               iconName,
-              about: getHardcodedGroupDescription(currentGroup.name, currentGroup.about),
+              about: resolveGroupDescription(currentGroup.name, currentGroup.about),
               logoUri: currentGroup.logoUri,
             });
 
@@ -199,7 +196,7 @@ export default function GroupHome() {
     name: editGroupName.trim() || groupMeta.name,
     color: selectedColor || groupMeta.color,
     iconName: selectedEditIconName,
-    about: getHardcodedGroupDescription(editGroupName.trim() || groupMeta.name, editAbout),
+    about: resolveGroupDescription(editGroupName.trim() || groupMeta.name, editAbout),
     logoUri: groupMeta.logoUri,
   };
   const displayedGroupMeta = editModalVisible ? livePreviewMeta : groupMeta;
@@ -267,7 +264,7 @@ export default function GroupHome() {
         setGroupMeta((prev) => ({
           ...prev,
           name: updated.name ?? prev.name,
-          about: getHardcodedGroupDescription(updated.name ?? prev.name, updated.about ?? prev.about),
+          about: resolveGroupDescription(updated.name ?? prev.name, updated.about ?? prev.about),
           iconName: updated.icon ?? prev.iconName,
           color: updated.color ?? prev.color,
         }));
@@ -282,7 +279,7 @@ export default function GroupHome() {
           setGroupMeta((prev) => ({
             ...prev,
             name: refreshedGroup.name ?? prev.name,
-            about: getHardcodedGroupDescription(refreshedGroup.name ?? prev.name, refreshedGroup.about ?? prev.about),
+            about: resolveGroupDescription(refreshedGroup.name ?? prev.name, refreshedGroup.about ?? prev.about),
             iconName: refreshedGroup.icon ?? prev.iconName,
             color: refreshedGroup.color ?? prev.color,
             logoUri: refreshedGroup.logoUri ?? prev.logoUri,
@@ -361,7 +358,7 @@ export default function GroupHome() {
             <Text style={styles.bannerTitle}>{displayedGroupMeta.name || groupName}</Text>
             <Text style={styles.bannerId}>ID: {groupId}</Text>
             <Text style={styles.bannerAbout} numberOfLines={2}>
-              {getHardcodedGroupDescription(displayedGroupMeta.name, displayedGroupMeta.about)}
+              {resolveGroupDescription(displayedGroupMeta.name, displayedGroupMeta.about)}
             </Text>
           </View>
         </View>

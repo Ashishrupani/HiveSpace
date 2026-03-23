@@ -33,12 +33,16 @@ export default function StatisticsCard({
       {/* Same text rows as before */}
       <View style={styles.row}>
         <Text style={cardStyles.label}>Current Streak:</Text>
-        <Text style={styles.value}>3 days</Text>
+        <Text style={styles.value}>
+          {streak} {streak === 1 ? 'Day' : 'Days'}
+        </Text>
       </View>
 
       <View style={styles.row}>
         <Text style={cardStyles.label}>Personal Best:</Text>
-        <Text style={styles.value}>{personalBest} days</Text>
+        <Text style={styles.value}>
+          {personalBest} {personalBest === 1 ? 'Day' : 'Days'}
+        </Text>
       </View>
     </DashboardCard>
   );

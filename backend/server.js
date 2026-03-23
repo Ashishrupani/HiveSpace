@@ -10,6 +10,9 @@ import homeRoutes from './routes/homeRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import ragRoutes from "./routes/ragRoutes.js";
 import { initializeSocketHandlers } from './socket/socketHandlers.js';
+import sessionRoutes from "./routes/sessionRoutes.js";
+import statsRoutes from "./routes/statsRoutes.js";
+import streakRoutes from "./routes/streakRoutes.js";
 import app from "./app.js";
 
 //load environmental variables
@@ -44,6 +47,9 @@ app.get("/", (req, res) => {
 app.use("/api/home", homeRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/rag", ragRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/stats", statsRoutes);
+app.use("/api/streak", streakRoutes);
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {

@@ -10,18 +10,19 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-3. Setup .env file
+2. Setup .env file
 
    ```bash
    EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
    EXPO_PUBLIC_API_URL=your_frontend_url
    ```
+
+3. Start the app
+
+   ```bash
+   npx expo start
+   ```
+
 
 In the output, you'll find options to open the app in a
 
