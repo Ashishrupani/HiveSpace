@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+
+import React, {useEffect, useMemo, useState } from 'react';
 import { View, ScrollView, StyleSheet, FlatList, Pressable, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import BackButton from '@/components/ui/BackButton';
@@ -8,6 +9,7 @@ import authStyles from '@/constants/styles/auth.styles';
 import { colors } from '@/constants/theme';
 const bee = require('../../../../assets/images/bee_astronanut.jpg');
 const queen = require('../../../../assets/images/queen_bee.avif');
+import { getSocket } from '@/lib/socket';
 
 type Player = {
   id: string;
@@ -15,38 +17,49 @@ type Player = {
   points: number;
 };
 
-type LeaderboardTab = 'Daily' | 'Weekly' | 'All time';
+function useLeaderboardFeed(groupId: string | undefined) {
+  const [players, setPlayers] = useState<Player[]>([]);
 
-type LeaderboardFeedState = {
-  players: Player[];
-  isConnected: boolean;
-};
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !groupId) return;
 
-function useLeaderboardFeed(groupId: string | undefined, tab: LeaderboardTab): LeaderboardFeedState {
-  void groupId;
-  void tab;
+    const onData = (data: { groupId: string; leaderboard: Player[] }) => {
+      if (data.groupId === groupId) setPlayers(data.leaderboard);
+    };
 
-  return {
-    players: [],
-    isConnected: false,
-  };
+    const onUpdate = (data: { groupId: string; entries: Player[] }) => {
+      if (data.groupId === groupId) setPlayers(data.entries);
+    };
+
+    socket.emit('getLeaderboard', { groupId });
+    socket.on('leaderboardData', onData);
+    socket.on('leaderboardUpdate', onUpdate);
+
+    return () => {
+      socket.off('leaderboardData', onData);
+      socket.off('leaderboardUpdate', onUpdate);
+    };
+  }, [groupId]);
+
+  return players;
 }
 
 export default function Leaderboard() {
   const { id } = useLocalSearchParams();
   const groupId = Array.isArray(id) ? id[0] : id;
-  const [tab, setTab] = useState<LeaderboardTab>('Daily');
-  const { players, isConnected } = useLeaderboardFeed(groupId, tab);
+  const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
+
+  const livePlayers = useLeaderboardFeed(groupId);
 
   const sorted = useMemo(() => {
-    return players.slice().sort((a, b) => b.points - a.points);
-  }, [players]);
+    return livePlayers.slice().sort((a, b) => b.points - a.points);
+  }, [livePlayers, tab]);
 
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
-  const hasPlayers = sorted.length > 0;
 
-  return (
+  return(
     <LinearGradient
       colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
       style={authStyles.container}
@@ -57,7 +70,7 @@ export default function Leaderboard() {
         <ThemedText type="title" style={styles.header}>
           Leaderboard
         </ThemedText>
-        <ThemedText style={styles.subheader}>Group ID: {groupId}</ThemedText>
+        <ThemedText style={styles.subheader}>Group ID: {id}</ThemedText>
 
         <View style={styles.tabRow}>
           {(['Daily', 'Weekly', 'All time'] as const).map((t) => (
@@ -71,6 +84,7 @@ export default function Leaderboard() {
           ))}
         </View>
 
+        {/* Podium */}
         <View style={styles.podiumRow}>
           <View style={styles.podiumSide}>
             {top3[1] && (
@@ -109,39 +123,29 @@ export default function Leaderboard() {
           </View>
         </View>
 
-        {hasPlayers ? (
-          <View style={styles.listWrap}>
-            <FlatList
-              data={rest}
-              keyExtractor={(p) => p.id}
-              renderItem={({ item }) => (
-                <View style={styles.listCard}>
-                  <View style={styles.listLeft}>
-                    <View style={styles.avatarSmall}>
-                      <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
-                    </View>
-                    <View style={styles.nameCol}>
-                      <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
-                      <ThemedText style={styles.username}>@username</ThemedText>
-                    </View>
+        {/* List of remaining players in dark cards */}
+        <View style={styles.listWrap}>
+          <FlatList
+            data={rest}
+            keyExtractor={(p) => p.id}
+            renderItem={({ item }) => (
+              <View style={styles.listCard}>
+                <View style={styles.listLeft}>
+                  <View style={styles.avatarSmall}>
+                    <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
                   </View>
-                  <ThemedText style={styles.points}>{item.points}</ThemedText>
+                  <View style={styles.nameCol}>
+                    <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
+                    <ThemedText style={styles.username}>@username</ThemedText>
+                  </View>
                 </View>
-              )}
-              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-              contentContainerStyle={{ paddingBottom: 80 }}
-            />
-          </View>
-        ) : (
-          <View style={styles.emptyStateCard}>
-            <ThemedText style={styles.emptyStateTitle}>Leaderboard coming soon</ThemedText>
-            <ThemedText style={styles.emptyStateText}>
-              {isConnected
-                ? 'No rankings yet for this timeframe.'
-                : 'Live rankings will appear here once the WebSocket feed is connected.'}
-            </ThemedText>
-          </View>
-        )}
+                <ThemedText style={styles.points}>{item.points}</ThemedText>
+              </View>
+            )}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            contentContainerStyle={{ paddingBottom: 80 }}
+          />
+        </View>
       </ScrollView>
     </LinearGradient>
   );
@@ -342,23 +346,6 @@ const styles = StyleSheet.create({
   points: {
     color: '#fff',
     fontWeight: '700',
-  },
-  emptyStateCard: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 10,
-    marginBottom: 80,
-    alignItems: 'center',
-  },
-  emptyStateTitle: {
-    color: '#fff',
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  emptyStateText: {
-    color: 'rgba(255,255,255,0.75)',
-    textAlign: 'center',
   },
   separator: {
     height: 1,
