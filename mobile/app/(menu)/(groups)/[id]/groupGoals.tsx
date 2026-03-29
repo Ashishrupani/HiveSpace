@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Keyboard, InputAccessoryView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Keyboard, InputAccessoryView, Platform, ActivityIndicator } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
 import GoalProgressBar from '@/components/ui/goalsProgressbar';
 import { colors } from "../../../../constants/theme";
@@ -7,7 +7,7 @@ import { useGroupGoals } from '@/contexts/GroupGoalsContext';
 import { Goal } from '@/contexts/GoalsContext';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import BackButton from '@/components/ui/BackButton';
-
+ 
 export default function GroupGoals() {
     const { id } = useLocalSearchParams();
     const groupId = Array.isArray(id) ? id[0] : id || '1';
@@ -15,7 +15,9 @@ export default function GroupGoals() {
     
     const { 
         getGroupGoals, 
-        getGroupCompletedGoals, 
+        getGroupCompletedGoals,
+        groupLoading,
+        fetchGroupGoals,
         addGroupGoal, 
         updateGroupGoal, 
         editGroupGoalDetails,
@@ -25,6 +27,12 @@ export default function GroupGoals() {
     
     const goals = getGroupGoals(groupId);
     const completedGoals = getGroupCompletedGoals(groupId);
+    const loading = groupLoading(groupId);
+ 
+    // Fetch goals for this group when the screen mounts
+    useEffect(() => {
+        fetchGroupGoals(groupId);
+    }, [groupId]);
     
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -46,21 +54,21 @@ export default function GroupGoals() {
     const [editDueDate, setEditDueDate] = useState('');
     const addTargetInputAccessoryId = 'addTargetInputAccessory-group-goals';
     const editTargetInputAccessoryId = 'editTargetInputAccessory-group-goals';
-
+ 
     const colors_palette = ['#4CAF50', '#FF5722', '#2196F3', '#9C27B0', '#FF9800', '#00BCD4'];
-
+ 
     const handleAddGoal = () => {
         if (!newGoalLabel.trim() || !newGoalTarget.trim()) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
-
+ 
         const target = parseFloat(newGoalTarget);
         if (isNaN(target) || target <= 0) {
             Alert.alert('Error', 'Please enter a valid target number');
             return;
         }
-
+ 
         const newGoal: Goal = {
             id: `g${groupId}-${Date.now()}`,
             label: newGoalLabel,
@@ -69,7 +77,7 @@ export default function GroupGoals() {
             color: newGoalColor,
             dueDate: newGoalDueDate || undefined,
         };
-
+ 
         addGroupGoal(groupId, newGoal);
         setNewGoalLabel('');
         setNewGoalTarget('');
@@ -77,31 +85,31 @@ export default function GroupGoals() {
         setNewGoalDueDate('');
         setShowAddModal(false);
     };
-
+ 
     const handleUpdateProgress = () => {
         if (!selectedGoal || !updateValue.trim()) {
             Alert.alert('Error', 'Please enter a value');
             return;
         }
-
+ 
         const value = parseFloat(updateValue);
         if (isNaN(value) || value < 0) {
             Alert.alert('Error', 'Please enter a valid number');
             return;
         }
-
+ 
         updateGroupGoal(groupId, selectedGoal.id, value);
         
         const goal = goals.find(g => g.id === selectedGoal.id);
         if (goal && (goal.value + value) >= goal.goal) {
             Alert.alert('🎉 Goal Completed!', `Congratulations on completing "${goal.label}"!`);
         }
-
+ 
         setUpdateValue('');
         setShowUpdateModal(false);
         setSelectedGoal(null);
     };
-
+ 
     const handleCompleteGoal = (goal: Goal) => {
         Alert.alert(
             'Complete Goal',
@@ -115,7 +123,7 @@ export default function GroupGoals() {
             ]
         );
     };
-
+ 
     const openEditModal = (goal: Goal) => {
         setSelectedGoal(goal);
         setEditLabel(goal.label);
@@ -124,30 +132,30 @@ export default function GroupGoals() {
         setEditDueDate(goal.dueDate || '');
         setShowEditModal(true);
     };
-
+ 
     const handleEditGoal = () => {
         if (!selectedGoal || !editLabel.trim() || !editTarget.trim()) {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
-
+ 
         const target = parseFloat(editTarget);
         if (isNaN(target) || target <= 0) {
             Alert.alert('Error', 'Please enter a valid target number');
             return;
         }
-
+ 
         editGroupGoalDetails(groupId, selectedGoal.id, {
             label: editLabel,
             goal: target,
             color: editColor,
             dueDate: editDueDate || undefined,
         });
-
+ 
         setShowEditModal(false);
         setSelectedGoal(null);
     };
-
+ 
     const handleDeleteGoal = (goalId: string, isCompleted: boolean = false) => {
         Alert.alert(
             'Delete Goal',
@@ -162,14 +170,14 @@ export default function GroupGoals() {
             ]
         );
     };
-
+ 
     const openUpdateModal = (goal: Goal) => {
         setSelectedGoal(goal);
         setShowUpdateModal(true);
     };
-
+ 
     const displayGoals = showCompleted ? completedGoals : goals;
-
+ 
     return (
         <View style={styles.container}>
             <BackButton />
@@ -193,69 +201,90 @@ export default function GroupGoals() {
                     </Text>
                 </TouchableOpacity>
             </View>
-
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                style={styles.scrollView}>
-
-                {displayGoals.length === 0 ? (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>
-                            {showCompleted ? 'No completed goals yet' : 'No active goals. Add one to get started!'}
-                        </Text>
-                    </View>
-                ) : (
-                    displayGoals.map((goal) => (
-                        <TouchableOpacity 
-                            key={goal.id} 
-                            onLongPress={() => handleDeleteGoal(goal.id, showCompleted)}
-                        >
-                            <View style={styles.goalContainer}>
-                                <GoalProgressBar goal={goal} />
-                                {showCompleted && goal.completedAt && (
-                                    <Text style={styles.completedDateText}>
-                                        Completed: {new Date(goal.completedAt).toLocaleDateString('en-US', {
-                                            month: 'long',
-                                            day: 'numeric',
-                                            year: 'numeric'
-                                        })}
-                                    </Text>
-                                )}
-                                {!showCompleted && goal.dueDate && (
-                                    <Text style={styles.dueDateText}>
-                                        Due: {goal.dueDate}
-                                    </Text>
-                                )}
-                                {!showCompleted && (
-                                    <View style={styles.goalActions}>
-                                        <TouchableOpacity 
-                                            style={styles.actionButton}
-                                            onPress={() => openEditModal(goal)}
-                                        >
-                                            <Text style={styles.actionButtonText}>Edit</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity 
-                                            style={styles.actionButton}
-                                            onPress={() => openUpdateModal(goal)}
-                                        >
-                                            <Text style={styles.actionButtonText}>Update</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity 
-                                            style={[styles.actionButton, styles.completeButton]}
-                                            onPress={() => handleCompleteGoal(goal)}
-                                        >
-                                            <Text style={styles.actionButtonText}>Complete</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    ))
-                )}
-
-            </ScrollView>
-
+ 
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+            ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                    style={styles.scrollView}
+                >
+                    {displayGoals.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>
+                                {showCompleted ? 'No completed goals yet' : 'No active goals. Add one to get started!'}
+                            </Text>
+                        </View>
+                    ) : (
+                        displayGoals.map((goal) => (
+                            <TouchableOpacity 
+                                key={goal.id} 
+                                onLongPress={() => handleDeleteGoal(goal.id, showCompleted)}
+                            >
+                                <View style={styles.goalContainer}>
+                                    <GoalProgressBar goal={goal} />
+                                    {showCompleted && goal.completedAt && (
+                                        <Text style={styles.completedDateText}>
+                                            Completed: {new Date(goal.completedAt).toLocaleDateString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </Text>
+                                    )}
+                                    {!showCompleted && goal.dueDate && (
+                                        <Text style={styles.dueDateText}>
+                                            Due: {goal.dueDate}
+                                        </Text>
+                                    )}
+                                    {!showCompleted && (
+                                        <View style={styles.goalActions}>
+                                            <TouchableOpacity 
+                                                style={styles.actionButton}
+                                                onPress={() => openEditModal(goal)}
+                                            >
+                                                <Text style={styles.actionButtonText}>Edit</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity 
+                                                style={styles.actionButton}
+                                                onPress={() => openUpdateModal(goal)}
+                                            >
+                                                <Text style={styles.actionButtonText}>Update</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity 
+                                                style={[styles.actionButton, styles.completeButton]}
+                                                onPress={() => handleCompleteGoal(goal)}
+                                            >
+                                                <Text style={styles.actionButtonText}>Complete</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity 
+                                                style={[styles.actionButton, styles.deleteButton]}
+                                                onPress={() => handleDeleteGoal(goal.id, false)}
+                                            >
+                                                <Text style={styles.actionButtonText}>Delete</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                    {showCompleted && (
+                                        <View style={styles.goalActions}>
+                                            <TouchableOpacity 
+                                                style={[styles.actionButton, styles.deleteButton]}
+                                                onPress={() => handleDeleteGoal(goal.id, true)}
+                                            >
+                                                <Text style={styles.actionButtonText}>Delete</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                        ))
+                    )}
+                </ScrollView>
+            )}
+ 
             {!showCompleted && (
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.createButton} onPress={() => setShowAddModal(true)}>
@@ -263,7 +292,7 @@ export default function GroupGoals() {
                     </TouchableOpacity>
                 </View>
             )}
-
+ 
             {/* Add Goal Modal */}
             <Modal
                 visible={showAddModal}
@@ -303,7 +332,7 @@ export default function GroupGoals() {
                             onChangeText={setNewGoalTarget}
                             inputAccessoryViewID={addTargetInputAccessoryId}
                         />
-
+ 
                         {Platform.OS === 'ios' && (
                             <InputAccessoryView nativeID={addTargetInputAccessoryId}>
                                 <View style={styles.keyboardAccessory}>
@@ -313,7 +342,7 @@ export default function GroupGoals() {
                                 </View>
                             </InputAccessoryView>
                         )}
-
+ 
                         <TextInput
                             style={styles.input}
                             placeholder="Due date (optional, e.g., 12/31/2025)"
@@ -321,7 +350,7 @@ export default function GroupGoals() {
                             value={newGoalDueDate}
                             onChangeText={setNewGoalDueDate}
                         />
-
+ 
                         <Text style={styles.colorLabel}>Choose color:</Text>
                         <View style={styles.colorPicker}>
                             {colors_palette.map(color => (
@@ -336,7 +365,7 @@ export default function GroupGoals() {
                                 />
                             ))}
                         </View>
-
+ 
                         <View style={styles.modalButtons}>
                             <TouchableOpacity 
                                 style={[styles.modalButton, styles.cancelButton]}
@@ -361,7 +390,7 @@ export default function GroupGoals() {
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Modal>
-
+ 
             {/* Update Progress Modal */}
             <Modal
                 visible={showUpdateModal}
@@ -391,7 +420,7 @@ export default function GroupGoals() {
                             value={updateValue}
                             onChangeText={setUpdateValue}
                         />
-
+ 
                         <View style={styles.modalButtons}>
                             <TouchableOpacity 
                                 style={[styles.modalButton, styles.cancelButton]}
@@ -414,7 +443,7 @@ export default function GroupGoals() {
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Modal>
-
+ 
             {/* Edit Goal Details Modal */}
             <Modal
                 visible={showEditModal}
@@ -443,7 +472,7 @@ export default function GroupGoals() {
                             onChangeText={setEditTarget}
                             inputAccessoryViewID={editTargetInputAccessoryId}
                         />
-
+ 
                         {Platform.OS === 'ios' && (
                             <InputAccessoryView nativeID={editTargetInputAccessoryId}>
                                 <View style={styles.keyboardAccessory}>
@@ -453,7 +482,7 @@ export default function GroupGoals() {
                                 </View>
                             </InputAccessoryView>
                         )}
-
+ 
                         <TextInput
                             style={styles.input}
                             placeholder="Due date (optional, e.g., 12/31/2025)"
@@ -461,7 +490,7 @@ export default function GroupGoals() {
                             value={editDueDate}
                             onChangeText={setEditDueDate}
                         />
-
+ 
                         <Text style={styles.colorLabel}>Choose color:</Text>
                         <View style={styles.colorPicker}>
                             {colors_palette.map(color => (
@@ -476,7 +505,7 @@ export default function GroupGoals() {
                                 />
                             ))}
                         </View>
-
+ 
                         <View style={styles.modalButtons}>
                             <TouchableOpacity 
                                 style={[styles.modalButton, styles.cancelButton]}
@@ -500,7 +529,7 @@ export default function GroupGoals() {
         </View>
     );
 }
-
+ 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -558,6 +587,11 @@ const styles = StyleSheet.create({
     toggleTextActive: {
         color: '#fff',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     goalContainer: {
         marginBottom: 16,
     },
@@ -575,6 +609,9 @@ const styles = StyleSheet.create({
     },
     completeButton: {
         backgroundColor: '#4CAF50',
+    },
+    deleteButton: {
+        backgroundColor: '#E53935',
     },
     actionButtonText: {
         color: '#fff',
