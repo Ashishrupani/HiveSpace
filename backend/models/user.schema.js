@@ -14,7 +14,7 @@ const userSchema = new Schema(
             personalBest: Number,
         },
         //user's goals and progress
-        Goals: { id : String, label: String, progress: Number, target: Number, color : String, deadline: String },
+        Goals: [{ id : String, label: String, progress: Number, target: Number, color : String, deadline: String }],
     },
     { timestamps: true }
 );
