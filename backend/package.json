@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "jest",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "migrate:study-sessions": "node scripts/migrateStudySessionsToDaily.js"
   },
   "keywords": [],
   "author": "",
