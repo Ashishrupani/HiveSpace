@@ -20,6 +20,7 @@ import User from '../models/user.schema.js';
 export const dashboardHandler = async (req, res) => {
     // Populate user's dashboard
     const userId = req.userId;
+    console.log("Dashboard handler called for user:", userId);
 
     try{
     // Verify that the user exists in the system
@@ -31,7 +32,7 @@ export const dashboardHandler = async (req, res) => {
         await newUser.save();
 
         //Send the data to populate dashboard
-        res.status(200).json({ success: true, user : newUser , err: null });
+        return res.status(200).json({ success: true, user : newUser , err: null });
         
     }
 
