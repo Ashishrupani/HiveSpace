@@ -19,6 +19,7 @@ COPY middleware/ ./middleware/
 COPY models/ ./models/
 COPY routes/ ./routes/
 COPY socket/ ./socket/
+COPY utils/ ./utils/
 COPY app.js .
 COPY server.js .
 
