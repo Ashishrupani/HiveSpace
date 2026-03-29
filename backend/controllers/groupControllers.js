@@ -3,12 +3,7 @@ import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
 import User from "../models/user.schema.js";
 
-const getDefaultGroupAbout = () => 'A place to collaborate and grow together.';
 
-const withDefaultAbout = (groupName, about) => {
-  const trimmedAbout = typeof about === 'string' ? about.trim() : '';
-  return trimmedAbout || getDefaultGroupAbout(groupName);
-};
 
 /** Important Note **
 List of error codes used in this file for various error scenarios:
@@ -471,3 +466,134 @@ export const getGroupLeaderboardHandler = async (req, res) => {
     error: null,
   });
 }
+
+export const createGroupGoalHandler = async (req, res) => {
+  // Logic for creating a goal for a group
+  const userId = req.userId;
+  const { groupId, label, progress, target, color, deadline } = req.body;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ success: false, message: 'Missing required parameters', err: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', err: 'group-not-found' });
+    }
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can create group goals', err: 'not-authorized' });
+    }
+    const newGoal = { id: new Date().getTime().toString(), label, progress, target, color, deadline };
+
+    if (!group.Goals) {
+      group.Goals = [];
+    }
+    group.Goals.push(newGoal);
+    await group.save();
+
+    res.status(200).json({ success: true, message: 'Group goal created successfully', err: null });
+  } catch (err) {
+    console.error('Error creating group goal:', err);
+    res.status(500).json({ success: false, message: 'Failed to create group goal', err: err.message });
+  }
+};
+
+export const updateGroupGoalHandler = async (req, res) => {
+  // Logic for updating a goal for a group
+  const userId = req.userId;
+  const { groupId, id, label, progress, target, color, deadline } = req.body;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ success: false, message: 'Missing required parameters', err: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', err: 'group-not-found' });
+    }
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can update group goals', err: 'not-authorized' });
+    }
+    const goalIndex = group.Goals.findIndex(goal => goal.id === id);
+    if (goalIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Goal not found', err: 'goal-not-found' });
+    }
+    group.Goals[goalIndex] = { id, label, progress, target, color, deadline };
+    await group.save();
+
+    res.status(200).json({ success: true, message: 'Group goal updated successfully', err: null });
+
+  }
+  catch (err) {
+    console.error('Error updating group goal:', err);
+    res.status(500).json({ success: false, message: 'Failed to update group goal', err: err.message });
+  }
+};
+
+export const deleteGroupGoalHandler = async (req, res) => {
+  // Logic for deleting a goal for a group
+  const userId = req.userId;
+  const { groupId } = req.body;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or userId', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can delete group goals', error: 'not-authorized' });
+    }
+
+    const { goalId } = req.body;
+    if (!goalId) {
+      return res.status(400).json({ success: false, message: 'Missing goalId parameter', error: 'missing-params' });
+    }
+
+    // Remove the goal from the group's Goals array
+    group.Goals = group.Goals.filter(goal => goal.id !== goalId);
+    await group.save();
+    res.status(200).json({ success: true, message: 'Group goal deleted successfully', error: null });
+
+  } catch (err) {
+    console.error('Error deleting group goal:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete group goal', error: err.message });
+  }
+
+};
+
+export const fetchGroupGoalsHandler = async (req, res) => {
+  // Logic for fetching goals for a group
+  const userId = req.userId;
+  const { groupId } = req.body;
+  if (!userId || !groupId) {
+    return res.status(400).json({ success: false, message: 'Missing userId or groupId parameter', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    const goals = group.Goals || [];
+
+    res.status(200).json({ success: true, goals, message: 'Dashboard goals fetched successfully', error: null });
+  }
+  catch (err) {
+    console.error('Error fetching dashboard goals:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch dashboard goals', error: err.message });
+  }
+
+};
+
