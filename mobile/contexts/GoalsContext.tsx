@@ -58,7 +58,7 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     const [completedGoals, setCompletedGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const baseUrl = IPHONE_TESTING_URL;
+    const baseUrl = API_BASE_URL;
  
     // Fetch goals on mount
     useEffect(() => {
