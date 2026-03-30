@@ -12,9 +12,10 @@ import pageStyles from "../../../constants/styles/page-styles";
 
 import { useSpotify } from "@/hooks/useSpotify";
 import { useGoals } from "@/contexts/GoalsContext";
+import { ThemedText } from "@/components/themed-text";
 
 import axios from "axios";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -22,10 +23,17 @@ export default function Dashboard() {
   const { getTopThreeGoals } = useGoals();
 
   const { getToken } = useAuth();
+  const { isLoaded, user } = useUser();
   const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
   const [streak, setStreak] = React.useState(0);
   const [personalBest, setPersonalBest] = React.useState(0);
+
+  const displayName =
+    user?.firstName ||
+    user?.fullName?.split(" ")[0] ||
+    user?.username ||
+    "there";
 
   useEffect(() => {
     fetchStreak();
@@ -126,18 +134,38 @@ export default function Dashboard() {
       style={pageStyles.container}
       contentContainerStyle={styles.scrollContent}
     >
-      <View style={{ marginTop: -50 }}>
-        <StatisticsCard
-          streak={streak}
-          personalBest={personalBest}
-          onPress={onstatspress}
-        />
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          {`Welcome back, ${isLoaded ? displayName : "there"}`}
+        </ThemedText>
+      </View>
+
+      <View style={styles.topRow}>
+        <View style={styles.squareBox}>
+          <StatisticsCard
+            streak={streak}
+            personalBest={personalBest}
+            onPress={onstatspress}
+            style={styles.cardFill}
+          />
+        </View>
+
+        <View style={styles.squareBox}>
+          <TimerCard
+            onPress={ontimerpress}
+            style={styles.cardFill}
+          />
+        </View>
       </View>
 
       <GoalsCard goals={getTopThreeGoals()} onPress={ongoalsPress} />
 
       <View style={styles.row}>
-        <TimerCard onPress={ontimerpress} width="48%" />
+        <NotificationsCard
+          notifications={mockNotifications}
+          width="48%"
+          style={styles.notificationRect}
+        />
         <MusicCard
           isConnected={spotify.isConnected}
           currentTrack={spotify.currentTrack}
@@ -146,10 +174,9 @@ export default function Dashboard() {
           onPlayPause={handlePlayPause}
           onSkip={handleSkip}
           width="48%"
+          style={styles.squareCard}
         />
       </View>
-
-      <NotificationsCard notifications={mockNotifications} />
     </ScrollView>
   );
 }
@@ -159,6 +186,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 1,
+  },
+  header: {
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "stretch",
+    marginBottom: 16,
+  },
+  squareBox: {
+    width: "48%",
+    aspectRatio: 1,
+    minHeight: 0,
+    overflow: "hidden",
+    borderRadius: 16,
+  },
+  cardFill: {
+    flex: 1,
+    marginBottom: 0,
+    borderRadius: 16,
+  },
+  notificationRect: {
+    height: 170,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
   },
   row: {
     flexDirection: "row",

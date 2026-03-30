@@ -67,6 +67,7 @@ export const pageStyles = StyleSheet.create({
     borderColor: colors.shadow,
     paddingHorizontal: 16,
     fontSize: 16,
+    color: colors.gradientbottom,
     marginBottom: 16,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },

@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import DashboardCard from "./dashboardCard";
 import cardStyles from "../../../constants/styles/card-styles";
-import streakIcon from "../../../assets/images/streak_icon.png"; 
-import {colors, Colors} from "@/constants/theme";
+import { colors, Colors } from "@/constants/theme";
 
 interface StatisticsProps {
   streak: number;
@@ -22,27 +22,25 @@ export default function StatisticsCard({
 }: StatisticsProps) {
   return (
     <DashboardCard onPress={onPress} width={width} height={height}>
-      {/* Top row: title on left, icon on right */}
       <View style={styles.headerRow}>
-        <Text style={[cardStyles.labelBold, styles.title, {color: Colors.light.text},]}>
-          Streak
-        </Text>
-        <Image source={streakIcon} style={styles.icon} />
+        <View style={styles.titleRow}>
+          <Ionicons name="flame" size={22} color="#FF6B6B" style={styles.fireIcon} />
+          <Text style={[cardStyles.labelBold, styles.title, { color: Colors.light.text }]}>Streak</Text>
+        </View>
       </View>
 
-      {/* Same text rows as before */}
-      <View style={styles.row}>
-        <Text style={cardStyles.label}>Current Streak:</Text>
-        <Text style={styles.value}>
-          {streak} {streak === 1 ? 'Day' : 'Days'}
-        </Text>
-      </View>
+      <View style={styles.statsRow}>
+        <View style={styles.metricBlock}>
+          <Text style={[cardStyles.label, styles.metricLabel]}>Current Streak</Text>
+          <Text style={styles.metricValue}>{streak}</Text>
+          <Text style={styles.metricSubtext}>{streak === 1 ? "Day" : "Days"}</Text>
+        </View>
 
-      <View style={styles.row}>
-        <Text style={cardStyles.label}>Personal Best:</Text>
-        <Text style={styles.value}>
-          {personalBest} {personalBest === 1 ? 'Day' : 'Days'}
-        </Text>
+        <View style={styles.metricBlock}>
+          <Text style={[cardStyles.label, styles.metricLabel]}>Personal Best</Text>
+          <Text style={styles.metricValue}>{personalBest}</Text>
+          <Text style={styles.metricSubtext}>{personalBest === 1 ? "Day" : "Days"}</Text>
+        </View>
       </View>
     </DashboardCard>
   );
@@ -50,27 +48,39 @@ export default function StatisticsCard({
 
 const styles = StyleSheet.create({
   headerRow: {
+    marginBottom: 16,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", 
-    marginBottom: 8,
+  },
+  fireIcon: {
+    marginRight: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
   },
-  icon: {
-    width: 28,
-    height: 28,
-    resizeMode: "contain",
-  },
-  row: {
+  statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
   },
-  value: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2F2A5A", // same purple you use for numbers
+  metricBlock: {
+    flex: 1,
+    paddingVertical: 6,
+  },
+  metricLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 6,
+  },
+  metricValue: {
+    fontSize: 30,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  metricSubtext: {
+    fontSize: 12,
+    color: "#6B7280",
   },
 });
