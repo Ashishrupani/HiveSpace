@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, StyleProp, ViewStyle } from "react-native";
 import DashboardCard from "./dashboardCard";
 import spotifyIcon from "../../../assets/images/spotify_icon.png";
 
@@ -18,6 +18,7 @@ interface MusicProps {
   onSkip: () => void;
   width?: number | string;
   height?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function MusicCard({
@@ -28,7 +29,8 @@ export default function MusicCard({
   onPlayPause,
   onSkip,
   width = 168,
-  height = 168,
+  height,
+  style,
 }: MusicProps) {
   if (!isConnected) {
     return (
@@ -36,7 +38,7 @@ export default function MusicCard({
         onPress={onLogin}
         width={width}
         height={height}
-        style={styles.card}
+        style={[styles.card, style]}
       >
         <View style={styles.content}>
           <View style={styles.iconCircle}>
@@ -57,7 +59,7 @@ export default function MusicCard({
       onPress={onPlayPause}
       width={width}
       height={height}
-      style={styles.card}
+      style={[styles.card, style]}
     >
       <View style={styles.content}>
         <View style={styles.iconCircle}>

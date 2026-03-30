@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, ViewStyle, StyleProp } from "react-native";
 interface DashboardCardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  width?: ViewStyle["width"];
+  width?: number | string;
   height?: number;
   style?: StyleProp<ViewStyle>;
 }

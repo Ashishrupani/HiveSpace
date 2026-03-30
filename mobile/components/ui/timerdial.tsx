@@ -51,7 +51,7 @@ export default function HexagonDial({
       </Svg>
       
       <View style={{position:'absolute'}}>
-        <Text style={authStyles.mainTitle}>{timeDisplay}</Text>
+        <Text style={[authStyles.mainTitle, { color: colors.primary }]}>{timeDisplay}</Text>
       </View>
     </View>
   );
