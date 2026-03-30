@@ -123,8 +123,21 @@ export default function TabTwoScreen() {
 
   return (
     <View style={pageStyles.timerdial}>
-      <Pressable onPress={() => router.push("/dashboard")} style={{ ...pageStyles.button, paddingTop: 10 }}>
-        <Ionicons name="arrow-back" size={30} color="#bd5417ff" />
+      <Pressable
+        onPress={() => router.push("/dashboard")}
+        style={{
+          ...pageStyles.button,
+          position: 'absolute',
+          top: 16,
+          left: 16,
+          width: 44,
+          height: 44,
+          paddingTop: 0,
+          marginTop: 0,
+          marginBottom: 0,
+        }}
+      >
+        <Ionicons name="arrow-back" size={26} color={colors.gradientbottom} />
       </Pressable>
 
       <HexagonDial
@@ -135,31 +148,43 @@ export default function TabTwoScreen() {
         backgroundColor={colors.primary}
       />
 
-      <TouchableOpacity
-        style={[pageStyles.button, { marginTop: 60 }]}
-        onPress={ontimerpress}
-      >
-        <Ionicons
-          name={isActive ? 'pause' : 'play'}
-          size={32}
-          color={colors.gradientbottom}
-        />
-      </TouchableOpacity>
+      <View style={{
+        width: '100%',
+        maxWidth: 260,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 0,
+        marginTop: 60,
+        marginBottom: 16,
+        alignSelf: 'center',
+      }}>
+        <TouchableOpacity
+          style={[pageStyles.button, { width: 72, height: 50 }]}
+          onPress={onResetPress}
+        >
+          <Ionicons
+            name="reload"
+            size={26}
+            color={colors.gradientbottom}
+          />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={pageStyles.button}
-        onPress={onResetPress}
-      >
-        <Ionicons
-          name="reload"
-          size={32}
-          color={colors.gradientbottom}
-        />
-      </TouchableOpacity>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[pageStyles.button, { width: 72, height: 50 }]}
+            onPress={ontimerpress}
+          >
+            <Ionicons
+              name={isActive ? 'pause' : 'play'}
+              size={26}
+              color={colors.gradientbottom}
+            />
+          </TouchableOpacity>
+        </View>
 
-      <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
         <TextInput
-          style={pageStyles.input}
+          style={[pageStyles.input, { width: 72, textAlign: 'center', marginBottom: 0 }]}
           keyboardType="numeric"
           value={String(initialTime)}
           onChangeText={onTimeChange}

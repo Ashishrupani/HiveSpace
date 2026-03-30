@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import DashboardCard from "./dashboardCard";
 import { Ionicons } from "@expo/vector-icons";
 import cardStyles from "../../../constants/styles/card-styles";
@@ -15,21 +15,34 @@ export interface NotificationItem {
 interface NotificationsProps {
   notifications: NotificationItem[];
   onPressViewAll?: () => void;
+  width?: number | string;
+  height?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function NotificationsCard({
   notifications,
   onPressViewAll,
+  width,
+  height,
+  style,
 }: NotificationsProps) {
   const hasNotifications = notifications && notifications.length > 0;
 
   return (
-    <DashboardCard>
+    <DashboardCard width={width} height={height} style={style}>
       <View style={styles.headerRow}>
-        <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>
-          Notifications
-        </Text>
-        {/* Optional "View all" in the future */}
+        <View style={styles.headerLabel}>
+          <Ionicons
+            name="notifications-outline"
+            size={18}
+            color="#2563EB"
+            style={styles.headerIcon}
+          />
+          <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>
+            Notifications
+          </Text>
+        </View>
       </View>
 
       {!hasNotifications && (
@@ -41,18 +54,11 @@ export default function NotificationsCard({
       {hasNotifications &&
         notifications.map((n) => (
           <View key={n.id} style={styles.itemRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="notifications-outline" size={16} color="#4B5563" />
-            </View>
             <View style={styles.textContainer}>
-              <Text style={styles.itemTitle} numberOfLines={1}>
+              <Text style={styles.itemTitle} numberOfLines={1} ellipsizeMode="tail">
                 {n.title}
               </Text>
-              <Text style={styles.itemBody} numberOfLines={1}>
-                {n.body}
-              </Text>
             </View>
-            <Text style={styles.timeAgo}>{n.timeAgo}</Text>
           </View>
         ))}
     </DashboardCard>
@@ -69,6 +75,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
   },
+  headerLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerIcon: {
+    marginRight: 8,
+  },
   emptyText: {
     fontSize: 13,
     color: "rgba(0,0,0,0.6)",
@@ -78,29 +91,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F3F4F6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
   textContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   itemTitle: {
     fontSize: 13,
     fontWeight: "600",
-  },
-  itemBody: {
-    fontSize: 12,
-    color: "rgba(0,0,0,0.6)",
-  },
-  timeAgo: {
-    fontSize: 11,
-    color: "rgba(0,0,0,0.5)",
-    marginLeft: 6,
   },
 });

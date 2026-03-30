@@ -19,15 +19,15 @@ export default function GroupLayout() {
           <Tabs.Screen
             name="groupDashboard"
             options={{
-              title: 'Group Dashboard',
+              title: 'My Groups',
               tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
             }}
           />
           <Tabs.Screen
             name="groupSetting"
             options={{
-              title: 'Settings',
-              tabBarIcon: ({ color }) => <IconSymbol size={28} name="gear" color={color} />,
+              title: 'Explore',
+              tabBarIcon: ({ color }) => <IconSymbol size={28} name="globe" color={color} />,
             }}
           />
           <Tabs.Screen
