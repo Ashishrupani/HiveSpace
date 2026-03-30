@@ -11,7 +11,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import axios from 'axios';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
-
+ 
 type GroupMeta = {
   name: string;
   color: string;
@@ -19,12 +19,12 @@ type GroupMeta = {
   about?: string;
   logoUri?: string;
 };
-
+ 
 const resolveGroupDescription = (_groupName?: string, about?: string) => {
   const trimmedAbout = String(about ?? '').trim();
   return trimmedAbout || 'A place to collaborate and grow together.';
 };
-
+ 
 const GROUP_ICONS = [
   { id: 1, name: 'person.3.fill' as const },
   { id: 2, name: 'book.fill' as const },
@@ -43,18 +43,18 @@ const GROUP_ICONS = [
   { id: 15, name: 'bolt.fill' as const },
   { id: 16, name: 'leaf.fill' as const },
 ];
-
+ 
 const GROUP_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
   '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
   '#F8B739', '#52B788', '#E76F51', '#2A9D8F',
   '#342A5f', '#6c5ce7', '#da07bddc'
 ];
-
+ 
 export default function GroupHome() {
     const {id} = useLocalSearchParams();
     const router = useRouter();
-    const { getTopThreeGroupGoals } = useGroupGoals();
+    const { getTopThreeGroupGoals, fetchGroupGoals } = useGroupGoals();
     const { getToken } = useAuth();
     const { isLoaded, user } = useUser();
     const [savedQuizCount, setSavedQuizCount] = React.useState(0);
@@ -74,12 +74,12 @@ export default function GroupHome() {
       const raw = [API_BASE_URL, IPHONE_TESTING_URL].filter(Boolean);
       return Array.from(new Set(raw));
     }, []);
-
+ 
     
     // Add refs to prevent duplicate API calls
     const savedCountsFetchedRef = React.useRef<string | null>(null);
     const groupMetaFetchedRef = React.useRef<string | null>(null);
-
+ 
     const postWithBaseFallback = React.useCallback(
       async (path: string, body: any, token: string) => {
         let lastError: any = null;
@@ -96,32 +96,38 @@ export default function GroupHome() {
       },
       [apiBaseCandidates]
     );
-
+ 
     const updateGroupWithFallback = React.useCallback(
       async (groupIdValue: string, payload: any, token: string) => {
         const path = `/api/groups/updateGroup`;
-
+ 
         let lastError: any = null;
           try {
             const body = path ? { ...payload, groupId: groupIdValue } : payload;
-
+ 
             const response = await postWithBaseFallback(path, body, token);
             return response;
           } catch (error: any) {
             lastError = error;
           }
-
+ 
         throw lastError;
       },
       [postWithBaseFallback]
     );
-
+ 
     const groupId = Array.isArray(id) ? id[0] : id;
-
+ 
+    // Fetch group goals so the GoalsCard shows real data
+    React.useEffect(() => {
+      if (!groupId) return;
+      fetchGroupGoals(groupId);
+    }, [groupId]);
+ 
     React.useEffect(() => {
       const fetchSavedCounts = async () => {
         const token = await getToken();
-
+ 
         if (!groupId || savedCountsFetchedRef.current === groupId) return;
         savedCountsFetchedRef.current = groupId;
         try {
@@ -136,10 +142,10 @@ export default function GroupHome() {
           setSavedSummaryCount(0);
         }
       };
-
+ 
       fetchSavedCounts();
     }, [groupId]);
-
+ 
     React.useEffect(() => {
       const fetchGroupMeta = async () => {
         if (!groupId || !isLoaded || !user?.id || groupMetaFetchedRef.current === groupId) return;
@@ -147,15 +153,15 @@ export default function GroupHome() {
         try {
           const token = await getToken();
           if (!token) return;
-
+ 
           const response = await postWithBaseFallback(`/api/groups/${groupId}`, { groupId }, token);
-
+ 
           const currentGroup = response?.data?.groupDetails;
-
+ 
           if (currentGroup) {
             const iconName = currentGroup.icon ?? currentGroup.iconName ?? 'person.3.fill';
             const color = currentGroup.color ?? '#342A5f';
-
+ 
             setGroupMeta({
               name: currentGroup.name ?? `Group ${groupId}`,
               color,
@@ -163,11 +169,11 @@ export default function GroupHome() {
               about: resolveGroupDescription(currentGroup.name, currentGroup.about),
               logoUri: currentGroup.logoUri,
             });
-
+ 
             setEditGroupName(currentGroup.name ?? '');
             setEditAbout(currentGroup.about ?? '');
             setSelectedColor(color);
-
+ 
             const matchingIcon = GROUP_ICONS.find((item) => item.name === iconName);
             setSelectedIconId(matchingIcon?.id ?? 1);
           }
@@ -178,18 +184,17 @@ export default function GroupHome() {
           }));
         }
       };
-
+ 
       fetchGroupMeta();
     }, [groupId, getToken, isLoaded, user?.id, postWithBaseFallback]);
-
+ 
     React.useEffect(() => {
-      // keep mount/unmount logs for debugging only; do not mutate navigator here
       console.log('GroupHome mounted');
       return () => {
         console.log('GroupHome unmounted');
       };
     }, []);
-
+ 
   const groupName = groupMeta.name;
   const selectedEditIconName = GROUP_ICONS.find((icon) => icon.id === selectedIconId)?.name ?? 'person.3.fill';
   const livePreviewMeta: GroupMeta = {
@@ -200,38 +205,38 @@ export default function GroupHome() {
     logoUri: groupMeta.logoUri,
   };
   const displayedGroupMeta = editModalVisible ? livePreviewMeta : groupMeta;
-
+ 
   const onGroupGoalsPress = () => {
     if (!groupId) return;
     router.push(`/(groups)/${groupId}/groupGoals` as any);
   };
-
+ 
   const openEditModal = () => {
     setEditGroupName(groupMeta.name ?? '');
     setEditAbout(groupMeta.about ?? '');
     setSelectedColor(groupMeta.color ?? '#342A5f');
-
+ 
     const matchingIcon = GROUP_ICONS.find((item) => item.name === (groupMeta.iconName ?? 'person.3.fill'));
     setSelectedIconId(matchingIcon?.id ?? 1);
     setEditModalVisible(true);
   };
-
+ 
   const handleSaveGroupEdits = async () => {
     if (!groupId) {
       Alert.alert('Error', 'Group ID is missing. Please reopen this group and try again.');
       return;
     }
-
+ 
     if (!editGroupName.trim()) {
       Alert.alert('Error', 'Group name is required.');
       return;
     }
-
+ 
     if (!isLoaded || !user?.id) {
       Alert.alert('Error', 'Please sign in to edit group details.');
       return;
     }
-
+ 
     try {
       setSavingGroupEdit(true);
       const token = await getToken();
@@ -240,7 +245,7 @@ export default function GroupHome() {
         return;
       }
       const selectedIcon = GROUP_ICONS.find((icon) => icon.id === selectedIconId);
-
+ 
       const response = await updateGroupWithFallback(
         groupId,
         {
@@ -252,13 +257,13 @@ export default function GroupHome() {
         },
         token
       );
-
+ 
       if (response?.data?.success === false) {
         const msg = response?.data?.message ?? 'Failed to update group details.';
         Alert.alert('Error', msg);
         return;
       }
-
+ 
       const updated = response?.data?.group;
       if (updated) {
         setGroupMeta((prev) => ({
@@ -269,11 +274,11 @@ export default function GroupHome() {
           color: updated.color ?? prev.color,
         }));
       }
-
+ 
       // Re-fetch canonical group data to ensure banner reflects persisted backend values
       try {
         const detailsResponse = await postWithBaseFallback(`/api/groups/${groupId}`, { groupId }, token);
-
+ 
         const refreshedGroup = detailsResponse?.data?.groupDetails;
         if (refreshedGroup) {
           setGroupMeta((prev) => ({
@@ -288,14 +293,14 @@ export default function GroupHome() {
       } catch {
         // Keep optimistic updated UI when refresh request fails.
       }
-
+ 
       setEditModalVisible(false);
       Alert.alert('Success', 'Group details updated successfully.');
     } catch (error: any) {
       const rawData = error?.response?.data;
       const backendBody = typeof error?.response?.data === 'string' ? error.response.data : '';
       const routeMissing = backendBody.includes('Cannot POST') && backendBody.includes('/api/groups');
-
+ 
       const msg = routeMissing
         ? 'Update endpoint not found on the running backend. Please restart the backend server on port 5000 and try again.'
         :
@@ -307,7 +312,7 @@ export default function GroupHome() {
       setSavingGroupEdit(false);
     }
   };
-
+ 
   const HorizontalCard = ({
     icon,
     title,
@@ -322,7 +327,7 @@ export default function GroupHome() {
     onPress?: () => void;
   }) => (
     <BaseCard
-      width={'100%'}
+      width={'100%'} // Add extra width if detail is not provided to balance the layout
       height={108}
       onPress={onPress}
       style={styles.horizontalCard}
@@ -340,11 +345,11 @@ export default function GroupHome() {
       {onPress ? <Ionicons name="chevron-forward" size={20} color="#8b84a8" /> : null}
     </BaseCard>
   );
-
+ 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <BackButton />
-
+ 
       <View style={[styles.groupBanner, { backgroundColor: displayedGroupMeta.color }]}> 
         <View style={styles.bannerLeft}>
           {displayedGroupMeta.logoUri ? (
@@ -362,19 +367,19 @@ export default function GroupHome() {
             </Text>
           </View>
         </View>
-
+ 
         <TouchableOpacity style={styles.bannerColorPill} onPress={openEditModal}>
           <View style={styles.bannerColorDot} />
           <Text style={styles.bannerColorText}>Edit</Text>
         </TouchableOpacity>
       </View>
       
-
+ 
       <GoalsCard 
         goals={getTopThreeGroupGoals(groupId)}
         onPress={onGroupGoalsPress}
       />
-
+ 
       <View style={styles.horizontalCardsList}>
         <HorizontalCard
           icon="podium"
@@ -383,7 +388,7 @@ export default function GroupHome() {
           detail="View full rankings"
           onPress={() => router.push(`/(groups)/${id}/leaderboard` as any)}
         />
-
+ 
         <HorizontalCard
           icon="reader"
           title="AI"
@@ -391,7 +396,7 @@ export default function GroupHome() {
           detail="Upload files and generate study content"
           onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
         />
-
+ 
         <HorizontalCard
           icon="bookmark"
           title="Saved"
@@ -400,7 +405,7 @@ export default function GroupHome() {
           onPress={() => router.push(`/(groups)/${id}/saved` as any)}
         />
       </View>
-
+ 
       <Modal
         animationType="slide"
         transparent={true}
@@ -420,7 +425,7 @@ export default function GroupHome() {
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-
+ 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.sectionLabel}>Group Icon</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.iconScrollContent}>
@@ -439,7 +444,7 @@ export default function GroupHome() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-
+ 
               <Text style={styles.sectionLabel}>Group Color</Text>
               <View style={styles.colorGrid}>
                 {GROUP_COLORS.map((color) => (
@@ -455,7 +460,7 @@ export default function GroupHome() {
                   />
                 ))}
               </View>
-
+ 
               <TextInput
                 value={editGroupName}
                 onChangeText={setEditGroupName}
@@ -466,7 +471,7 @@ export default function GroupHome() {
                 returnKeyType="done"
                 editable={!savingGroupEdit}
               />
-
+ 
               <TextInput
                 value={editAbout}
                 onChangeText={setEditAbout}
@@ -478,7 +483,7 @@ export default function GroupHome() {
                 maxLength={300}
                 editable={!savingGroupEdit}
               />
-
+ 
               <TouchableOpacity
                 style={[styles.saveButton, { backgroundColor: selectedColor }, savingGroupEdit && styles.saveButtonDisabled]}
                 onPress={handleSaveGroupEdits}
@@ -490,7 +495,7 @@ export default function GroupHome() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
+ 
       <Modal transparent visible={savingGroupEdit} animationType="fade">
         <View style={styles.savingOverlay}>
           <View style={styles.savingCard}>
@@ -499,12 +504,12 @@ export default function GroupHome() {
           </View>
         </View>
       </Modal>
-
+ 
     </ScrollView>
   )
-
+ 
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,

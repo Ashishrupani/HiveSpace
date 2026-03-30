@@ -5,7 +5,7 @@ import { groupHomeHandler, findGroupHandler, createGroupHandler,
          updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, 
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
          getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
-         getGroupLeaderboardHandler} 
+         getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler, deleteGroupGoalHandler, fetchGroupGoalsHandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -26,6 +26,13 @@ router.post("/updateGroup", debugMiddleware, verifyAuth, updateGroupHandler);
 
 //Get user's joined groups
 router.post("/my-groups", debugMiddleware, verifyAuth, getUserJoinedGroupsHandler); //(shows the groups the user has joined)
+
+router.post("/create-goal", verifyAuth, debugMiddleware, createGroupGoalHandler);
+router.post("/update-goal", verifyAuth, debugMiddleware, updateGroupGoalHandler);
+// Goals - Delete goal
+router.post("/delete-goal", verifyAuth, debugMiddleware, deleteGroupGoalHandler);
+// Goals - Fetch goal
+router.post("/fetch-goals", verifyAuth, debugMiddleware, fetchGroupGoalsHandler);
 
 // Save a quiz to a group (MUST COME BEFORE /:id route)
 router.post("/:id/save-quiz", debugMiddleware, verifyAuth, saveQuizHandler);

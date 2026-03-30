@@ -1,4 +1,6 @@
 import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
 //importing clerk
@@ -7,6 +9,7 @@ import mongoose from "mongoose";
 import homeRoutes from './routes/homeRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import ragRoutes from "./routes/ragRoutes.js";
+import { initializeSocketHandlers } from './socket/socketHandlers.js';
 import sessionRoutes from "./routes/sessionRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
@@ -17,13 +20,18 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+const httpServer = createServer(app);
+export const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
+initializeSocketHandlers(io);
+
 //connect to database
 mongoose.connect(process.env.MONGO_DB_URI).then(()=>{
   console.log('Connected to MongoDB');  
 }).catch((err)=>{
     console.log(err.message);
 });
-
 
 app.use(clerkMiddleware());
 
@@ -53,10 +61,8 @@ app.get("/api/health", (req, res) => {
 
 
 //Setting up the server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
-
-
 
 export default app;
