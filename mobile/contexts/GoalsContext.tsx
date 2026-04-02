@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import { API_BASE_URL , IPHONE_TESTING_URL} from '@/api/constants';

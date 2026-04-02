@@ -4,7 +4,7 @@ import groupDashboardStyles from '../../../constants/styles/groupDashboard.style
 import GroupCard from '@/components/ui/cards/groupCard';
 import { useFocusEffect, useRouter } from 'expo-router';
 import axios from 'axios';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/expo';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
 
 type JoinedGroup = {

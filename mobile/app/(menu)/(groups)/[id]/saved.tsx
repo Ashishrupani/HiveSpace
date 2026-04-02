@@ -5,7 +5,7 @@ import BackButton from '@/components/ui/BackButton';
 import BaseCard from '@/components/ui/cards/baseCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getSavedQuizzes, getSavedSummaries, SavedQuiz, SavedSummary } from '@/api/ragApi';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 
 export default function SavedItemsPage() {
   const { id } = useLocalSearchParams();

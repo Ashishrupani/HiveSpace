@@ -9,7 +9,7 @@ import { useGroupGoals } from '@/contexts/GroupGoalsContext';
 import { getSavedQuizzes, getSavedSummaries } from '@/api/ragApi';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import axios from 'axios';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/expo';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
  
 type GroupMeta = {

@@ -1,4 +1,4 @@
-import { useSignIn } from "@clerk/clerk-expo";
+import { useSignIn } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useNavigation, useRouter } from "expo-router";
@@ -18,71 +18,70 @@ import {
 import authStyles from "../../constants/styles/auth.styles";
 import colors from "../../constants/theme";
 import showErrorToast from "../../components/ui/toast/ErrorToast";
-
+ 
 export default function Page() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { signIn, setActive, isLoaded } = useSignIn();
-
+ 
+  // Core 3: useSignIn returns { signIn, errors, fetchStatus }
+  // setActive and isLoaded no longer exist on this hook
+  const { signIn, errors, fetchStatus } = useSignIn();
+ 
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-
+ 
+  // Core 3: derive loading state from fetchStatus instead of manual useState
+  const isLoading = fetchStatus === "fetching";
+ 
   const fadeAnim = useState(new Animated.Value(0))[0];
-
+ 
   useEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
-
+ 
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
   }, [navigation]);
-
+ 
   const onSignInPress = async () => {
-    if (!isLoaded || isLoading) return;
-
+    if (isLoading) return;
+ 
     if (!emailAddress.trim() || !password.trim()) {
       showErrorToast("Please enter both email and password");
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      const signInAttempt = await signIn.create({
-        identifier: emailAddress,
-        password,
+ 
+    // Core 3: signIn.password() replaces signIn.create({ identifier, password })
+    const { error } = await signIn.password({
+      emailAddress,
+      password,
+    });
+ 
+    if (error) {
+      // Core 3: ClerkError is flat — use error.message directly, not error.errors[0]
+      showErrorToast(error.message || "Invalid email or password");
+      return;
+    }
+ 
+    // Core 3: signIn.finalize() replaces setActive({ session: signInAttempt.createdSessionId })
+    if (signIn.status === "complete") {
+      await signIn.finalize({
+        navigate: () => {
+          router.replace("/");
+        },
       });
-
-      if (signInAttempt.status === "complete") {
-        await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/");
-      } else {
-        
-        showErrorToast("Unable to complete sign in. Please try again.");
-      }
-    } catch (err: any) {
-
-      if (err.errors) {
-        const errorMessage =
-          err.errors[0]?.longMessage ||
-          err.errors[0]?.message ||
-          "Invalid email or password";
-        showErrorToast(errorMessage);
-      } else {
-        showErrorToast("Something went wrong. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Handle MFA or other additional steps if needed
+      showErrorToast("Unable to complete sign in. Please try again.");
     }
   };
-
+ 
   return (
     <LinearGradient
       colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
@@ -114,7 +113,7 @@ export default function Page() {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </Pressable>
         </View>
-
+ 
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -148,7 +147,7 @@ export default function Page() {
                 Sign in to continue your journey
               </Text>
             </View>
-
+ 
             {/* Form Container */}
             <View
               style={{
@@ -220,7 +219,7 @@ export default function Page() {
                   />
                 </View>
               </View>
-
+ 
               {/* Password Input */}
               <View style={{ marginBottom: 16 }}>
                 <Text
@@ -289,7 +288,7 @@ export default function Page() {
                   </TouchableOpacity>
                 </View>
               </View>
-
+ 
               {/* Forgot Password */}
               <Link
                 href="/reset-password"
@@ -303,7 +302,7 @@ export default function Page() {
               >
                 Forgot Password?
               </Link>
-
+ 
               {/* Login Button */}
               <TouchableOpacity
                 style={{
@@ -338,10 +337,10 @@ export default function Page() {
                 )}
               </TouchableOpacity>
             </View>
-
+ 
             {/* Spacer to push footer to bottom */}
             <View style={{ flex: 1, minHeight: 40 }} />
-
+ 
             {/* Sign up link */}
             <View
               style={{

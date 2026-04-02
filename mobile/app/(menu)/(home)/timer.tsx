@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, TextInput, TouchableOpacity, View } from 'react-native';
 
 import axios from "axios";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/expo";
 
 // This is adapted from this open source project
 // https://github.com/nabendu82/TimerReactNative/blob/master/App/index.js

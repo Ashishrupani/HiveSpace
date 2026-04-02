@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import colors from "@/constants/theme";
 
 import axios from "axios";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/expo";
 
 type Marking = {
   bgColor?: string;

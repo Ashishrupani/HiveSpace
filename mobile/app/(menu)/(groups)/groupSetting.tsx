@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import GroupCardWithJoin from '@/components/ui/cards/groupCardWithJoin';
 import colors from '@/constants/theme';
 import axios from 'axios';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/expo';
 import showErrorToast from '@/components/ui/toast/ErrorToast';
 import showSuccessToast from '@/components/ui/toast/SuccessToast';
 import showInfoToast from '@/components/ui/toast/InfoToast';
