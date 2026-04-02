@@ -1,6 +1,6 @@
 import { SignOutButton } from '@/components/SignOutButton'
 import WelcomePage from '@/components/ui/welcomepage'
-import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo'
+import {Show, useUser } from '@clerk/expo'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import React from 'react'
@@ -32,7 +32,7 @@ export default function Page() {
 
   return (
     <LinearGradient colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]} style={authStyles.container}>
-      <SignedIn>
+      <Show when={"signed-in"}>
         {/* <Text style={authStyles.title}>Hello {user?.emailAddresses[0].emailAddress}</Text>
         <SignOutButton />
 
@@ -47,10 +47,10 @@ export default function Page() {
           } */}
       
 
-      </SignedIn>
-      <SignedOut>
+      </Show>
+      <Show when={"signed-out"}>
         <WelcomePage />
-      </SignedOut>
-      </LinearGradient>
+      </Show>
+    </LinearGradient>
   )
 }

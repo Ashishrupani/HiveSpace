@@ -48,8 +48,11 @@ app-example
 .DS_Store
 .env.local
 .vscode
+eas.json
+*.log
 
 # local db
 hspace.sqlite
 hspace.db
 *.db
+

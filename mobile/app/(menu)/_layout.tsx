@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import DrawerNavigation from '@/components/drawerNavigation';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 import { useNotifications } from '@/hooks/useNotifications';
 

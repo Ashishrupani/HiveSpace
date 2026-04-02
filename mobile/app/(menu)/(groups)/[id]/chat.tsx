@@ -11,7 +11,7 @@ import {
   Keyboard,
 } from 'react-native';
 import pageStyles from '@/constants/styles/page-styles';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/expo';
 import { useGlobalSearchParams } from 'expo-router';
 import { useGroupChat } from '@/hooks/groupChat';
 

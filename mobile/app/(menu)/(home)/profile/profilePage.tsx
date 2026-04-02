@@ -1,5 +1,5 @@
 // app/(menu)/(home)/profile/profile.tsx
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/expo";
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import {
@@ -17,7 +17,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Fonts } from "@/constants/theme";
-import { useUser } from "@clerk/clerk-expo";
+import { useUser } from "@clerk/expo";
 import * as ImagePicker from "expo-image-picker";
 
 

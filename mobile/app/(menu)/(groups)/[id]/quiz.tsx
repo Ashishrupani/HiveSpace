@@ -6,7 +6,7 @@ import * as FileSystem from 'expo-file-system';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { uploadNotesForSummary, uploadNotesForQuiz, RAGSummary, RAGQuiz, saveQuizToGroup, saveSummaryToGroup, QuizOptions } from '@/api/ragApi';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/expo';
 
 type AIMode = 'upload' | 'summary' | 'quiz';
 

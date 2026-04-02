@@ -1,8 +1,8 @@
 import 'react-native-reanimated';
 //Importing ClerkProvider to wrap the app with Clerk authentication
-import { ClerkProvider } from '@clerk/clerk-expo'
+import { ClerkProvider } from '@clerk/expo'
 import { Slot } from 'expo-router'
-import { tokenCache } from '@clerk/clerk-expo/token-cache'
+import { tokenCache } from '@clerk/expo/token-cache'
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ export default function RootLayout() {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:5000';
   const iphoneTesting = `http://${process.env.EXPO_PUBLIC_IP_ADDRESS}:5000`;
+  const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
   useEffect(() => {
     const checkBackend = async () => {
@@ -35,7 +36,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider tokenCache={tokenCache}>
+      <ClerkProvider publishableKey={clerkKey} tokenCache={tokenCache}>
         <Slot/>
         <Toast />
         

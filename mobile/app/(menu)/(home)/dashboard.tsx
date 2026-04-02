@@ -15,7 +15,7 @@ import { useGoals } from "@/contexts/GoalsContext";
 import { ThemedText } from "@/components/themed-text";
 
 import axios from "axios";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/expo";
 
 export default function Dashboard() {
   const router = useRouter();

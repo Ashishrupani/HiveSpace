@@ -1,4 +1,4 @@
-import { useSignUp } from "@clerk/clerk-expo";
+import { useSignUp } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useNavigation, useRouter } from "expo-router";
@@ -18,12 +18,15 @@ import {
 import authStyles from "../../constants/styles/auth.styles";
 import colors from "../../constants/theme";
 import showErrorToast from "../../components/ui/toast/ErrorToast";
-
+ 
 export default function SignUpScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const { isLoaded, signUp, setActive } = useSignUp();
-
+ 
+  // Core 3: useSignUp returns { signUp, errors, fetchStatus }
+  // setActive and isLoaded no longer exist on this hook
+  const { signUp, errors, fetchStatus } = useSignUp();
+ 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
@@ -33,30 +36,32 @@ export default function SignUpScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-
+ 
+  // Core 3: derive loading state from fetchStatus instead of manual useState
+  const isLoading = fetchStatus === "fetching";
+ 
   const fadeAnim = useState(new Animated.Value(0))[0];
-
+ 
   useEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
-
+ 
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
   }, [navigation]);
-
+ 
   const onSignUpPress = async () => {
-    if (!isLoaded || isLoading) return;
-
+    if (isLoading) return;
+ 
     const f = firstName.trim();
     const l = lastName.trim();
     const em = emailAddress.trim();
-
+ 
     if (!f || !l) {
       showErrorToast("Please enter your first and last name");
       return;
@@ -73,59 +78,53 @@ export default function SignUpScreen() {
       showErrorToast("Passwords do not match");
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      await signUp.create({
-        emailAddress: em,
-        password,
-        firstName: f,
-        lastName: l,
-        unsafeMetadata: { username },
-      });
-
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      setPendingVerification(true);
-    } catch (err: any) {
-      const errorMessage =
-        err.errors?.[0]?.longMessage ||
-        err.errors?.[0]?.message ||
-        "Could not create account. Please try again.";
-      showErrorToast(errorMessage);
-    } finally {
-      setIsLoading(false);
+ 
+    // Core 3: signUp.password() replaces signUp.create({ emailAddress, password, ... })
+    // Pass all user fields directly to signUp.password()
+    const { error } = await signUp.password({
+      emailAddress: em,
+      password,
+      firstName: f,
+      lastName: l,
+      unsafeMetadata: { username },
+    });
+ 
+    if (error) {
+      // Core 3: ClerkError is flat — use error.message directly, not error.errors[0]
+      showErrorToast(error.message || "Could not create account. Please try again.");
+      return;
     }
+ 
+    // Core 3: signUp.verifications.sendEmailCode() replaces
+    // signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+    await signUp.verifications.sendEmailCode();
+    setPendingVerification(true);
   };
-
+ 
   const onVerifyPress = async () => {
-    if (!isLoaded || isLoading) return;
-
+    if (isLoading) return;
+ 
     if (!code.trim()) {
       showErrorToast("Please enter the verification code");
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      const attempt = await signUp.attemptEmailAddressVerification({ code });
-      if (attempt.status === "complete") {
-        await setActive({ session: attempt.createdSessionId });
-        router.replace("/");
-      } else {
-        showErrorToast("Verification incomplete. Please try again.");
-      }
-    } catch (err: any) {
-      console.error("Verification error:", err);
-      const errorMessage =
-        err.errors?.[0]?.message || "Invalid code. Please try again.";
-      showErrorToast(errorMessage);
-    } finally {
-      setIsLoading(false);
+ 
+    // Core 3: signUp.verifications.verifyEmailCode({ code }) replaces
+    // signUp.attemptEmailAddressVerification({ code })
+    await signUp.verifications.verifyEmailCode({ code });
+ 
+    if (signUp.status === "complete") {
+      // Core 3: signUp.finalize() replaces setActive({ session: attempt.createdSessionId })
+      await signUp.finalize({
+        navigate: () => {
+          router.replace("/");
+        },
+      });
+    } else {
+      showErrorToast("Verification incomplete. Please try again.");
     }
   };
-
+ 
   // --- Verification Screen ---
   if (pendingVerification) {
     return (
@@ -159,7 +158,7 @@ export default function SignUpScreen() {
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </Pressable>
           </View>
-
+ 
           <ScrollView
             contentContainerStyle={{
               flexGrow: 1,
@@ -211,7 +210,7 @@ export default function SignUpScreen() {
                   </Text>
                 </Text>
               </View>
-
+ 
               {/* Verification Form */}
               <View
                 style={{
@@ -282,7 +281,7 @@ export default function SignUpScreen() {
                     />
                   </View>
                 </View>
-
+ 
                 <TouchableOpacity
                   style={{
                     backgroundColor: colors.link,
@@ -322,7 +321,7 @@ export default function SignUpScreen() {
       </LinearGradient>
     );
   }
-
+ 
   // --- Sign Up Screen ---
   return (
     <LinearGradient
@@ -355,7 +354,7 @@ export default function SignUpScreen() {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </Pressable>
         </View>
-
+ 
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -389,7 +388,7 @@ export default function SignUpScreen() {
                 Sign up to get started with your journey
               </Text>
             </View>
-
+ 
             {/* Form Container */}
             <View
               style={{
@@ -460,7 +459,7 @@ export default function SignUpScreen() {
                   />
                 </View>
               </View>
-
+ 
               {/* Last Name */}
               <View style={{ marginBottom: 16 }}>
                 <Text
@@ -517,7 +516,7 @@ export default function SignUpScreen() {
                   />
                 </View>
               </View>
-
+ 
               {/* Username */}
               <View style={{ marginBottom: 16 }}>
                 <Text
@@ -529,7 +528,10 @@ export default function SignUpScreen() {
                     marginLeft: 4,
                   }}
                 >
-                  Username <Text style={{ color: colors.subtext, fontWeight: "400" }}>(Optional)</Text>
+                  Username{" "}
+                  <Text style={{ color: colors.subtext, fontWeight: "400" }}>
+                    (Optional)
+                  </Text>
                 </Text>
                 <View
                   style={{
@@ -574,7 +576,7 @@ export default function SignUpScreen() {
                   />
                 </View>
               </View>
-
+ 
               {/* Email */}
               <View style={{ marginBottom: 16 }}>
                 <Text
@@ -633,7 +635,7 @@ export default function SignUpScreen() {
                   />
                 </View>
               </View>
-
+ 
               {/* Password */}
               <View style={{ marginBottom: 16 }}>
                 <Text
@@ -701,7 +703,7 @@ export default function SignUpScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-
+ 
               {/* Confirm Password */}
               <View style={{ marginBottom: 24 }}>
                 <Text
@@ -759,7 +761,7 @@ export default function SignUpScreen() {
                   />
                 </View>
               </View>
-
+ 
               {/* Sign Up Button */}
               <TouchableOpacity
                 style={{
@@ -794,10 +796,10 @@ export default function SignUpScreen() {
                 )}
               </TouchableOpacity>
             </View>
-
+ 
             {/* Spacer to push footer to bottom */}
             <View style={{ flex: 1, minHeight: 24 }} />
-
+ 
             {/* Sign in link */}
             <View
               style={{
