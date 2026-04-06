@@ -14,6 +14,7 @@ const groupSchema = new Schema(
         adminUID: { type: String, required: true },
         //User IDs of group members
         UID: { type: [String], required: true },
+        memberNames: [{ name: String, UID: String }],
         //group's shared goals
        Goals: [{ id : String, label: String, progress: Number, target: Number, color : String, deadline: String }],
         //group's chat history

@@ -5,7 +5,8 @@ import { groupHomeHandler, findGroupHandler, createGroupHandler,
          updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, 
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
          getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
-         getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler, deleteGroupGoalHandler, fetchGroupGoalsHandler} 
+         getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler,
+         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -47,13 +48,16 @@ router.get("/:id/saved-quizzes", debugMiddleware, verifyName, getSavedQuizzesHan
 router.get("/:id/saved-summaries", debugMiddleware, verifyName, getSavedSummariesHandler);
 
 // Get leaderboard for a group (placeholder until websocket is integrated)
-router.get("/:id/leaderboard", debugMiddleware, verifyName, getGroupLeaderboardHandler);
+router.get("/:id/leaderboard", debugMiddleware, getGroupLeaderboardHandler);
 
 // Join a group
 router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);
 
 //Leave a joined group
 router.post("/:id/leave", debugMiddleware, verifyAuth, leaveGroupHandler);
+
+//View members
+router.post("/:id/members", debugMiddleware, verifyAuth, viewMembersHandler); //inner group details (shows the members inside the group)
 
 // Fetch group details by groupId (MUST COME LAST as it's generic /:id)
 router.post("/:id", debugMiddleware, verifyAuth, getGroupDetailsHandler); //inner group details (shows the posts inside the group)

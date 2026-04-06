@@ -631,3 +631,62 @@ export const fetchGroupGoalsHandler = async (req, res) => {
 
 };
 
+export const viewMembersHandler = async (req, res) => {
+  // Logic for viewing members of a group
+  const userId = req.userId;
+  const { groupId } = req.body;
+
+  if (!userId || !groupId) {
+    return res.status(400).json({ success: false, message: 'Missing userId or groupId parameter', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can view group members', error: 'not-authorized' });
+    }
+
+    //Add the member names and UIDs to the response (we can optimize this later by just sending the UIDs and then frontend can fetch the names using the UIDs, but for now this works fine)
+
+    res.status(200).json({ success: true, members, message: 'Group members fetched successfully', error: null });
+  }
+  catch (err) {
+    console.error('Error fetching group members:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch group members', error: err.message });
+  }
+
+}
+
+export const deleteGrouphandler = async (req, res){
+  // Logic for deleting a group
+  const userId = req.userId;
+  const { groupId } = req.body;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or userId', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (group.adminUID !== userId) {
+      return res.status(403).json({ success: false, message: 'Only group admins can delete the group', error: 'not-authorized' });
+    }
+
+    await Group.deleteOne({ _id: groupId });
+    res.status(200).json({ success: true, message: 'Group deleted successfully', error: null });
+  } catch (err) {
+    console.error('Error deleting group:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete group', error: err.message });
+  }
+  
+}

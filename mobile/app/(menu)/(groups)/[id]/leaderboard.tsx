@@ -1,6 +1,5 @@
-
-import React, {useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet, FlatList, Pressable, Image } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, ScrollView, StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import BackButton from '@/components/ui/BackButton';
 import { ThemedText } from '@/components/themed-text';
@@ -9,74 +8,84 @@ import authStyles from '@/constants/styles/auth.styles';
 import { colors } from '@/constants/theme';
 const bee = require('../../../../assets/images/bee_astronanut.jpg');
 const queen = require('../../../../assets/images/queen_bee.avif');
-import { getSocket } from '@/lib/socket';
+import axios from 'axios';
+import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
+
+
+const apiUrl = IPHONE_TESTING_URL;
 
 type Player = {
   id: string;
   name: string;
   points: number;
 };
-
+ 
+const fetchLeaderboard = async (id: string): Promise<Player[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/groups/${id}/leaderboard`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    return [];
+  }
+};
+ 
 function useLeaderboardFeed(groupId: string | undefined) {
   const [players, setPlayers] = useState<Player[]>([]);
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+ 
+  const load = async () => {
+    if (!groupId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchLeaderboard(groupId);
+      setPlayers(data);
+    } catch {
+      setError('Failed to load leaderboard.');
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
   useEffect(() => {
-
-    // Replace with database instead of websockets
-    // Make a separate schema for leaderboards, then load them here....
-    
-
-    const socket = getSocket();
-    if (!socket || !groupId) return;
-
-    const onData = (data: { groupId: string; leaderboard: Player[] }) => {
-      if (data.groupId === groupId) setPlayers(data.leaderboard);
-    };
-
-    const onUpdate = (data: { groupId: string; entries: Player[] }) => {
-      if (data.groupId === groupId) setPlayers(data.entries);
-    };
-
-    socket.emit('getLeaderboard', { groupId });
-    socket.on('leaderboardData', onData);
-    socket.on('leaderboardUpdate', onUpdate);
-
-    return () => {
-      socket.off('leaderboardData', onData);
-      socket.off('leaderboardUpdate', onUpdate);
-    };
+    load();
   }, [groupId]);
-
-  return players;
+ 
+  return { players, loading, error, refresh: load };
 }
-
+ 
 export default function Leaderboard() {
   const { id } = useLocalSearchParams();
   const groupId = Array.isArray(id) ? id[0] : id;
   const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
-
-  const livePlayers = useLeaderboardFeed(groupId);
-
+ 
+  const { players, loading, error, refresh } = useLeaderboardFeed(groupId);
+ 
   const sorted = useMemo(() => {
-    return livePlayers.slice().sort((a, b) => b.points - a.points);
-  }, [livePlayers, tab]);
-
+    return players.slice().sort((a, b) => b.points - a.points);
+  }, [players, tab]);
+ 
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
-
-  return(
+ 
+  return (
     <LinearGradient
       colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
       style={authStyles.container}
     >
       <ScrollView contentContainerStyle={styles.scroll}>
         <BackButton />
-
+ 
         <ThemedText type="title" style={styles.header}>
           Leaderboard
         </ThemedText>
         <ThemedText style={styles.subheader}>Group ID: {id}</ThemedText>
-
+ 
+        {/* Tab Row */}
         <View style={styles.tabRow}>
           {(['Daily', 'Weekly', 'All time'] as const).map((t) => (
             <Pressable
@@ -84,85 +93,116 @@ export default function Leaderboard() {
               onPress={() => setTab(t)}
               style={[styles.tab, tab === t ? styles.tabActive : undefined]}
             >
-              <ThemedText style={[styles.tabText, tab === t ? styles.tabTextActive : undefined]}>{t}</ThemedText>
+              <ThemedText style={[styles.tabText, tab === t ? styles.tabTextActive : undefined]}>
+                {t}
+              </ThemedText>
             </Pressable>
           ))}
         </View>
-
-        {/* Podium */}
-        <View style={styles.podiumRow}>
-          <View style={styles.podiumSide}>
-            {top3[1] && (
-              <View style={styles.podiumItem}>
-                <Image source={bee} style={[styles.avatarLarge, styles.avatarSilverImage]} />
-                <View style={styles.podiumCard}>
-                  <ThemedText style={styles.podiumName}>{top3[1].name}</ThemedText>
-                  <ThemedText style={styles.podiumPoints}>{top3[1].points}</ThemedText>
-                </View>
-              </View>
-            )}
+ 
+        {/* Loading / Error States */}
+        {loading && (
+          <View style={styles.centered}>
+            <ActivityIndicator color="#fff" size="large" />
+            <ThemedText style={styles.statusText}>Loading leaderboard…</ThemedText>
           </View>
-
-          <View style={styles.podiumCenter}>
-            {top3[0] && (
-              <View style={styles.podiumItemCenter}>
-                <Image source={queen} style={[styles.avatarXL, styles.avatarGoldImage]} />
-                <View style={styles.podiumCardCenter}>
-                  <ThemedText style={styles.podiumNameCenter}>{top3[0].name}</ThemedText>
-                  <ThemedText style={styles.podiumPointsCenter}>{top3[0].points}</ThemedText>
-                </View>
-              </View>
-            )}
+        )}
+ 
+        {!loading && error && (
+          <View style={styles.centered}>
+            <ThemedText style={styles.statusText}>{error}</ThemedText>
+            <Pressable onPress={refresh} style={styles.retryBtn}>
+              <ThemedText style={styles.retryText}>Try again</ThemedText>
+            </Pressable>
           </View>
-
-          <View style={styles.podiumSide}>
-            {top3[2] && (
-              <View style={styles.podiumItem}>
-                <Image source={bee} style={[styles.avatarLarge, styles.avatarBronzeImage]} />
-                <View style={styles.podiumCard}>
-                  <ThemedText style={styles.podiumName}>{top3[2].name}</ThemedText>
-                  <ThemedText style={styles.podiumPoints}>{top3[2].points}</ThemedText>
-                </View>
-              </View>
-            )}
+        )}
+ 
+        {!loading && !error && sorted.length === 0 && (
+          <View style={styles.centered}>
+            <ThemedText style={styles.statusText}>No players yet.</ThemedText>
           </View>
-        </View>
-
-        {/* List of remaining players in dark cards */}
-        <View style={styles.listWrap}>
-          <FlatList
-            data={rest}
-            keyExtractor={(p) => p.id}
-            renderItem={({ item }) => (
-              <View style={styles.listCard}>
-                <View style={styles.listLeft}>
-                  <View style={styles.avatarSmall}>
-                    <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
+        )}
+ 
+        {!loading && !error && sorted.length > 0 && (
+          <>
+            {/* Podium */}
+            <View style={styles.podiumRow}>
+              <View style={styles.podiumSide}>
+                {top3[1] && (
+                  <View style={styles.podiumItem}>
+                    <Image source={bee} style={[styles.avatarLarge, styles.avatarSilverImage]} />
+                    <View style={styles.podiumCard}>
+                      <ThemedText style={styles.podiumName}>{top3[1].name}</ThemedText>
+                      <ThemedText style={styles.podiumPoints}>{top3[1].points}</ThemedText>
+                    </View>
                   </View>
-                  <View style={styles.nameCol}>
-                    <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
-                    <ThemedText style={styles.username}>@username</ThemedText>
-                  </View>
-                </View>
-                <ThemedText style={styles.points}>{item.points}</ThemedText>
+                )}
               </View>
-            )}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            contentContainerStyle={{ paddingBottom: 80 }}
-          />
-        </View>
+ 
+              <View style={styles.podiumCenter}>
+                {top3[0] && (
+                  <View style={styles.podiumItemCenter}>
+                    <Image source={queen} style={[styles.avatarXL, styles.avatarGoldImage]} />
+                    <View style={styles.podiumCardCenter}>
+                      <ThemedText style={styles.podiumNameCenter}>{top3[0].name}</ThemedText>
+                      <ThemedText style={styles.podiumPointsCenter}>{top3[0].points}</ThemedText>
+                    </View>
+                  </View>
+                )}
+              </View>
+ 
+              <View style={styles.podiumSide}>
+                {top3[2] && (
+                  <View style={styles.podiumItem}>
+                    <Image source={bee} style={[styles.avatarLarge, styles.avatarBronzeImage]} />
+                    <View style={styles.podiumCard}>
+                      <ThemedText style={styles.podiumName}>{top3[2].name}</ThemedText>
+                      <ThemedText style={styles.podiumPoints}>{top3[2].points}</ThemedText>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+ 
+            {/* Remaining players */}
+            <View style={styles.listWrap}>
+              <FlatList
+                data={rest}
+                keyExtractor={(p) => p.id}
+                scrollEnabled={false}
+                renderItem={({ item, index }) => (
+                  <View style={styles.listCard}>
+                    <View style={styles.listLeft}>
+                      <ThemedText style={styles.rankNumber}>{index + 4}</ThemedText>
+                      <View style={styles.avatarSmall}>
+                        <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
+                      </View>
+                      <View style={styles.nameCol}>
+                        <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
+                        <ThemedText style={styles.username}>@username</ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText style={styles.points}>{item.points}</ThemedText>
+                  </View>
+                )}
+                ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+                contentContainerStyle={{ paddingBottom: 80 }}
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
     </LinearGradient>
   );
 }
-
+ 
 function getInitials(name: string) {
   const parts = name.split(' ');
   const first = parts[0] ? parts[0][0] : '';
   const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
   return (first + last).toUpperCase();
 }
-
+ 
 const styles = StyleSheet.create({
   scroll: {
     padding: 20,
@@ -204,7 +244,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '800',
   },
-
+ 
+  centered: {
+    alignItems: 'center',
+    marginTop: 40,
+    gap: 12,
+  },
+  statusText: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 15,
+  },
+  retryBtn: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+ 
   podiumRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -229,54 +289,23 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 8,
   },
   avatarXL: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 10,
   },
-  avatarGold: {
-    backgroundColor: '#FFD700',
-  },
-  avatarSilver: {
-    backgroundColor: '#94A3B8',
-  },
-  avatarBronze: {
-    backgroundColor: '#C76B2D',
-  },
-  avatarTextSmall: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  avatarTextXL: {
-    color: '#111',
-    fontWeight: '800',
-  },
-  /* image variants for top-3 */
   avatarSilverImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.2)',
   },
   avatarGoldImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
     borderWidth: 4,
     borderColor: '#FFD700',
   },
   avatarBronzeImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.15)',
   },
@@ -312,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 18,
   },
-
+ 
   listWrap: {
     marginTop: 6,
   },
@@ -328,6 +357,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  rankNumber: {
+    color: 'rgba(255,255,255,0.5)',
+    fontWeight: '700',
+    fontSize: 13,
+    width: 24,
+    textAlign: 'center',
+    marginRight: 6,
+  },
   avatarSmall: {
     width: 48,
     height: 48,
@@ -336,6 +373,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+  },
+  avatarTextSmall: {
+    color: '#fff',
+    fontWeight: '700',
   },
   nameCol: {
     flexDirection: 'column',
@@ -351,9 +392,5 @@ const styles = StyleSheet.create({
   points: {
     color: '#fff',
     fontWeight: '700',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: 'transparent',
   },
 });
