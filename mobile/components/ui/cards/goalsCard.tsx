@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import * as Progress from "react-native-progress";
 import cardStyles from "../../../constants/styles/card-styles";
 import { colors, Colors } from "../../../constants/theme";
@@ -11,6 +11,7 @@ interface GoalsProps {
   onPress?: () => void;
   width?: number;
   height?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
 export default function GoalsCard({
@@ -18,11 +19,12 @@ export default function GoalsCard({
   onPress,
   width,
   height,
+  style,
 }: GoalsProps) {
   const hasGoals = goals && goals.length > 0;
 
   return (
-    <DashboardCard onPress={onPress} width={width} height={height}>
+    <DashboardCard onPress={onPress} width={width} height={height} style={style}>
       <Text style={[cardStyles.labelBold, { color: Colors.light.text }, styles.title]}>Goals</Text>
       
       {!hasGoals && (
