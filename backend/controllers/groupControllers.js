@@ -2,6 +2,7 @@
 import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
 import User from "../models/user.schema.js";
+import { findSourceMap } from "node:module";
 
 
 
@@ -333,8 +334,9 @@ export const getUserJoinedGroupsHandler = async (req, res) => {
 export const saveQuizHandler = async (req, res) => {
   // Logic for saving a quiz to a group
   const groupId = req.params.id || req.body.groupId;
-  const { quiz } = req.body;
+  const { quiz, score} = req.body;
   const userId = req.userId;
+  const firstName = req.firstName;
 
   if (!groupId || !quiz) {
     return res.status(400).json({ success: false, message: 'Missing groupId or quiz data', error: 'missing-params' });
@@ -352,12 +354,28 @@ export const saveQuizHandler = async (req, res) => {
       group.savedQuizzes = [];
     }
 
+    if (score){
+      // Update leaderboard points for the user
+      if (!group.Leaderboard) {
+        group.Leaderboard = [];
+      }
+      const userEntryIndex = group.Leaderboard.findIndex(entry => entry.UID === userId);
+      if (userEntryIndex !== -1) {
+        // If user already has an entry, update points
+        group.Leaderboard[userEntryIndex].points += score;
+      } else {
+        // If user doesn't have an entry, create one
+        group.Leaderboard.push({ UID: userId, name: firstName, points: score });
+      }
+    }
+
     group.savedQuizzes.push({
       ...quiz,
       savedBy: userId,
       savedAt: new Date()
     });
 
+    //save both the new quiz and the updated leaderboard
     await group.save();
 
     res.status(200).json({ success: true, message: 'Quiz saved successfully', error: null });
@@ -372,6 +390,7 @@ export const saveSummaryHandler = async (req, res) => {
   const groupId = req.params.id || req.body.groupId;
   const { summary } = req.body;
   const userId = req.userId;
+  const firstName = req.firstName;
 
   if (!groupId || !summary) {
     return res.status(400).json({ success: false, message: 'Missing groupId or summary data', error: 'missing-params' });
@@ -458,13 +477,31 @@ export const getGroupLeaderboardHandler = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Missing groupId', error: 'missing-params' });
   }
 
-  return res.status(200).json({
-    success: true,
-    groupId,
-    leaderboard: [],
-    message: 'Leaderboard controller placeholder. WebSocket integration pending.',
-    error: null,
-  });
+  try{
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    const leaderboard = Group.Leaderboard || [];
+
+    /*Sending to frontend --- 
+    Leaderboard : { 
+    UID
+    Name
+    Score
+    }
+    */
+    
+    res.status(200).json({ success: true, leaderboard, message: 'Group leaderboard fetched successfully', error: null });
+  }
+  catch{
+    console.error('Error fetching group leaderboard:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch group leaderboard', error: err.message });
+  }
+
+
 }
 
 export const createGroupGoalHandler = async (req, res) => {

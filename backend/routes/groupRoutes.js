@@ -1,6 +1,6 @@
 import express from 'express';
 import { debugMiddleware } from '../middleware/debug.js';
-import { verifyAuth } from "../middleware/verifyAuth.js";
+import { verifyAuth, verifyName } from "../middleware/verifyAuth.js";
 import { groupHomeHandler, findGroupHandler, createGroupHandler, 
          updateGroupHandler, getGroupDetailsHandler,  joinGroupHandler, 
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
@@ -35,19 +35,19 @@ router.post("/delete-goal", verifyAuth, debugMiddleware, deleteGroupGoalHandler)
 router.post("/fetch-goals", verifyAuth, debugMiddleware, fetchGroupGoalsHandler);
 
 // Save a quiz to a group (MUST COME BEFORE /:id route)
-router.post("/:id/save-quiz", debugMiddleware, verifyAuth, saveQuizHandler);
+router.post("/:id/save-quiz", debugMiddleware, verifyName, saveQuizHandler);
 
 // Save a summary to a group (MUST COME BEFORE /:id route)
-router.post("/:id/save-summary", debugMiddleware, verifyAuth, saveSummaryHandler);
+router.post("/:id/save-summary", debugMiddleware, verifyName, saveSummaryHandler);
 
 // Get saved quizzes for a group (MUST COME BEFORE /:id route)
-router.get("/:id/saved-quizzes", debugMiddleware, verifyAuth, getSavedQuizzesHandler);
+router.get("/:id/saved-quizzes", debugMiddleware, verifyName, getSavedQuizzesHandler);
 
 // Get saved summaries for a group (MUST COME BEFORE /:id route)
-router.get("/:id/saved-summaries", debugMiddleware, verifyAuth, getSavedSummariesHandler);
+router.get("/:id/saved-summaries", debugMiddleware, verifyName, getSavedSummariesHandler);
 
 // Get leaderboard for a group (placeholder until websocket is integrated)
-router.get("/:id/leaderboard", debugMiddleware, verifyAuth, getGroupLeaderboardHandler);
+router.get("/:id/leaderboard", debugMiddleware, verifyName, getGroupLeaderboardHandler);
 
 // Join a group
 router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);

@@ -20,3 +20,22 @@ export const verifyAuth = (req, res, next) => {
         return res.status(500).send('Unauthorized: Failed Authentication');
     }
 };
+
+export const verifyName = (req, res, next) => {
+    const auth = getAuth(req)
+
+    try{
+    if (!auth || !auth.userId || !auth.firstName) {
+        return res.status(403).send('Forbidden: User not authenticated or missing name');
+    }
+    req.userId = auth.userId; // Attach the user ID to the request object for use in subsequent middleware or route handlers
+    req.firstName = auth.firstName;
+    //User is authenticated, proceed to the next middleware or route handler
+    next()
+    
+    }
+    catch(err){
+        console.error("Error in verifyName middleware:", err);
+        return res.status(500).send('Unauthorized: Failed Authentication');
+    }
+}

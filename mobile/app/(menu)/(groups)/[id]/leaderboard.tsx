@@ -21,6 +21,11 @@ function useLeaderboardFeed(groupId: string | undefined) {
   const [players, setPlayers] = useState<Player[]>([]);
 
   useEffect(() => {
+
+    // Replace with database instead of websockets
+    // Make a separate schema for leaderboards, then load them here....
+    
+
     const socket = getSocket();
     if (!socket || !groupId) return;
 

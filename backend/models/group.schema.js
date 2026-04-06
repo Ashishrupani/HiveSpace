@@ -42,7 +42,8 @@ const groupSchema = new Schema(
             }],
             savedBy: String,
             savedAt: { type: Date, default: Date.now }
-        }] }
+        }] },
+        Leaderboard: { type: [{ UID: String, name: String, points: Number }] }
 
     },
     { timestamps: true }
