@@ -1,8 +1,5 @@
 //getAuth isn't used yet but will be later. Need to refer to documents for proper usage.
-import { getAuth } from "@clerk/express";
 import Group from "../models/group.schema.js";
-import User from "../models/user.schema.js";
-import { findSourceMap } from "node:module";
 
 
 
