@@ -56,6 +56,12 @@ export default function GroupLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="members"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }

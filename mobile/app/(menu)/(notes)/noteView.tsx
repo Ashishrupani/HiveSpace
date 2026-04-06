@@ -16,6 +16,7 @@ import cardStyles from "../../../constants/styles/card-styles";
 
 import { getNoteById, updateNote, UINote } from "../../../lib/notes-repo";
 import * as Sharing from "expo-sharing";
+import BackButton from "../../../components/ui/BackButton";
 
 // -----------------------------------------------------------------------------
 // Component
@@ -146,6 +147,7 @@ export default function NoteView() {
         backgroundColor: colors.noteBackground,
       }}
     >
+      <BackButton />
       {/* Top bar with title + Save button */}
       <View
         style={{
@@ -155,6 +157,7 @@ export default function NoteView() {
           paddingHorizontal: 16,
           paddingTop: 16,
           paddingBottom: 8,
+          paddingLeft: 60, // Make space for the back button
         }}
       >
         {/* Note title */}
