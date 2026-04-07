@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, StyleProp, ViewStyle } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, StyleProp, ViewStyle } from "react-native";
 import DashboardCard from "./dashboardCard";
 import spotifyIcon from "../../../assets/images/spotify_icon.png";
+import { Ionicons } from '@expo/vector-icons';
 
 interface Track {
   name: string;
@@ -42,7 +43,7 @@ export default function MusicCard({
       >
         <View style={styles.content}>
           <View style={styles.iconCircle}>
-            <Image source={spotifyIcon} style={styles.iconCircle} />
+            <Image source={spotifyIcon} style={styles.icon} />
           </View>
 
           <Text style={styles.title}>Connect Spotify</Text>
@@ -56,27 +57,41 @@ export default function MusicCard({
 
   return (
     <DashboardCard
-      onPress={onPlayPause}
       width={width}
       height={height}
       style={[styles.card, style]}
     >
       <View style={styles.content}>
         <View style={styles.iconCircle}>
-          <Image source={spotifyIcon} style={styles.icon} />
+          {currentTrack?.albumArt ? (
+            <Image source={{ uri: currentTrack.albumArt }} style={styles.icon} />
+          ) : (
+            <Image source={spotifyIcon} style={styles.icon} />
+          )}
         </View>
-
-        <Text style={styles.title}>{trackTitle}</Text>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{trackTitle}</Text>
         <Text style={styles.subtitle}>{trackArtist}</Text>
+        <View style={{ flexDirection: "row", marginTop: 4, gap: 20 }}>
+          <TouchableOpacity onPress={onPlayPause}>
+            <Ionicons
+              name={isPlaying ? "pause-circle" : "play-circle"}
+              size={30}
+              color="#1DB954"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onSkip}>
+            <Ionicons name="play-skip-forward" size={30} color="#1DB954" />
+          </TouchableOpacity>
+        </View>
       </View>
     </DashboardCard>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FAFAFA",
-    paddingVertical: 20,
+    paddingVertical: 5,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -85,18 +100,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 68,
+    height: 68,
+    borderRadius: 12,
     backgroundColor: "rgba(0,0,0,0.05)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
   },
   icon: {
-    width: 32,
-    height: 32,
-    resizeMode: "contain",
+    width: 68,
+    height: 68,
+    borderRadius: 12,
+    resizeMode: "cover",
   },
   title: {
     color: "#0A0000",
