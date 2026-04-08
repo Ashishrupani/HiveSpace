@@ -94,17 +94,14 @@ export default function Dashboard() {
   }, [spotify.isConnected]);
 
   const handleSpotifyLogin = async () => {
-    console.log("[Dashboard] Login button pressed");
     await spotify.login();
   };
 
   const handlePlayPause = async () => {
-    console.log("[Dashboard] Play/Pause pressed");
     await spotify.playPause();
   };
 
   const handleSkip = async () => {
-    console.log("[Dashboard] Skip pressed");
     await spotify.skip();
   };
 

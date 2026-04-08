@@ -20,6 +20,8 @@ const SPOTIFY_SCOPES = [
   'user-read-currently-playing'
 ];
 WebBrowser.maybeCompleteAuthSession();
+const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile', path: 'dashboard' });
+console.log('Spotify Redirect URI:',redirectUri);
 
 interface Track {
   name: string;
@@ -33,8 +35,6 @@ export const useSpotify = () => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
-  console.log('Spotify Redirect URI:',redirectUri);
 
   const [authRequest, authResponse, openSpotifyLogin] = AuthSession.useAuthRequest(
     {
@@ -50,7 +50,7 @@ export const useSpotify = () => {
       const { code } = authResponse.params;
       exchangeCodeForToken(code, authRequest.codeVerifier);
     }
-  }, [authResponse, authRequest]);
+  }, [authResponse]);
 
   const exchangeCodeForToken = async (code: string, verifier: string) => {
     try {
@@ -126,8 +126,8 @@ export const useSpotify = () => {
       const response = await spotifyApi('/me/player/currently-playing');
       if (response?.data?.item) {
         setCurrentTrack({
-          name: response.data.item.name,//not used 
-          artist: response.data.item.artists[0].name,//not used
+          name: response.data.item.name,
+          artist: response.data.item.artists[0].name,
           albumArt: response.data.item.album.images[0]?.url,
         });
         setIsPlaying(response.data.is_playing);
@@ -161,6 +161,12 @@ export const useSpotify = () => {
     }
   };
 
+  const logout = () => {
+    setAccessToken(null);
+    setRefreshToken(null);
+  };
+
+
   return {
     login: () => openSpotifyLogin(),
     isConnected: !!accessToken,
@@ -168,6 +174,8 @@ export const useSpotify = () => {
     isPlaying,
     playPause,
     skip,
-    fetchCurrentTrack
+    fetchCurrentTrack,
+    logout
+
   };
 };
