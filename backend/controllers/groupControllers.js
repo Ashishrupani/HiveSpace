@@ -650,10 +650,20 @@ export const viewMembersHandler = async (req, res) => {
     if (!group.UID?.includes(userId)) {
       return res.status(403).json({ success: false, message: 'Only group members can view group members', error: 'not-authorized' });
     }
+    const admin = group.adminUID;
+
+    //If the user is not an admin, we need to add the user to the member list.
+    if (admin !== userId && !group.memberNames.includes(userId)) {
+      group.memberNames.push({ name: req.firstName, UID: userId });
+      await group.save();
+    }
+
 
     //Add the member names and UIDs to the response (we can optimize this later by just sending the UIDs and then frontend can fetch the names using the UIDs, but for now this works fine)
+    const members = group.memberNames || [];
 
-    res.status(200).json({ success: true, members, message: 'Group members fetched successfully', error: null });
+    // Return the admin and members list
+    res.status(200).json({ success: true, admin, members, message: 'Group members fetched successfully', error: null });
   }
   catch (err) {
     console.error('Error fetching group members:', err);
@@ -662,7 +672,7 @@ export const viewMembersHandler = async (req, res) => {
 
 }
 
-export const deleteGrouphandler = async (req, res){
+export const deleteGrouphandler = async (req, res) =>{
   // Logic for deleting a group
   const userId = req.userId;
   const { groupId } = req.body;
@@ -688,5 +698,44 @@ export const deleteGrouphandler = async (req, res){
     console.error('Error deleting group:', err);
     res.status(500).json({ success: false, message: 'Failed to delete group', error: err.message });
   }
-  
+
 }
+
+export const kickMemberHandler = async (req, res) => {
+  // Logic for kicking a member from a group
+  const userId = req.userId;
+  const { groupId, memberId } = req.body;
+
+  if (!groupId || !userId || !memberId) {
+    return res.status(400).json({ success: false, message: 'Missing groupId, userId or memberId parameter', error: 'missing-params' });
+  }
+  try {
+    const group = await Group.findOne({ _id: groupId });
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+
+    if (group.adminUID !== userId) {
+      return res.status(403).json({ success: false, message: 'Only group admins can kick members', error: 'not-authorized' });
+    }
+
+    if (!group.UID.includes(memberId)) {
+      return res.status(404).json({ success: false, message: 'Member not found in the group', error: 'member-not-found' });
+    }
+
+    // Remove memberId from the group's UID array
+    group.UID = group.UID.filter(uid => uid !== memberId);
+
+    // Also remove the member from the memberNames array
+    group.memberNames = group.memberNames.filter(member => member.UID !== memberId);
+    await group.save();
+    res.status(200).json({ success: true, message: 'Member kicked successfully', error: null });
+
+  } catch (error) {
+    console.error('Error kicking member:', error);
+    res.status(500).json({ success: false, message: 'Failed to kick member', error: error.message });
+  }
+
+}
+

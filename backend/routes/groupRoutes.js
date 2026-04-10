@@ -6,7 +6,7 @@ import { groupHomeHandler, findGroupHandler, createGroupHandler,
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
          getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
          getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler,
-         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler} 
+         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler, kickMemberHandler, deleteGrouphandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -24,6 +24,9 @@ router.post("/createGroup", debugMiddleware, verifyAuth, createGroupHandler);
 
 // Update group details (name/about/icon/color)
 router.post("/updateGroup", debugMiddleware, verifyAuth, updateGroupHandler);
+
+//Delete a group (admin only)
+router.post("/deleteGroup", debugMiddleware, verifyAuth, deleteGroupHandler);
 
 //Get user's joined groups
 router.post("/my-groups", debugMiddleware, verifyAuth, getUserJoinedGroupsHandler); //(shows the groups the user has joined)
@@ -58,6 +61,9 @@ router.post("/:id/leave", debugMiddleware, verifyAuth, leaveGroupHandler);
 
 //View members
 router.post("/:id/members", debugMiddleware, verifyAuth, viewMembersHandler); //inner group details (shows the members inside the group)
+
+//Kick a member (admin only)
+router.post("/:id/kick", debugMiddleware, verifyAuth, kickMemberHandler); //inner group details (shows the members inside the group)
 
 // Fetch group details by groupId (MUST COME LAST as it's generic /:id)
 router.post("/:id", debugMiddleware, verifyAuth, getGroupDetailsHandler); //inner group details (shows the posts inside the group)

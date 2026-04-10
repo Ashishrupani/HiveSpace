@@ -10,19 +10,22 @@ const bee = require('../../../../assets/images/bee_astronanut.jpg');
 const queen = require('../../../../assets/images/queen_bee.avif');
 import axios from 'axios';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
-
-
+ 
+ 
 const apiUrl = IPHONE_TESTING_URL;
-
+ 
 type Player = {
   id: string;
   name: string;
   points: number;
 };
  
-const fetchLeaderboard = async (id: string): Promise<Player[]> => {
+const fetchLeaderboard = async (id: string, tab: 'Daily' | 'Weekly' | 'All time'): Promise<Player[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/groups/${id}/leaderboard`);
+    const tabParam = tab === 'All time' ? 'alltime' : tab.toLowerCase();
+    const response = await axios.get(`${apiUrl}/api/groups/${id}/leaderboard`, {
+      params: { period: tabParam , groupId: id },
+    });
     if (response.status === 200) {
       return response.data;
     }
@@ -32,7 +35,7 @@ const fetchLeaderboard = async (id: string): Promise<Player[]> => {
   }
 };
  
-function useLeaderboardFeed(groupId: string | undefined) {
+function useLeaderboardFeed(groupId: string | undefined, tab: 'Daily' | 'Weekly' | 'All time') {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +45,7 @@ function useLeaderboardFeed(groupId: string | undefined) {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchLeaderboard(groupId);
+      const data = await fetchLeaderboard(groupId, tab);
       setPlayers(data);
     } catch {
       setError('Failed to load leaderboard.');
@@ -53,7 +56,7 @@ function useLeaderboardFeed(groupId: string | undefined) {
  
   useEffect(() => {
     load();
-  }, [groupId]);
+  }, [groupId, tab]);
  
   return { players, loading, error, refresh: load };
 }
@@ -63,7 +66,7 @@ export default function Leaderboard() {
   const groupId = Array.isArray(id) ? id[0] : id;
   const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
  
-  const { players, loading, error, refresh } = useLeaderboardFeed(groupId);
+  const { players, loading, error, refresh } = useLeaderboardFeed(groupId, tab);
  
   const sorted = useMemo(() => {
     return players.slice().sort((a, b) => b.points - a.points);
@@ -267,16 +270,17 @@ const styles = StyleSheet.create({
  
   podiumRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'flex-end',
     marginBottom: 20,
+    gap: 8,
   },
   podiumSide: {
-    flex: 1,
+    width: 110,
     alignItems: 'center',
   },
   podiumCenter: {
-    flex: 1,
+    width: 130,
     alignItems: 'center',
   },
   podiumItem: {
