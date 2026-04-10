@@ -5,3 +5,7 @@
 expo-env.d.ts
 #setup instructions
 #setup.txt.DS_Store.env.local
+
+#this is for emergencies, if you accidentally commit something you shouldn't, add it here and it will be ignored in the future. Remember to remove it from git history if it's sensitive.
+devScript.js
+devRoute.js

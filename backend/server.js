@@ -14,6 +14,8 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
 import app from "./app.js";
+//Dev route for syncing member names in groups (temporary until we have a better solution for this)
+//import devRoute from "./routes/devRoute.js";
 
 //load environmental variables
 dotenv.config();
@@ -50,6 +52,7 @@ app.use("/api/rag", ragRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/streak", streakRoutes);
+//app.use("/api/dev", devRoute);
 
 //this is a health check route for debugging and monitoring
 app.get("/api/health", (req, res) => {

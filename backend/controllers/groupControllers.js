@@ -285,7 +285,7 @@ export const leaveGroupHandler = async (req, res) => {
   }
 }
 
-export const deleteGrouphandler = async (req, res) =>{
+export const deleteGroupHandler = async (req, res) =>{
   // Logic for deleting a group
   const userId = req.userId;
   const { groupId } = req.body;
@@ -551,7 +551,7 @@ export const viewMembersHandler = async (req, res) => {
     const admin = group.adminUID;
 
     //If the user is not an admin, we need to add the user to the member list.
-    if (admin !== userId && !group.memberNames.includes(userId)) {
+    if (admin !== userId && !group.memberNames.some(m => m.UID === userId)) {
       group.memberNames.push({ name: req.firstName, UID: userId });
       await group.save();
     }

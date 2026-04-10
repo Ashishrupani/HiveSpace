@@ -6,7 +6,7 @@ import { groupHomeHandler, findGroupHandler, createGroupHandler,
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
          getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
          getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler,
-         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler, kickMemberHandler, deleteGrouphandler} 
+         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler, kickMemberHandler, deleteGroupHandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -60,7 +60,7 @@ router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);
 router.post("/:id/leave", debugMiddleware, verifyAuth, leaveGroupHandler);
 
 //View members
-router.post("/:id/members", debugMiddleware, verifyAuth, viewMembersHandler); //inner group details (shows the members inside the group)
+router.post("/:id/members", debugMiddleware, verifyName, viewMembersHandler); //inner group details (shows the members inside the group)
 
 //Kick a member (admin only)
 router.post("/:id/kick", debugMiddleware, verifyAuth, kickMemberHandler); //inner group details (shows the members inside the group)
