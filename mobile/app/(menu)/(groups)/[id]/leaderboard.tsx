@@ -217,11 +217,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
     fontWeight: '700',
+    color: '#fff',
   },
   subheader: {
     textAlign: 'center',
     marginBottom: 12,
     opacity: 0.9,
+    color: '#fff',
   },
   tabRow: {
     flexDirection: 'row',

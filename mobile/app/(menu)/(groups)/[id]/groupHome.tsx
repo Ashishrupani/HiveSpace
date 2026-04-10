@@ -221,6 +221,11 @@ export default function GroupHome() {
     setEditModalVisible(true);
   };
  
+  const openMembersPage = () => {
+    if (!groupId) return;
+    router.push(`/(groups)/${groupId}/members` as any);
+  };
+ 
   const handleSaveGroupEdits = async () => {
     if (!groupId) {
       Alert.alert('Error', 'Group ID is missing. Please reopen this group and try again.');
@@ -351,7 +356,7 @@ export default function GroupHome() {
       <BackButton />
  
       <View style={[styles.groupBanner, { backgroundColor: displayedGroupMeta.color }]}> 
-        <View style={styles.bannerLeft}>
+        <View style={styles.bannerHeader}>
           {displayedGroupMeta.logoUri ? (
             <Image source={{ uri: displayedGroupMeta.logoUri }} style={styles.bannerLogo} resizeMode="cover" />
           ) : (
@@ -359,25 +364,29 @@ export default function GroupHome() {
               <IconSymbol name={displayedGroupMeta.iconName as any} size={30} color="#fff" />
             </View>
           )}
-          <View style={styles.bannerTextWrap}>
-            <Text style={styles.bannerTitle}>{displayedGroupMeta.name || groupName}</Text>
-            <Text style={styles.bannerId}>ID: {groupId}</Text>
-            <Text style={styles.bannerAbout} numberOfLines={2}>
-              {resolveGroupDescription(displayedGroupMeta.name, displayedGroupMeta.about)}
-            </Text>
-          </View>
+          <Text style={styles.bannerTitle}>{displayedGroupMeta.name || groupName}</Text>
         </View>
- 
-        <TouchableOpacity style={styles.bannerColorPill} onPress={openEditModal}>
-          <View style={styles.bannerColorDot} />
-          <Text style={styles.bannerColorText}>Edit</Text>
-        </TouchableOpacity>
+
+        <View style={styles.bannerActions}>
+          <TouchableOpacity style={styles.bannerMemberButton} onPress={openMembersPage}>
+            <Text style={styles.bannerMemberText}>View Members</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bannerColorPill} onPress={openEditModal}>
+            <View style={styles.bannerColorDot} />
+            <Text style={styles.bannerColorText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.bannerId}>ID: {groupId}</Text>
+        <Text style={styles.bannerAbout} numberOfLines={3}>
+          {resolveGroupDescription(displayedGroupMeta.name, displayedGroupMeta.about)}
+        </Text>
       </View>
-      
- 
+
       <GoalsCard 
         goals={getTopThreeGroupGoals(groupId)}
         onPress={onGroupGoalsPress}
+        style={styles.goalsCardSpace}
       />
  
       <View style={styles.horizontalCardsList}>
@@ -522,33 +531,47 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
   },
+  goalsCardSpace: {
+    marginTop: 16,
+    marginBottom: 4,
+  },
   groupBanner: {
-    marginTop: 8,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    flexDirection: 'row',
+    marginTop: 16,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 24,
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  bannerHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   bannerLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
   },
   bannerLogo: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginRight: 12,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    marginRight: 16,
+    backgroundColor: 'rgba(255,255,255,0.24)',
   },
   bannerIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginRight: 12,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    marginRight: 16,
+    backgroundColor: 'rgba(255,255,255,0.24)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -557,20 +580,23 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
+    marginTop: 12,
+    textAlign: 'center',
   },
   bannerId: {
-    color: 'rgba(255,255,255,0.92)',
+    color: 'rgba(255,255,255,0.95)',
     fontSize: 13,
-    marginTop: 2,
+    marginTop: 12,
+    textAlign: 'center',
   },
   bannerAbout: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 16,
-    paddingRight: 8,
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   bannerColorPill: {
     flexDirection: 'row',
@@ -579,7 +605,23 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    marginLeft: 10,
+  },
+  bannerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  bannerMemberButton: {
+    backgroundColor: 'rgba(255,255,255,0.24)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  bannerMemberText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   bannerColorDot: {
     width: 8,
