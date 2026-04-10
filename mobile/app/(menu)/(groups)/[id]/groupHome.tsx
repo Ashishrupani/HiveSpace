@@ -194,6 +194,29 @@ export default function GroupHome() {
         console.log('GroupHome unmounted');
       };
     }, []);
+
+    const membersPrefetchedRef = React.useRef<string | null>(null);
+    const base = API_BASE_URL;
+
+React.useEffect(() => {
+  const prefetchMembers = async () => {
+    if (!groupId || !isLoaded || !user?.id) return;
+    if (membersPrefetchedRef.current === groupId) return;
+    membersPrefetchedRef.current = groupId;
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await axios.post(
+        `${base}/api/groups/${groupId}/members`,
+        { groupId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch {
+      // silent — this is just a background warm-up call
+    }
+  };
+  prefetchMembers();
+}, [groupId, isLoaded, user?.id]);
  
   const groupName = groupMeta.name;
   const selectedEditIconName = GROUP_ICONS.find((icon) => icon.id === selectedIconId)?.name ?? 'person.3.fill';

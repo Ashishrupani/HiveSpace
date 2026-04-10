@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 
 export const verifyAuth = (req, res, next) => {
     // Extract the authentication information from the request using Clerk's getAuth function ()
@@ -19,4 +19,21 @@ export const verifyAuth = (req, res, next) => {
         console.error("Error in verifyAuth middleware:", err);
         return res.status(500).send('Unauthorized: Failed Authentication');
     }
+};
+
+export const verifyName = async (req, res, next) => {
+  const auth = getAuth(req);
+  try {
+    if (!auth || !auth.userId) {
+      return res.status(403).send('Forbidden: User not authenticated');
+    }
+    req.userId = auth.userId;
+
+    const clerkUser = await clerkClient.users.getUser(auth.userId);
+    req.firstName = clerkUser.firstName ?? 'Unknown';
+    next();
+  } catch (err) {
+    console.error("Error in verifyName middleware:", err);
+    return res.status(500).send('Unauthorized: Failed Authentication');
+  }
 };
