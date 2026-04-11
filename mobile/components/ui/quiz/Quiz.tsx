@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, Pressable } from 'reac
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation } from 'expo-router';
 import quizStyles from '@/constants/styles/quiz-styles';
-import BackButton from '@/components/ui/BackButton';
 
 export type Question = {
   id: string;
@@ -117,7 +116,6 @@ export default function Quiz({ questions, groupId, onFinish, onBackToFileUpload 
 
   return (
     <View style={{ flex: 1 }}>
-      <BackButton />
       <ScrollView contentContainerStyle={quizStyles.container}>
         <View style={quizStyles.card}>
         <Text style={quizStyles.progress}>{`Question ${index + 1} / ${questions.length}`}</Text>

@@ -29,7 +29,7 @@ export default function RootLayout() {
     };
 
     checkBackend();
-    const interval = setInterval(checkBackend, 60000); // Check every 60 seconds
+    const interval = setInterval(checkBackend, 300000); // Check every 5 minutes
 
     return () => clearInterval(interval);
   }, []);
@@ -40,7 +40,7 @@ export default function RootLayout() {
         <Slot/>
         <Toast />
         
-        {/* Debug notification */}
+        {/* Debug notification
         <View style={styles.debugContainer}>
           <View style={[
             styles.debugBadge,
@@ -52,7 +52,7 @@ export default function RootLayout() {
                backendStatus === 'connected' ? '✓ Connected' : '✗ Disconnected'}
             </Text>
           </View>
-        </View>
+        </View> */}
       </ClerkProvider>
     </GestureHandlerRootView>
   );

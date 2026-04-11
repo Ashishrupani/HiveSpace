@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import BackButton from '@/components/ui/BackButton';
 import BaseCard from '@/components/ui/cards/baseCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -55,18 +55,20 @@ export default function SavedItemsPage() {
         </View>
       ) : (
         <>
-          <BaseCard width={'100%'} height={110} style={styles.summaryCard}>
+          <BaseCard width={'100%'} height={110} style={styles.summaryCard} onPress={() => router.push(`/${groupId}/savedQuizzes`)}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="reader" size={18} color="#342A5f" />
               <Text style={styles.cardTitle}>Saved quizzes</Text>
+              <Text style={styles.subtitle}>Click to view saved quizzes</Text>
             </View>
             <Text style={styles.countText}>{quizzes.length}</Text>
           </BaseCard>
 
-          <BaseCard width={'100%'} height={110} style={styles.summaryCard}>
+          <BaseCard width={'100%'} height={110} style={styles.summaryCard} onPress={() => router.push(`/${groupId}/savedSummaries`)}>
             <View style={styles.cardHeaderRow}>
               <Ionicons name="document-text" size={18} color="#342A5f" />
               <Text style={styles.cardTitle}>Saved summaries</Text>
+              <Text style={styles.subtitle}>Click to view saved summaries</Text>
             </View>
             <Text style={styles.countText}>{summaries.length}</Text>
           </BaseCard>

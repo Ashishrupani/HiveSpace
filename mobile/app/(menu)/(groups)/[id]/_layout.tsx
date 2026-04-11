@@ -62,6 +62,18 @@ export default function GroupLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="savedQuizzes"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="savedSummaries"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }
