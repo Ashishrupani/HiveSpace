@@ -471,6 +471,53 @@ export const getSavedQuizzesHandler = async (req, res) => {
   }
 }
 
+export const saveQuizResultsHandler = async (req, res) => {
+  // Logic for saving quiz results to the group
+  const groupId = req.params.id || req.body.groupId;
+  const { quizResult } = req.body;
+  const userId = req.userId;
+  const firstName = req.firstName;
+
+  if (!groupId || !quizResult) {
+    return res.status(400).json({ success: false, message: 'Missing groupId or quiz result data', error: 'missing-params' });
+  }
+
+  try {
+    const group = await Group.findOne({ _id: groupId });
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
+    }
+    if (!group.UID?.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'Only group members can save quiz results', error: 'not-authorized' });
+    }
+
+    // The frontend sends const payload = { groupId, answers, score: computed, total: questions.length };
+    // Update leaderboard points for the user
+    if (quizResult.score){
+      if (!group.Leaderboard) {
+        group.Leaderboard = [];
+      }
+      const userEntryIndex = group.Leaderboard.findIndex(entry => entry.UID === userId);
+      if (userEntryIndex !== -1) {
+        // If user already has an entry, update points
+        group.Leaderboard[userEntryIndex].points += quizResult.score;
+      } else {
+        // If user does not have an entry, create one
+        group.Leaderboard.push({ UID: userId, name: firstName, points: quizResult.score });
+      }
+    }
+
+    await group.save();
+    res.status(200).json({ success: true, message: 'Quiz results saved successfully', error: null });
+
+  }
+  catch (err) {
+    console.error('Error saving quiz results:', err);
+    res.status(500).json({ success: false, message: 'Failed to save quiz results', error: err.message });
+  }
+
+}
+
 export const getSavedSummariesHandler = async (req, res) => {
   // Logic for fetching saved summaries for a group
   const groupId = req.params.id || req.params.groupId;
@@ -509,15 +556,9 @@ export const getGroupLeaderboardHandler = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Group not found', error: 'group-not-found' });
     }
 
-    const leaderboard = Group.Leaderboard || [];
+    const leaderboard = group.Leaderboard || [];
 
-    /*Sending to frontend --- 
-    Leaderboard : { 
-    UID
-    Name
-    Score
-    }
-    */
+
     
     res.status(200).json({ success: true, leaderboard, message: 'Group leaderboard fetched successfully', error: null });
   }

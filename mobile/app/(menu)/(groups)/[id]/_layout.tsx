@@ -1,79 +1,56 @@
 import React from 'react'
-import { Tabs , Stack} from 'expo-router';
-import { HapticTab } from '@/components/haptic-tab';
+import { Tabs, useLocalSearchParams } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
+import { GroupDataProvider } from '@/contexts/GroupDataContext';
 
 export default function GroupLayout() {
+  const { id } = useLocalSearchParams();
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
-      <Tabs.Screen
-        name="groupHome"
-        options={{
-          title: 'Group Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="quiz"
-        options={{
-          title: 'AI',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
-        }}
-      />
-      {/* <Tabs.Screen
-        name="info"
-        options={{
-          title: 'Info',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="info.circle.fill" color={color} />,
-        }}
-      /> */}
-      <Tabs.Screen
-        name="groupGoals"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="saved"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="members"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="savedQuizzes"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="savedSummaries"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
-  )
+    // Provider wraps all tab screens so they share one fetch
+    <GroupDataProvider>
+      <Tabs
+        screenOptions={{ headerShown: false }}
+        initialRouteName="groupHome"
+      >
+        <Tabs.Screen
+          name="groupHome"
+          initialParams={{ id }}
+          options={{
+            title: 'Group Home',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          initialParams={{ id }}
+          options={{
+            title: 'Chat',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="bubble.left.and.bubble.right.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="quiz"
+          initialParams={{ id }}
+          options={{
+            title: 'AI',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="sparkles" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="leaderboard"
+          initialParams={{ id }}
+          options={{
+            title: 'Leaderboard',
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen name="groupGoals" initialParams={{ id }} options={{ href: null }} />
+        <Tabs.Screen name="saved" initialParams={{ id }} options={{ href: null }} />
+        <Tabs.Screen name="members" initialParams={{ id }} options={{ href: null }} />
+        <Tabs.Screen name="savedQuizzes" initialParams={{ id }} options={{ href: null }} />
+        <Tabs.Screen name="savedSummaries" initialParams={{ id }} options={{ href: null }} />
+      </Tabs>
+    </GroupDataProvider>
+  );
 }
