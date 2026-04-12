@@ -9,8 +9,6 @@ import { useAuth } from '@clerk/expo';
 import { getSavedQuizzes, SavedQuiz } from '@/api/ragApi';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const PRIMARY = '#342A5f';
 const BORDER = '#e0e0e0';
 const BG = '#f5f5f5';
@@ -21,12 +19,21 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   hard: '#d32f2f',
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function SavedQuizzesPage() {
-  const { id: rawId } = useLocalSearchParams();
+  const { id: rawId, prefetchedQuizzes, prefetchedGroupId } = useLocalSearchParams();
   const groupId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
   const { getToken } = useAuth();
+
+  const parsePrefetched = (): SavedQuiz[] | null => {
+    const raw = Array.isArray(prefetchedQuizzes) ? prefetchedQuizzes[0] : prefetchedQuizzes;
+    const fromGroupId = Array.isArray(prefetchedGroupId) ? prefetchedGroupId[0] : prefetchedGroupId;
+    if (!raw || fromGroupId !== groupId) return null;
+    try {
+      return JSON.parse(raw) as SavedQuiz[];
+    } catch {
+      return null;
+    }
+  };
 
   const [quizzes, setQuizzes] = useState<SavedQuiz[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,9 +49,7 @@ export default function SavedQuizzesPage() {
       setLoading(false);
       return;
     }
-
     setError(null);
-
     try {
       const token = await getToken();
       const data = await getSavedQuizzes(groupId, token);
@@ -75,10 +80,24 @@ export default function SavedQuizzesPage() {
     }
   };
 
-  // Only runs once on mount — no dependency on getToken reference
   useEffect(() => {
+    // Always reset when groupId changes
+    setQuizzes([]);
+    setError(null);
+    setActiveQuiz(null);
+
+    const prefetched = parsePrefetched();
+    if (prefetched !== null) {
+      // Valid prefetch for this group — use it, skip API call
+      setQuizzes(prefetched);
+      setLoading(false);
+      return;
+    }
+
+    // No valid prefetch — fetch from API
+    setLoading(true);
     fetchQuizzes();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [groupId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Active Quiz Screen ───────────────────────────────────────────────────────
 
@@ -105,7 +124,6 @@ export default function SavedQuizzesPage() {
           </Text>
           <View style={{ width: 36 }} />
         </View>
-
         <QuizComponent
           questions={questions}
           groupId={groupId}
@@ -130,21 +148,23 @@ export default function SavedQuizzesPage() {
 
   if (error) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centeredScroll}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
+        }
+      >
         <Ionicons name="cloud-offline-outline" size={48} color="#ccc" />
         <Text style={styles.emptyTitle}>Something went wrong</Text>
         <Text style={styles.emptySubtitle}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => {
-            setLoading(true);
-            fetchQuizzes();
-          }}
+          onPress={() => { setLoading(true); fetchQuizzes(); }}
         >
           <Ionicons name="refresh" size={18} color="#fff" />
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -152,13 +172,19 @@ export default function SavedQuizzesPage() {
 
   if (quizzes.length === 0) {
     return (
-      <View style={styles.centered}>
+      <ScrollView
+        contentContainerStyle={styles.centeredScroll}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
+        }
+      >
         <Ionicons name="document-outline" size={48} color="#ccc" />
         <Text style={styles.emptyTitle}>No Saved Quizzes</Text>
         <Text style={styles.emptySubtitle}>
           Generate a quiz from the AI page and save it to see it here.
         </Text>
-      </View>
+        <Text style={styles.pullToRefresh}>Pull down to refresh</Text>
+      </ScrollView>
     );
   }
 
@@ -169,11 +195,7 @@ export default function SavedQuizzesPage() {
       <ScrollView
         contentContainerStyle={styles.contentPadding}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={PRIMARY}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
         }
       >
         <Text style={styles.heading}>Saved Quizzes</Text>
@@ -183,18 +205,12 @@ export default function SavedQuizzesPage() {
 
         {quizzes.map((quiz, idx) => {
           const difficultyCounts = quiz.questions.reduce<Record<string, number>>(
-            (acc, q) => {
-              acc[q.difficulty] = (acc[q.difficulty] ?? 0) + 1;
-              return acc;
-            },
+            (acc, q) => { acc[q.difficulty] = (acc[q.difficulty] ?? 0) + 1; return acc; },
             {}
           );
-
           const savedDate = quiz.savedAt
             ? new Date(quiz.savedAt).toLocaleDateString(undefined, {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
+                day: 'numeric', month: 'short', year: 'numeric',
               })
             : null;
 
@@ -205,23 +221,17 @@ export default function SavedQuizzesPage() {
               onPress={() => setActiveQuiz(quiz)}
               activeOpacity={0.85}
             >
-              {/* Card header */}
               <View style={styles.cardHeader}>
                 <View style={styles.cardIconWrapper}>
                   <Ionicons name="help-circle" size={22} color={PRIMARY} />
                 </View>
                 <View style={styles.cardTitleBlock}>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
-                    {quiz.title}
-                  </Text>
-                  {savedDate && (
-                    <Text style={styles.cardDate}>Saved {savedDate}</Text>
-                  )}
+                  <Text style={styles.cardTitle} numberOfLines={2}>{quiz.title}</Text>
+                  {savedDate && <Text style={styles.cardDate}>Saved {savedDate}</Text>}
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#bbb" />
               </View>
 
-              {/* Stats row */}
               <View style={styles.statsRow}>
                 <View style={styles.statBadge}>
                   <Ionicons name="list" size={14} color={PRIMARY} />
@@ -230,32 +240,19 @@ export default function SavedQuizzesPage() {
                     {quiz.questions.length === 1 ? 'question' : 'questions'}
                   </Text>
                 </View>
-
                 {Object.entries(difficultyCounts).map(([level, count]) => (
                   <View
                     key={level}
-                    style={[
-                      styles.difficultyBadge,
-                      { backgroundColor: DIFFICULTY_COLORS[level] + '22' },
-                    ]}
+                    style={[styles.difficultyBadge, { backgroundColor: DIFFICULTY_COLORS[level] + '22' }]}
                   >
-                    <Text
-                      style={[
-                        styles.difficultyText,
-                        { color: DIFFICULTY_COLORS[level] },
-                      ]}
-                    >
+                    <Text style={[styles.difficultyText, { color: DIFFICULTY_COLORS[level] }]}>
                       {count} {level}
                     </Text>
                   </View>
                 ))}
               </View>
 
-              {/* Start button */}
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => setActiveQuiz(quiz)}
-              >
+              <TouchableOpacity style={styles.startButton} onPress={() => setActiveQuiz(quiz)}>
                 <Ionicons name="play" size={16} color="#fff" />
                 <Text style={styles.startButtonText}>Start Quiz</Text>
               </TouchableOpacity>
@@ -266,8 +263,6 @@ export default function SavedQuizzesPage() {
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
@@ -280,112 +275,37 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 12,
   },
-
-  // Screen header (active quiz)
-  screenHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-  },
-  screenHeaderTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
-    color: PRIMARY,
-    marginHorizontal: 8,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: BG,
+  centeredScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: BG,
+    padding: 32,
+    gap: 12,
+    minHeight: '100%',
   },
-
-  // List header
+  screenHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER },
+  screenHeaderTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: PRIMARY, marginHorizontal: 8 },
+  backButton: { width: 36, height: 36, borderRadius: 8, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' },
   heading: { fontSize: 28, fontWeight: '700', color: PRIMARY, marginBottom: 4 },
   subheading: { fontSize: 14, color: '#999', marginBottom: 20 },
-
-  // Quiz card
-  quizCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    gap: 12,
-  },
-  cardIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#e8e4f3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  quizCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: BORDER, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
+  cardIconWrapper: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#e8e4f3', justifyContent: 'center', alignItems: 'center' },
   cardTitleBlock: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', lineHeight: 22 },
   cardDate: { fontSize: 12, color: '#999', marginTop: 2 },
-
-  // Stats
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8e4f3',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    gap: 4,
-  },
+  statBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e8e4f3', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 20, gap: 4 },
   statText: { fontSize: 12, fontWeight: '600', color: PRIMARY },
   difficultyBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 20 },
   difficultyText: { fontSize: 12, fontWeight: '600' },
-
-  // Start button
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PRIMARY,
-    borderRadius: 10,
-    paddingVertical: 12,
-    gap: 8,
-  },
+  startButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: PRIMARY, borderRadius: 10, paddingVertical: 12, gap: 8 },
   startButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-
-  // Loading
   loadingText: { fontSize: 16, color: '#999', marginTop: 12 },
-
-  // Empty / error
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333', textAlign: 'center' },
   emptySubtitle: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20 },
-  retryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: PRIMARY,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    gap: 8,
-    marginTop: 8,
-  },
+  pullToRefresh: { fontSize: 12, color: '#bbb', marginTop: 8 },
+  retryButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10, gap: 8, marginTop: 8 },
   retryButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });

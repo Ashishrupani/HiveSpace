@@ -18,9 +18,7 @@ export default function SavedItemsPage() {
 
   React.useEffect(() => {
     const loadSavedItems = async () => {
-
       const token = await getToken();
-
       try {
         setLoading(true);
         const [savedQuizzes, savedSummaries] = await Promise.all([
@@ -37,17 +35,35 @@ export default function SavedItemsPage() {
       }
     };
 
-    if (groupId) {
-      loadSavedItems();
-    }
+    if (groupId) loadSavedItems();
   }, [groupId]);
+
+  const navigateToQuizzes = () => {
+    router.push({
+      pathname: `/${groupId}/savedQuizzes` as any,
+      params: {
+        // Serialize the data as JSON — expo-router params are strings
+        prefetchedQuizzes: JSON.stringify(quizzes),
+        prefetchedGroupId: groupId,
+      },
+    });
+  };
+
+  const navigateToSummaries = () => {
+    router.push({
+      pathname: `/${groupId}/savedSummaries` as any,
+      params: {
+        prefetchedSummaries: JSON.stringify(summaries),
+        prefetchedGroupId: groupId,
+      },
+    });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <BackButton />
 
       <Text style={styles.title}>Saved</Text>
-      <Text style={styles.subtitle}>Group ID: {groupId}</Text>
 
       {loading ? (
         <View style={styles.loadingWrap}>
@@ -55,19 +71,29 @@ export default function SavedItemsPage() {
         </View>
       ) : (
         <>
-          <BaseCard width={'100%'} height={110} style={styles.summaryCard} onPress={() => router.push(`/${groupId}/savedQuizzes`)}>
+          <BaseCard
+            width={'100%'}
+            height={110}
+            style={styles.summaryCard}
+            onPress={navigateToQuizzes}
+          >
             <View style={styles.cardHeaderRow}>
               <Ionicons name="reader" size={18} color="#342A5f" />
-              <Text style={styles.cardTitle}>Saved quizzes</Text>
+              <Text style={styles.cardTitle}>Saved Quizzes</Text>
               <Text style={styles.subtitle}>Click to view saved quizzes</Text>
             </View>
             <Text style={styles.countText}>{quizzes.length}</Text>
           </BaseCard>
 
-          <BaseCard width={'100%'} height={110} style={styles.summaryCard} onPress={() => router.push(`/${groupId}/savedSummaries`)}>
+          <BaseCard
+            width={'100%'}
+            height={110}
+            style={styles.summaryCard}
+            onPress={navigateToSummaries}
+          >
             <View style={styles.cardHeaderRow}>
               <Ionicons name="document-text" size={18} color="#342A5f" />
-              <Text style={styles.cardTitle}>Saved summaries</Text>
+              <Text style={styles.cardTitle}>Saved Summaries</Text>
               <Text style={styles.subtitle}>Click to view saved summaries</Text>
             </View>
             <Text style={styles.countText}>{summaries.length}</Text>
