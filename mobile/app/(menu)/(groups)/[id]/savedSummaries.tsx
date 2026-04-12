@@ -1,116 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAuth } from '@clerk/expo';
-import { getSavedSummaries, SavedSummary } from '@/api/ragApi';
-
+import { SavedSummary } from '@/api/ragApi';
+import { useGroupData } from '@/contexts/GroupDataContext';
+import { useFocusEffect } from '@react-navigation/native';
+ 
 const PRIMARY = '#342A5f';
 const BORDER = '#e0e0e0';
 const BG = '#f5f5f5';
-
+ 
 export default function SavedSummariesPage() {
-  const { id: rawId, prefetchedSummaries, prefetchedGroupId } = useLocalSearchParams();
+  const { id: rawId } = useLocalSearchParams();
   const groupId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
-  const { getToken } = useAuth();
-
-  const parsePrefetched = (): SavedSummary[] | null => {
-    const raw = Array.isArray(prefetchedSummaries) ? prefetchedSummaries[0] : prefetchedSummaries;
-    const fromGroupId = Array.isArray(prefetchedGroupId) ? prefetchedGroupId[0] : prefetchedGroupId;
-    if (!raw || fromGroupId !== groupId) return null;
-    try {
-      return JSON.parse(raw) as SavedSummary[];
-    } catch {
-      return null;
-    }
-  };
-
-  const [summaries, setSummaries] = useState<SavedSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+ 
+  const { getData, fetch, isLoading } = useGroupData();
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [activeSummary, setActiveSummary] = useState<SavedSummary | null>(null);
-
-  // ─── Fetch ───────────────────────────────────────────────────────────────────
-
-  const fetchSummaries = async () => {
-    if (!groupId) {
-      setError('No group ID found.');
-      setLoading(false);
-      return;
-    }
-    setError(null);
-    try {
-      const token = await getToken();
-      const data = await getSavedSummaries(groupId, token);
-      setSummaries(data);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to load saved summaries.';
-      setError(msg);
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+ 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetch(groupId, ['saved']);
+    }, [groupId]),
+  );
+ 
   const handleRefresh = async () => {
-    if (!groupId) return;
     setRefreshing(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const data = await getSavedSummaries(groupId, token);
-      setSummaries(data);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to load saved summaries.';
-      setError(msg);
-      Alert.alert('Error', msg);
-    } finally {
-      setRefreshing(false);
-    }
+    await fetch(groupId, ['saved']);
+    setRefreshing(false);
   };
-
-  useEffect(() => {
-    // Always reset when groupId changes
-    setSummaries([]);
-    setError(null);
-    setActiveSummary(null);
-
-    const prefetched = parsePrefetched();
-    if (prefetched !== null) {
-      // Valid prefetch for this group — use it, skip API call
-      setSummaries(prefetched);
-      setLoading(false);
-      return;
-    }
-
-    // No valid prefetch — fetch from API
-    setLoading(true);
-    fetchSummaries();
-  }, [groupId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Active Summary Screen ────────────────────────────────────────────────────
-
+ 
+  const { summaries } = getData(groupId);
+  const loading = isLoading(groupId, ['saved']);
+ 
+  // ─── Active Summary Screen ────────────────────────────────────────────────
+ 
   if (activeSummary) {
     return (
       <View style={styles.container}>
         <View style={styles.screenHeader}>
-          <TouchableOpacity
-            onPress={() => setActiveSummary(null)}
-            style={styles.backButton}
-            hitSlop={8}
-          >
+          <TouchableOpacity onPress={() => setActiveSummary(null)} style={styles.backButton} hitSlop={8}>
             <Ionicons name="arrow-back" size={22} color={PRIMARY} />
           </TouchableOpacity>
-          <Text style={styles.screenHeaderTitle} numberOfLines={1}>
-            {activeSummary.title}
-          </Text>
+          <Text style={styles.screenHeaderTitle} numberOfLines={1}>{activeSummary.title}</Text>
           <View style={{ width: 36 }} />
         </View>
-
+ 
         <ScrollView contentContainerStyle={styles.contentPadding}>
           <Text style={styles.summaryTitle}>{activeSummary.title}</Text>
           {activeSummary.savedAt && (
@@ -121,7 +59,7 @@ export default function SavedSummariesPage() {
               })}
             </Text>
           )}
-
+ 
           <View style={styles.bulletContainer}>
             {activeSummary.bullets.map((bullet, idx) => (
               <View key={idx} style={styles.bulletPoint}>
@@ -130,7 +68,7 @@ export default function SavedSummariesPage() {
               </View>
             ))}
           </View>
-
+ 
           {activeSummary.keyTerms.length > 0 && (
             <View style={styles.termsContainer}>
               <Text style={styles.termsTitle}>Key Terms</Text>
@@ -146,10 +84,10 @@ export default function SavedSummariesPage() {
       </View>
     );
   }
-
-  // ─── Loading ──────────────────────────────────────────────────────────────────
-
-  if (loading) {
+ 
+  // ─── Loading ──────────────────────────────────────────────────────────────
+ 
+  if (loading && summaries.length === 0) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={PRIMARY} />
@@ -157,40 +95,14 @@ export default function SavedSummariesPage() {
       </View>
     );
   }
-
-  // ─── Error ────────────────────────────────────────────────────────────────────
-
-  if (error) {
+ 
+  // ─── Empty ────────────────────────────────────────────────────────────────
+ 
+  if (!loading && summaries.length === 0) {
     return (
       <ScrollView
         contentContainerStyle={styles.centeredScroll}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
-      >
-        <Ionicons name="cloud-offline-outline" size={48} color="#ccc" />
-        <Text style={styles.emptyTitle}>Something went wrong</Text>
-        <Text style={styles.emptySubtitle}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => { setLoading(true); fetchSummaries(); }}
-        >
-          <Ionicons name="refresh" size={18} color="#fff" />
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    );
-  }
-
-  // ─── Empty ────────────────────────────────────────────────────────────────────
-
-  if (summaries.length === 0) {
-    return (
-      <ScrollView
-        contentContainerStyle={styles.centeredScroll}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
       >
         <Ionicons name="document-outline" size={48} color="#ccc" />
         <Text style={styles.emptyTitle}>No Saved Summaries</Text>
@@ -201,29 +113,27 @@ export default function SavedSummariesPage() {
       </ScrollView>
     );
   }
-
-  // ─── Summary List ─────────────────────────────────────────────────────────────
-
+ 
+  // ─── Summary List ─────────────────────────────────────────────────────────
+ 
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.contentPadding}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
       >
         <Text style={styles.heading}>Saved Summaries</Text>
         <Text style={styles.subheading}>
           {summaries.length} {summaries.length === 1 ? 'summary' : 'summaries'} saved
         </Text>
-
+ 
         {summaries.map((summary, idx) => {
           const savedDate = summary.savedAt
             ? new Date(summary.savedAt).toLocaleDateString(undefined, {
                 day: 'numeric', month: 'short', year: 'numeric',
               })
             : null;
-
+ 
           return (
             <TouchableOpacity
               key={`${summary.title}-${idx}`}
@@ -241,36 +151,29 @@ export default function SavedSummariesPage() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#bbb" />
               </View>
-
+ 
               <View style={styles.statsRow}>
                 <View style={styles.statBadge}>
                   <Ionicons name="list" size={14} color={PRIMARY} />
                   <Text style={styles.statText}>
-                    {summary.bullets.length}{' '}
-                    {summary.bullets.length === 1 ? 'point' : 'points'}
+                    {summary.bullets.length} {summary.bullets.length === 1 ? 'point' : 'points'}
                   </Text>
                 </View>
                 {summary.keyTerms.length > 0 && (
                   <View style={styles.statBadge}>
                     <Ionicons name="pricetag" size={14} color={PRIMARY} />
                     <Text style={styles.statText}>
-                      {summary.keyTerms.length}{' '}
-                      {summary.keyTerms.length === 1 ? 'term' : 'terms'}
+                      {summary.keyTerms.length} {summary.keyTerms.length === 1 ? 'term' : 'terms'}
                     </Text>
                   </View>
                 )}
               </View>
-
+ 
               {summary.bullets[0] && (
-                <Text style={styles.previewText} numberOfLines={2}>
-                  {summary.bullets[0]}
-                </Text>
+                <Text style={styles.previewText} numberOfLines={2}>{summary.bullets[0]}</Text>
               )}
-
-              <TouchableOpacity
-                style={styles.readButton}
-                onPress={() => setActiveSummary(summary)}
-              >
+ 
+              <TouchableOpacity style={styles.readButton} onPress={() => setActiveSummary(summary)}>
                 <Ionicons name="book-outline" size={16} color="#fff" />
                 <Text style={styles.readButtonText}>Read Summary</Text>
               </TouchableOpacity>
@@ -281,27 +184,12 @@ export default function SavedSummariesPage() {
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   contentPadding: { padding: 20 },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: BG,
-    padding: 32,
-    gap: 12,
-  },
-  centeredScroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: BG,
-    padding: 32,
-    gap: 12,
-    minHeight: '100%',
-  },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12 },
+  centeredScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12, minHeight: '100%' },
   screenHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER },
   screenHeaderTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: PRIMARY, marginHorizontal: 8 },
   backButton: { width: 36, height: 36, borderRadius: 8, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' },
@@ -334,6 +222,4 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333', textAlign: 'center' },
   emptySubtitle: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20 },
   pullToRefresh: { fontSize: 12, color: '#bbb', marginTop: 8 },
-  retryButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10, gap: 8, marginTop: 8 },
-  retryButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });

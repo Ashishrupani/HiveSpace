@@ -1,106 +1,51 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAuth } from '@clerk/expo';
-import { getSavedQuizzes, SavedQuiz } from '@/api/ragApi';
+import { SavedQuiz } from '@/api/ragApi';
+import { useGroupData } from '@/contexts/GroupDataContext';
+import { useFocusEffect } from '@react-navigation/native';
 import QuizComponent, { Question as QType } from '@/components/ui/quiz/Quiz';
-
+ 
 const PRIMARY = '#342A5f';
 const BORDER = '#e0e0e0';
 const BG = '#f5f5f5';
-
+ 
 const DIFFICULTY_COLORS: Record<string, string> = {
   easy: '#4CAF50',
   medium: '#FF9800',
   hard: '#d32f2f',
 };
-
+ 
 export default function SavedQuizzesPage() {
-  const { id: rawId, prefetchedQuizzes, prefetchedGroupId } = useLocalSearchParams();
+  const { id: rawId } = useLocalSearchParams();
   const groupId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
-  const { getToken } = useAuth();
-
-  const parsePrefetched = (): SavedQuiz[] | null => {
-    const raw = Array.isArray(prefetchedQuizzes) ? prefetchedQuizzes[0] : prefetchedQuizzes;
-    const fromGroupId = Array.isArray(prefetchedGroupId) ? prefetchedGroupId[0] : prefetchedGroupId;
-    if (!raw || fromGroupId !== groupId) return null;
-    try {
-      return JSON.parse(raw) as SavedQuiz[];
-    } catch {
-      return null;
-    }
-  };
-
-  const [quizzes, setQuizzes] = useState<SavedQuiz[]>([]);
-  const [loading, setLoading] = useState(true);
+ 
+  const { getData, fetch, isLoading } = useGroupData();
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [activeQuiz, setActiveQuiz] = useState<SavedQuiz | null>(null);
-
-  // ─── Fetch ───────────────────────────────────────────────────────────────────
-
-  const fetchQuizzes = async () => {
-    if (!groupId) {
-      setError('No group ID found.');
-      setLoading(false);
-      return;
-    }
-    setError(null);
-    try {
-      const token = await getToken();
-      const data = await getSavedQuizzes(groupId, token);
-      setQuizzes(data);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to load saved quizzes.';
-      setError(msg);
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+ 
+  // Refresh on focus — context deduplicates concurrent calls
+  useFocusEffect(
+    React.useCallback(() => {
+      fetch(groupId, ['saved']);
+    }, [groupId]),
+  );
+ 
   const handleRefresh = async () => {
-    if (!groupId) return;
     setRefreshing(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const data = await getSavedQuizzes(groupId, token);
-      setQuizzes(data);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to load saved quizzes.';
-      setError(msg);
-      Alert.alert('Error', msg);
-    } finally {
-      setRefreshing(false);
-    }
+    await fetch(groupId, ['saved']);
+    setRefreshing(false);
   };
-
-  useEffect(() => {
-    // Always reset when groupId changes
-    setQuizzes([]);
-    setError(null);
-    setActiveQuiz(null);
-
-    const prefetched = parsePrefetched();
-    if (prefetched !== null) {
-      // Valid prefetch for this group — use it, skip API call
-      setQuizzes(prefetched);
-      setLoading(false);
-      return;
-    }
-
-    // No valid prefetch — fetch from API
-    setLoading(true);
-    fetchQuizzes();
-  }, [groupId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ─── Active Quiz Screen ───────────────────────────────────────────────────────
-
+ 
+  const { quizzes } = getData(groupId);
+  const loading = isLoading(groupId, ['saved']);
+ 
+  // ─── Active Quiz Screen ───────────────────────────────────────────────────
+ 
   if (activeQuiz) {
     const questions: QType[] = activeQuiz.questions.map((q) => ({
       id: q.id,
@@ -108,20 +53,14 @@ export default function SavedQuizzesPage() {
       choices: q.choices.map((c) => c.text),
       correctIndex: q.choices.findIndex((c) => c.id === q.answer),
     }));
-
+ 
     return (
       <View style={styles.container}>
         <View style={styles.screenHeader}>
-          <TouchableOpacity
-            onPress={() => setActiveQuiz(null)}
-            style={styles.backButton}
-            hitSlop={8}
-          >
+          <TouchableOpacity onPress={() => setActiveQuiz(null)} style={styles.backButton} hitSlop={8}>
             <Ionicons name="arrow-back" size={22} color={PRIMARY} />
           </TouchableOpacity>
-          <Text style={styles.screenHeaderTitle} numberOfLines={1}>
-            {activeQuiz.title}
-          </Text>
+          <Text style={styles.screenHeaderTitle} numberOfLines={1}>{activeQuiz.title}</Text>
           <View style={{ width: 36 }} />
         </View>
         <QuizComponent
@@ -132,10 +71,10 @@ export default function SavedQuizzesPage() {
       </View>
     );
   }
-
-  // ─── Loading ──────────────────────────────────────────────────────────────────
-
-  if (loading) {
+ 
+  // ─── Loading ──────────────────────────────────────────────────────────────
+ 
+  if (loading && quizzes.length === 0) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={PRIMARY} />
@@ -143,40 +82,14 @@ export default function SavedQuizzesPage() {
       </View>
     );
   }
-
-  // ─── Error ────────────────────────────────────────────────────────────────────
-
-  if (error) {
+ 
+  // ─── Empty ────────────────────────────────────────────────────────────────
+ 
+  if (!loading && quizzes.length === 0) {
     return (
       <ScrollView
         contentContainerStyle={styles.centeredScroll}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
-      >
-        <Ionicons name="cloud-offline-outline" size={48} color="#ccc" />
-        <Text style={styles.emptyTitle}>Something went wrong</Text>
-        <Text style={styles.emptySubtitle}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => { setLoading(true); fetchQuizzes(); }}
-        >
-          <Ionicons name="refresh" size={18} color="#fff" />
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    );
-  }
-
-  // ─── Empty ────────────────────────────────────────────────────────────────────
-
-  if (quizzes.length === 0) {
-    return (
-      <ScrollView
-        contentContainerStyle={styles.centeredScroll}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
       >
         <Ionicons name="document-outline" size={48} color="#ccc" />
         <Text style={styles.emptyTitle}>No Saved Quizzes</Text>
@@ -187,33 +100,31 @@ export default function SavedQuizzesPage() {
       </ScrollView>
     );
   }
-
-  // ─── Quiz List ────────────────────────────────────────────────────────────────
-
+ 
+  // ─── Quiz List ────────────────────────────────────────────────────────────
+ 
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.contentPadding}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
       >
         <Text style={styles.heading}>Saved Quizzes</Text>
         <Text style={styles.subheading}>
           {quizzes.length} {quizzes.length === 1 ? 'quiz' : 'quizzes'} saved
         </Text>
-
+ 
         {quizzes.map((quiz, idx) => {
           const difficultyCounts = quiz.questions.reduce<Record<string, number>>(
             (acc, q) => { acc[q.difficulty] = (acc[q.difficulty] ?? 0) + 1; return acc; },
-            {}
+            {},
           );
           const savedDate = quiz.savedAt
             ? new Date(quiz.savedAt).toLocaleDateString(undefined, {
                 day: 'numeric', month: 'short', year: 'numeric',
               })
             : null;
-
+ 
           return (
             <TouchableOpacity
               key={`${quiz.title}-${idx}`}
@@ -231,13 +142,12 @@ export default function SavedQuizzesPage() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#bbb" />
               </View>
-
+ 
               <View style={styles.statsRow}>
                 <View style={styles.statBadge}>
                   <Ionicons name="list" size={14} color={PRIMARY} />
                   <Text style={styles.statText}>
-                    {quiz.questions.length}{' '}
-                    {quiz.questions.length === 1 ? 'question' : 'questions'}
+                    {quiz.questions.length} {quiz.questions.length === 1 ? 'question' : 'questions'}
                   </Text>
                 </View>
                 {Object.entries(difficultyCounts).map(([level, count]) => (
@@ -251,7 +161,7 @@ export default function SavedQuizzesPage() {
                   </View>
                 ))}
               </View>
-
+ 
               <TouchableOpacity style={styles.startButton} onPress={() => setActiveQuiz(quiz)}>
                 <Ionicons name="play" size={16} color="#fff" />
                 <Text style={styles.startButtonText}>Start Quiz</Text>
@@ -263,27 +173,12 @@ export default function SavedQuizzesPage() {
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   contentPadding: { padding: 20 },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: BG,
-    padding: 32,
-    gap: 12,
-  },
-  centeredScroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: BG,
-    padding: 32,
-    gap: 12,
-    minHeight: '100%',
-  },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12 },
+  centeredScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12, minHeight: '100%' },
   screenHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: BORDER },
   screenHeaderTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: PRIMARY, marginHorizontal: 8 },
   backButton: { width: 36, height: 36, borderRadius: 8, backgroundColor: BG, justifyContent: 'center', alignItems: 'center' },
@@ -306,6 +201,4 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333', textAlign: 'center' },
   emptySubtitle: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20 },
   pullToRefresh: { fontSize: 12, color: '#bbb', marginTop: 8 },
-  retryButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10, gap: 8, marginTop: 8 },
-  retryButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });
