@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, FlatList,
-  Pressable, Image, ActivityIndicator, TouchableOpacity, RefreshControl,
+  Pressable, Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
 import { useFocusEffect } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import BackButton from '@/components/ui/BackButton';
@@ -25,21 +25,28 @@ function getInitials(name: string) {
 }
  
 export default function LeaderboardPage() {
-  const { id } = useLocalSearchParams();
-  const groupId = Array.isArray(id) ? id[0] : id ?? '';
+  const groupId = useActiveGroupId();
   const [tab, setTab] = useState<Tab>('All time');
   const [refreshing, setRefreshing] = useState(false);
  
-  const { getData, fetch, isLoading } = useGroupData();
+  const { getData, fetch, isLoading, invalidate } = useGroupData();
+  const lastGroupId = useRef<string>('');
  
   useFocusEffect(
     useCallback(() => {
+      // If groupId changed, invalidate stale cache before fetching
+      if (lastGroupId.current !== groupId) {
+        if (lastGroupId.current) invalidate(lastGroupId.current, ['leaderboard']);
+        invalidate(groupId, ['leaderboard']);
+        lastGroupId.current = groupId;
+      }
       fetch(groupId, ['leaderboard']);
     }, [groupId]),
   );
  
   const handleRefresh = async () => {
     setRefreshing(true);
+    invalidate(groupId, ['leaderboard']);
     await fetch(groupId, ['leaderboard']);
     setRefreshing(false);
   };
@@ -51,8 +58,6 @@ export default function LeaderboardPage() {
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
  
-  // ─── Loading ──────────────────────────────────────────────────────────────
- 
   if (loading && leaderboard.length === 0) {
     return (
       <View style={styles.centered}>
@@ -61,8 +66,6 @@ export default function LeaderboardPage() {
       </View>
     );
   }
- 
-  // ─── Empty ────────────────────────────────────────────────────────────────
  
   if (!loading && sorted.length === 0) {
     return (
@@ -78,8 +81,6 @@ export default function LeaderboardPage() {
     );
   }
  
-  // ─── Main ─────────────────────────────────────────────────────────────────
- 
   return (
     <View style={styles.container}>
       <ScrollView
@@ -89,7 +90,6 @@ export default function LeaderboardPage() {
         <BackButton />
         <Text style={styles.heading}>Leaderboard</Text>
  
-        {/* Tab Row */}
         <View style={styles.tabRow}>
           {TABS.map((t) => (
             <Pressable key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
@@ -98,7 +98,6 @@ export default function LeaderboardPage() {
           ))}
         </View>
  
-        {/* Podium */}
         <View style={styles.podiumRow}>
           <View style={styles.podiumSide}>
             {top3[1] && (
@@ -140,7 +139,6 @@ export default function LeaderboardPage() {
           </View>
         </View>
  
-        {/* Rest of list */}
         {rest.length > 0 && (
           <View style={styles.listWrap}>
             <FlatList

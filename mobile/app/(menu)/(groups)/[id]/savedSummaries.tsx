@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { SavedSummary } from '@/api/ragApi';
 import { useGroupData } from '@/contexts/GroupDataContext';
@@ -14,15 +14,20 @@ const BORDER = '#e0e0e0';
 const BG = '#f5f5f5';
  
 export default function SavedSummariesPage() {
-  const { id: rawId } = useLocalSearchParams();
-  const groupId = Array.isArray(rawId) ? rawId[0] : rawId ?? '';
+  const groupId = useActiveGroupId();
  
-  const { getData, fetch, isLoading } = useGroupData();
+  const { getData, fetch, isLoading, invalidate } = useGroupData();
+  const lastGroupId = useRef<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [activeSummary, setActiveSummary] = useState<SavedSummary | null>(null);
  
   useFocusEffect(
     React.useCallback(() => {
+      if (lastGroupId.current !== groupId) {
+        if (lastGroupId.current) invalidate(lastGroupId.current, ['saved']);
+        invalidate(groupId, ['saved']);
+        lastGroupId.current = groupId;
+      }
       fetch(groupId, ['saved']);
     }, [groupId]),
   );

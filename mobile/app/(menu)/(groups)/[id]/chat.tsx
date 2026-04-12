@@ -4,7 +4,6 @@ import {
   ScrollView,
   Text,
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
   TextInput,
   TouchableOpacity,
@@ -13,63 +12,59 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import pageStyles from '@/constants/styles/page-styles';
 import { useAuth, useUser } from '@clerk/expo';
-import { useGlobalSearchParams } from 'expo-router';
 import { useGroupChat } from '@/hooks/groupChat';
-
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
+ 
 export default function ChatScreen() {
   const { userId } = useAuth();
   const { user } = useUser();
-  const { id } = useGlobalSearchParams<{ id: string }>();
-  const groupId = Array.isArray(id) ? id[0] : id;
-
+  const groupId = useActiveGroupId();
+ 
   const [text, setText] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const insets = useSafeAreaInsets();
-
+ 
   const userName = user?.firstName ?? user?.username ?? userId ?? 'User';
-
+ 
   const { messages, sendMessage, scrollRef } = useGroupChat(
     groupId || '',
     userId || '',
     userName,
   );
-
-  // Track keyboard height manually — works reliably on both platforms
+ 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-
+ 
     const showSub = Keyboard.addListener(showEvent, (e) => {
       setKeyboardHeight(e.endCoordinates.height);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     });
-
+ 
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardHeight(0);
     });
-
+ 
     return () => {
       showSub.remove();
       hideSub.remove();
     };
   }, []);
-
+ 
   const handleSend = () => {
     if (!text.trim()) return;
     sendMessage(text);
     setText('');
     scrollRef.current?.scrollToEnd({ animated: true });
   };
-
+ 
   return (
     <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
       <View style={[pageStyles.container, styles.container]}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Group Chat</Text>
         </View>
-
-        {/* Messages */}
+ 
         <ScrollView
           ref={scrollRef}
           contentContainerStyle={styles.messages}
@@ -104,8 +99,7 @@ export default function ChatScreen() {
             </View>
           ))}
         </ScrollView>
-
-        {/* Input */}
+ 
         <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <TextInput
             value={text}
@@ -127,7 +121,7 @@ export default function ChatScreen() {
     </View>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },

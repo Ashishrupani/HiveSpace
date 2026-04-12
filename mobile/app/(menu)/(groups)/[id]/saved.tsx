@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
 import BackButton from '@/components/ui/BackButton';
 import BaseCard from '@/components/ui/cards/baseCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -8,14 +9,19 @@ import { useGroupData } from '@/contexts/GroupDataContext';
 import { useFocusEffect } from '@react-navigation/native';
  
 export default function SavedItemsPage() {
-  const { id } = useLocalSearchParams();
-  const groupId = Array.isArray(id) ? id[0] : id || '';
-  const { getData, fetch, isLoading } = useGroupData();
+  const groupId = useActiveGroupId();
+  const { getData, fetch, isLoading, invalidate } = useGroupData();
+  const lastGroupId = useRef<string>('');
  
   // Refresh the saved slice every time the screen gains focus.
   // The context guards against concurrent fetches internally.
   useFocusEffect(
     React.useCallback(() => {
+      if (lastGroupId.current !== groupId) {
+        if (lastGroupId.current) invalidate(lastGroupId.current, ['saved']);
+        invalidate(groupId, ['saved']);
+        lastGroupId.current = groupId;
+      }
       fetch(groupId, ['saved']);
     }, [groupId]),
   );
