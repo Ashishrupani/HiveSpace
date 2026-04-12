@@ -11,7 +11,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import axios from 'axios';
 import { useAuth, useUser } from '@clerk/expo';
 import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
- 
+
 type GroupMeta = {
   name: string;
   color: string;
@@ -19,12 +19,12 @@ type GroupMeta = {
   about?: string;
   logoUri?: string;
 };
- 
+
 const resolveGroupDescription = (_groupName?: string, about?: string) => {
   const trimmedAbout = String(about ?? '').trim();
   return trimmedAbout || 'A place to collaborate and grow together.';
 };
- 
+
 const GROUP_ICONS = [
   { id: 1, name: 'person.3.fill' as const },
   { id: 2, name: 'book.fill' as const },
@@ -43,183 +43,182 @@ const GROUP_ICONS = [
   { id: 15, name: 'bolt.fill' as const },
   { id: 16, name: 'leaf.fill' as const },
 ];
- 
+
 const GROUP_COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
   '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
   '#F8B739', '#52B788', '#E76F51', '#2A9D8F',
   '#342A5f', '#6c5ce7', '#da07bddc'
 ];
- 
+
 export default function GroupHome() {
-    const {id} = useLocalSearchParams();
-    const router = useRouter();
-    const { getTopThreeGroupGoals, fetchGroupGoals } = useGroupGoals();
-    const { getToken } = useAuth();
-    const { isLoaded, user } = useUser();
-    const [savedQuizCount, setSavedQuizCount] = React.useState(0);
-    const [savedSummaryCount, setSavedSummaryCount] = React.useState(0);
-    const [groupMeta, setGroupMeta] = React.useState<GroupMeta>({
-      name: 'Group',
-      color: '#342A5f',
-      iconName: 'person.3.fill',
-    });
-    const [editModalVisible, setEditModalVisible] = React.useState(false);
-    const [editGroupName, setEditGroupName] = React.useState('');
-    const [editAbout, setEditAbout] = React.useState('');
-    const [selectedIconId, setSelectedIconId] = React.useState<number>(1);
-    const [selectedColor, setSelectedColor] = React.useState<string>('#342A5f');
-    const [savingGroupEdit, setSavingGroupEdit] = React.useState(false);
-    const apiBaseCandidates = React.useMemo(() => {
-      const raw = [API_BASE_URL, IPHONE_TESTING_URL].filter(Boolean);
-      return Array.from(new Set(raw));
-    }, []);
- 
-    
-    // Add refs to prevent duplicate API calls
-    const savedCountsFetchedRef = React.useRef<string | null>(null);
-    const groupMetaFetchedRef = React.useRef<string | null>(null);
- 
-    const postWithBaseFallback = React.useCallback(
-      async (path: string, body: any, token: string) => {
-        let lastError: any = null;
-        for (const base of apiBaseCandidates) {
-          try {
-            return await axios.post(`${base}${path}`, body, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-          } catch (error: any) {
-            lastError = error;
-          }
-        }
-        throw lastError;
-      },
-      [apiBaseCandidates]
-    );
- 
-    const updateGroupWithFallback = React.useCallback(
-      async (groupIdValue: string, payload: any, token: string) => {
-        const path = `/api/groups/updateGroup`;
- 
-        let lastError: any = null;
-          try {
-            const body = path ? { ...payload, groupId: groupIdValue } : payload;
- 
-            const response = await postWithBaseFallback(path, body, token);
-            return response;
-          } catch (error: any) {
-            lastError = error;
-          }
- 
-        throw lastError;
-      },
-      [postWithBaseFallback]
-    );
- 
-    const groupId = Array.isArray(id) ? id[0] : id;
- 
-    // Fetch group goals so the GoalsCard shows real data
-    React.useEffect(() => {
-      if (!groupId) return;
-      fetchGroupGoals(groupId);
-    }, [groupId]);
- 
-    React.useEffect(() => {
-      const fetchSavedCounts = async () => {
-        const token = await getToken();
- 
-        if (!groupId || savedCountsFetchedRef.current === groupId) return;
-        savedCountsFetchedRef.current = groupId;
-        try {
-          const [quizzes, summaries] = await Promise.all([
-            getSavedQuizzes(groupId, token),
-            getSavedSummaries(groupId, token),
-          ]);
-          setSavedQuizCount(quizzes?.length ?? 0);
-          setSavedSummaryCount(summaries?.length ?? 0);
-        } catch {
-          setSavedQuizCount(0);
-          setSavedSummaryCount(0);
-        }
-      };
- 
-      fetchSavedCounts();
-    }, [groupId]);
- 
-    React.useEffect(() => {
-      const fetchGroupMeta = async () => {
-        if (!groupId || !isLoaded || !user?.id || groupMetaFetchedRef.current === groupId) return;
-        groupMetaFetchedRef.current = groupId;
-        try {
-          const token = await getToken();
-          if (!token) return;
- 
-          const response = await postWithBaseFallback(`/api/groups/${groupId}`, { groupId }, token);
- 
-          const currentGroup = response?.data?.groupDetails;
- 
-          if (currentGroup) {
-            const iconName = currentGroup.icon ?? currentGroup.iconName ?? 'person.3.fill';
-            const color = currentGroup.color ?? '#342A5f';
- 
-            setGroupMeta({
-              name: currentGroup.name ?? `Group ${groupId}`,
-              color,
-              iconName,
-              about: resolveGroupDescription(currentGroup.name, currentGroup.about),
-              logoUri: currentGroup.logoUri,
-            });
- 
-            setEditGroupName(currentGroup.name ?? '');
-            setEditAbout(currentGroup.about ?? '');
-            setSelectedColor(color);
- 
-            const matchingIcon = GROUP_ICONS.find((item) => item.name === iconName);
-            setSelectedIconId(matchingIcon?.id ?? 1);
-          }
-        } catch {
-          setGroupMeta((prev) => ({
-            ...prev,
-            name: groupId ? `Group ${groupId}` : 'Group',
-          }));
-        }
-      };
- 
-      fetchGroupMeta();
-    }, [groupId, getToken, isLoaded, user?.id, postWithBaseFallback]);
- 
-    React.useEffect(() => {
-      console.log('GroupHome mounted');
-      return () => {
-        console.log('GroupHome unmounted');
-      };
-    }, []);
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { getTopThreeGroupGoals, fetchGroupGoals } = useGroupGoals();
+  const { getToken } = useAuth();
+  const { isLoaded, user } = useUser();
 
-    const membersPrefetchedRef = React.useRef<string | null>(null);
-    const base = API_BASE_URL;
+  // ─── Loading state ────────────────────────────────────────────────────────
+  const [initialLoading, setInitialLoading] = React.useState(true);
 
-React.useEffect(() => {
-  const prefetchMembers = async () => {
+  const [savedQuizCount, setSavedQuizCount] = React.useState(0);
+  const [savedSummaryCount, setSavedSummaryCount] = React.useState(0);
+  const [groupMeta, setGroupMeta] = React.useState<GroupMeta>({
+    name: 'Group',
+    color: '#342A5f',
+    iconName: 'person.3.fill',
+  });
+  const [editModalVisible, setEditModalVisible] = React.useState(false);
+  const [editGroupName, setEditGroupName] = React.useState('');
+  const [editAbout, setEditAbout] = React.useState('');
+  const [selectedIconId, setSelectedIconId] = React.useState<number>(1);
+  const [selectedColor, setSelectedColor] = React.useState<string>('#342A5f');
+  const [savingGroupEdit, setSavingGroupEdit] = React.useState(false);
+
+  const apiBaseCandidates = React.useMemo(() => {
+    const raw = [API_BASE_URL, IPHONE_TESTING_URL].filter(Boolean);
+    return Array.from(new Set(raw));
+  }, []);
+
+  const savedCountsFetchedRef = React.useRef<string | null>(null);
+  const groupMetaFetchedRef = React.useRef<string | null>(null);
+  const membersPrefetchedRef = React.useRef<string | null>(null);
+  const base = API_BASE_URL;
+
+  const postWithBaseFallback = React.useCallback(
+    async (path: string, body: any, token: string) => {
+      let lastError: any = null;
+      for (const b of apiBaseCandidates) {
+        try {
+          return await axios.post(`${b}${path}`, body, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (error: any) {
+          lastError = error;
+        }
+      }
+      throw lastError;
+    },
+    [apiBaseCandidates]
+  );
+
+  const updateGroupWithFallback = React.useCallback(
+    async (groupIdValue: string, payload: any, token: string) => {
+      const path = `/api/groups/updateGroup`;
+      let lastError: any = null;
+      try {
+        const body = { ...payload, groupId: groupIdValue };
+        const response = await postWithBaseFallback(path, body, token);
+        return response;
+      } catch (error: any) {
+        lastError = error;
+      }
+      throw lastError;
+    },
+    [postWithBaseFallback]
+  );
+
+  const groupId = Array.isArray(id) ? id[0] : id;
+
+  // ─── Initial data load — runs all fetches together ────────────────────────
+  React.useEffect(() => {
     if (!groupId || !isLoaded || !user?.id) return;
-    if (membersPrefetchedRef.current === groupId) return;
-    membersPrefetchedRef.current = groupId;
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await axios.post(
-        `${base}/api/groups/${groupId}/members`,
-        { groupId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } catch {
-      // silent — this is just a background warm-up call
-    }
-  };
-  prefetchMembers();
-}, [groupId, isLoaded, user?.id]);
- 
+
+    const loadAll = async () => {
+      setInitialLoading(true);
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        // Run group meta, saved counts, and goals in parallel
+        await Promise.all([
+          // Group meta
+          (async () => {
+            if (groupMetaFetchedRef.current === groupId) return;
+            groupMetaFetchedRef.current = groupId;
+            try {
+              const response = await postWithBaseFallback(
+                `/api/groups/${groupId}`,
+                { groupId },
+                token
+              );
+              const currentGroup = response?.data?.groupDetails;
+              if (currentGroup) {
+                const iconName = currentGroup.icon ?? currentGroup.iconName ?? 'person.3.fill';
+                const color = currentGroup.color ?? '#342A5f';
+                setGroupMeta({
+                  name: currentGroup.name ?? `Group ${groupId}`,
+                  color,
+                  iconName,
+                  about: resolveGroupDescription(currentGroup.name, currentGroup.about),
+                  logoUri: currentGroup.logoUri,
+                });
+                setEditGroupName(currentGroup.name ?? '');
+                setEditAbout(currentGroup.about ?? '');
+                setSelectedColor(color);
+                const matchingIcon = GROUP_ICONS.find((item) => item.name === iconName);
+                setSelectedIconId(matchingIcon?.id ?? 1);
+              }
+            } catch {
+              setGroupMeta((prev) => ({
+                ...prev,
+                name: groupId ? `Group ${groupId}` : 'Group',
+              }));
+            }
+          })(),
+
+          // Saved counts
+          (async () => {
+            if (savedCountsFetchedRef.current === groupId) return;
+            savedCountsFetchedRef.current = groupId;
+            try {
+              const [quizzes, summaries] = await Promise.all([
+                getSavedQuizzes(groupId, token),
+                getSavedSummaries(groupId, token),
+              ]);
+              setSavedQuizCount(quizzes?.length ?? 0);
+              setSavedSummaryCount(summaries?.length ?? 0);
+            } catch {
+              setSavedQuizCount(0);
+              setSavedSummaryCount(0);
+            }
+          })(),
+
+          // Group goals
+          fetchGroupGoals(groupId),
+        ]);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadAll();
+  }, [groupId, isLoaded, user?.id]);
+
+  // Background member prefetch — doesn't block loading screen
+  React.useEffect(() => {
+    const prefetchMembers = async () => {
+      if (!groupId || !isLoaded || !user?.id) return;
+      if (membersPrefetchedRef.current === groupId) return;
+      membersPrefetchedRef.current = groupId;
+      try {
+        const token = await getToken();
+        if (!token) return;
+        await axios.post(
+          `${base}/api/groups/${groupId}/members`,
+          { groupId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch {
+        // silent warm-up call
+      }
+    };
+    prefetchMembers();
+  }, [groupId, isLoaded, user?.id]);
+
   const groupName = groupMeta.name;
-  const selectedEditIconName = GROUP_ICONS.find((icon) => icon.id === selectedIconId)?.name ?? 'person.3.fill';
+  const selectedEditIconName =
+    GROUP_ICONS.find((icon) => icon.id === selectedIconId)?.name ?? 'person.3.fill';
   const livePreviewMeta: GroupMeta = {
     name: editGroupName.trim() || groupMeta.name,
     color: selectedColor || groupMeta.color,
@@ -228,43 +227,41 @@ React.useEffect(() => {
     logoUri: groupMeta.logoUri,
   };
   const displayedGroupMeta = editModalVisible ? livePreviewMeta : groupMeta;
- 
+
   const onGroupGoalsPress = () => {
     if (!groupId) return;
     router.push(`/(groups)/${groupId}/groupGoals` as any);
   };
- 
+
   const openEditModal = () => {
     setEditGroupName(groupMeta.name ?? '');
     setEditAbout(groupMeta.about ?? '');
     setSelectedColor(groupMeta.color ?? '#342A5f');
- 
-    const matchingIcon = GROUP_ICONS.find((item) => item.name === (groupMeta.iconName ?? 'person.3.fill'));
+    const matchingIcon = GROUP_ICONS.find(
+      (item) => item.name === (groupMeta.iconName ?? 'person.3.fill')
+    );
     setSelectedIconId(matchingIcon?.id ?? 1);
     setEditModalVisible(true);
   };
- 
+
   const openMembersPage = () => {
     if (!groupId) return;
     router.push(`/(groups)/${groupId}/members` as any);
   };
- 
+
   const handleSaveGroupEdits = async () => {
     if (!groupId) {
       Alert.alert('Error', 'Group ID is missing. Please reopen this group and try again.');
       return;
     }
- 
     if (!editGroupName.trim()) {
       Alert.alert('Error', 'Group name is required.');
       return;
     }
- 
     if (!isLoaded || !user?.id) {
       Alert.alert('Error', 'Please sign in to edit group details.');
       return;
     }
- 
     try {
       setSavingGroupEdit(true);
       const token = await getToken();
@@ -273,7 +270,6 @@ React.useEffect(() => {
         return;
       }
       const selectedIcon = GROUP_ICONS.find((icon) => icon.id === selectedIconId);
- 
       const response = await updateGroupWithFallback(
         groupId,
         {
@@ -285,13 +281,12 @@ React.useEffect(() => {
         },
         token
       );
- 
+
       if (response?.data?.success === false) {
-        const msg = response?.data?.message ?? 'Failed to update group details.';
-        Alert.alert('Error', msg);
+        Alert.alert('Error', response?.data?.message ?? 'Failed to update group details.');
         return;
       }
- 
+
       const updated = response?.data?.group;
       if (updated) {
         setGroupMeta((prev) => ({
@@ -302,45 +297,50 @@ React.useEffect(() => {
           color: updated.color ?? prev.color,
         }));
       }
- 
-      // Re-fetch canonical group data to ensure banner reflects persisted backend values
+
       try {
-        const detailsResponse = await postWithBaseFallback(`/api/groups/${groupId}`, { groupId }, token);
- 
+        const detailsResponse = await postWithBaseFallback(
+          `/api/groups/${groupId}`,
+          { groupId },
+          token
+        );
         const refreshedGroup = detailsResponse?.data?.groupDetails;
         if (refreshedGroup) {
           setGroupMeta((prev) => ({
             ...prev,
             name: refreshedGroup.name ?? prev.name,
-            about: resolveGroupDescription(refreshedGroup.name ?? prev.name, refreshedGroup.about ?? prev.about),
+            about: resolveGroupDescription(
+              refreshedGroup.name ?? prev.name,
+              refreshedGroup.about ?? prev.about
+            ),
             iconName: refreshedGroup.icon ?? prev.iconName,
             color: refreshedGroup.color ?? prev.color,
             logoUri: refreshedGroup.logoUri ?? prev.logoUri,
           }));
         }
       } catch {
-        // Keep optimistic updated UI when refresh request fails.
+        // Keep optimistic UI
       }
- 
+
       setEditModalVisible(false);
       Alert.alert('Success', 'Group details updated successfully.');
     } catch (error: any) {
       const rawData = error?.response?.data;
-      const backendBody = typeof error?.response?.data === 'string' ? error.response.data : '';
-      const routeMissing = backendBody.includes('Cannot POST') && backendBody.includes('/api/groups');
- 
+      const backendBody =
+        typeof error?.response?.data === 'string' ? error.response.data : '';
+      const routeMissing =
+        backendBody.includes('Cannot POST') && backendBody.includes('/api/groups');
       const msg = routeMissing
-        ? 'Update endpoint not found on the running backend. Please restart the backend server on port 5000 and try again.'
-        :
-        (typeof rawData === 'string' ? rawData : rawData?.message) ??
-        error?.message ??
-        'Failed to update group details.';
+        ? 'Update endpoint not found. Please restart the backend server and try again.'
+        : (typeof rawData === 'string' ? rawData : rawData?.message) ??
+          error?.message ??
+          'Failed to update group details.';
       Alert.alert('Error', msg);
     } finally {
       setSavingGroupEdit(false);
     }
   };
- 
+
   const HorizontalCard = ({
     icon,
     title,
@@ -355,7 +355,7 @@ React.useEffect(() => {
     onPress?: () => void;
   }) => (
     <BaseCard
-      width={'100%'} // Add extra width if detail is not provided to balance the layout
+      width={'100%'}
       height={108}
       onPress={onPress}
       style={styles.horizontalCard}
@@ -373,15 +373,30 @@ React.useEffect(() => {
       {onPress ? <Ionicons name="chevron-forward" size={20} color="#8b84a8" /> : null}
     </BaseCard>
   );
- 
+
+  // ─── Loading screen ───────────────────────────────────────────────────────
+  if (initialLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#342A5f" />
+        <Text style={styles.loadingText}>Loading group…</Text>
+      </View>
+    );
+  }
+
+  // ─── Main render ──────────────────────────────────────────────────────────
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <BackButton />
- 
-      <View style={[styles.groupBanner, { backgroundColor: displayedGroupMeta.color }]}> 
+
+      <View style={[styles.groupBanner, { backgroundColor: displayedGroupMeta.color }]}>
         <View style={styles.bannerHeader}>
           {displayedGroupMeta.logoUri ? (
-            <Image source={{ uri: displayedGroupMeta.logoUri }} style={styles.bannerLogo} resizeMode="cover" />
+            <Image
+              source={{ uri: displayedGroupMeta.logoUri }}
+              style={styles.bannerLogo}
+              resizeMode="cover"
+            />
           ) : (
             <View style={styles.bannerIconCircle}>
               <IconSymbol name={displayedGroupMeta.iconName as any} size={30} color="#fff" />
@@ -406,12 +421,12 @@ React.useEffect(() => {
         </Text>
       </View>
 
-      <GoalsCard 
+      <GoalsCard
         goals={getTopThreeGroupGoals(groupId)}
         onPress={onGroupGoalsPress}
         style={styles.goalsCardSpace}
       />
- 
+
       <View style={styles.horizontalCardsList}>
         <HorizontalCard
           icon="podium"
@@ -420,7 +435,6 @@ React.useEffect(() => {
           detail="View full rankings"
           onPress={() => router.push(`/(groups)/${id}/leaderboard` as any)}
         />
- 
         <HorizontalCard
           icon="reader"
           title="AI"
@@ -428,7 +442,6 @@ React.useEffect(() => {
           detail="Upload files and generate study content"
           onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
         />
- 
         <HorizontalCard
           icon="bookmark"
           title="Saved"
@@ -437,7 +450,8 @@ React.useEffect(() => {
           onPress={() => router.push(`/(groups)/${id}/saved` as any)}
         />
       </View>
- 
+
+      {/* Edit Group Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -453,14 +467,21 @@ React.useEffect(() => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Group</Text>
-              <TouchableOpacity onPress={() => !savingGroupEdit && setEditModalVisible(false)} disabled={savingGroupEdit}>
+              <TouchableOpacity
+                onPress={() => !savingGroupEdit && setEditModalVisible(false)}
+                disabled={savingGroupEdit}
+              >
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
- 
+
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.sectionLabel}>Group Icon</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.iconScrollContent}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.iconScrollContent}
+              >
                 {GROUP_ICONS.map((item) => (
                   <TouchableOpacity
                     key={item.id}
@@ -476,7 +497,7 @@ React.useEffect(() => {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
- 
+
               <Text style={styles.sectionLabel}>Group Color</Text>
               <View style={styles.colorGrid}>
                 {GROUP_COLORS.map((color) => (
@@ -492,7 +513,7 @@ React.useEffect(() => {
                   />
                 ))}
               </View>
- 
+
               <TextInput
                 value={editGroupName}
                 onChangeText={setEditGroupName}
@@ -503,7 +524,7 @@ React.useEffect(() => {
                 returnKeyType="done"
                 editable={!savingGroupEdit}
               />
- 
+
               <TextInput
                 value={editAbout}
                 onChangeText={setEditAbout}
@@ -515,19 +536,26 @@ React.useEffect(() => {
                 maxLength={300}
                 editable={!savingGroupEdit}
               />
- 
+
               <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: selectedColor }, savingGroupEdit && styles.saveButtonDisabled]}
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: selectedColor },
+                  savingGroupEdit && styles.saveButtonDisabled,
+                ]}
                 onPress={handleSaveGroupEdits}
                 disabled={savingGroupEdit}
               >
-                <Text style={styles.saveButtonText}>{savingGroupEdit ? 'Saving...' : 'Save Changes'}</Text>
+                <Text style={styles.saveButtonText}>
+                  {savingGroupEdit ? 'Saving...' : 'Save Changes'}
+                </Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
- 
+
+      {/* Saving overlay */}
       <Modal transparent visible={savingGroupEdit} animationType="fade">
         <View style={styles.savingOverlay}>
           <View style={styles.savingCard}>
@@ -536,13 +564,25 @@ React.useEffect(() => {
           </View>
         </View>
       </Modal>
- 
     </ScrollView>
-  )
- 
+  );
 }
- 
+
 const styles = StyleSheet.create({
+  // ─── Loading ──────────────────────────────────────────────────────────────
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#342A5f',
+    fontWeight: '600',
+  },
+
   container: {
     flexGrow: 1,
     paddingHorizontal: 16,

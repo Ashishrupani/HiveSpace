@@ -6,7 +6,7 @@ import { groupHomeHandler, findGroupHandler, createGroupHandler,
          leaveGroupHandler, getUserJoinedGroupsHandler, saveQuizHandler, 
          getSavedQuizzesHandler, saveSummaryHandler, getSavedSummariesHandler,
          getGroupLeaderboardHandler, createGroupGoalHandler, updateGroupGoalHandler,
-         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler, kickMemberHandler, deleteGroupHandler} 
+         deleteGroupGoalHandler, fetchGroupGoalsHandler, viewMembersHandler, kickMemberHandler, deleteGroupHandler, saveQuizResultsHandler} 
 from '../controllers/groupControllers.js';
 
 
@@ -52,6 +52,8 @@ router.get("/:id/saved-summaries", debugMiddleware, verifyName, getSavedSummarie
 
 // Get leaderboard for a group (placeholder until websocket is integrated)
 router.get("/:id/leaderboard", debugMiddleware, getGroupLeaderboardHandler);
+
+router.post("/:id/quizResults", debugMiddleware, verifyName, saveQuizResultsHandler); // Save quiz results to the group (MUST COME BEFORE /:id route)
 
 // Join a group
 router.post("/:id/join", debugMiddleware, verifyAuth, joinGroupHandler);

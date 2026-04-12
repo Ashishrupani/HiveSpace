@@ -1,402 +1,211 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, ScrollView, StyleSheet, FlatList,
+  Pressable, Image, ActivityIndicator, TouchableOpacity, RefreshControl,
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import BackButton from '@/components/ui/BackButton';
-import { ThemedText } from '@/components/themed-text';
-import { LinearGradient } from 'expo-linear-gradient';
-import authStyles from '@/constants/styles/auth.styles';
-import { colors } from '@/constants/theme';
+import { useGroupData } from '@/contexts/GroupDataContext';
+ 
 const bee = require('../../../../assets/images/bee_astronanut.jpg');
 const queen = require('../../../../assets/images/queen_bee.avif');
-import axios from 'axios';
-import { API_BASE_URL, IPHONE_TESTING_URL } from '@/api/constants';
  
+const PRIMARY = '#342A5f';
+const BORDER = '#e0e0e0';
+const BG = '#f5f5f5';
  
-const apiUrl = IPHONE_TESTING_URL;
+const TABS = ['Daily', 'Weekly', 'All time'] as const;
+type Tab = typeof TABS[number];
  
-type Player = {
-  id: string;
-  name: string;
-  points: number;
-};
- 
-const fetchLeaderboard = async (id: string, tab: 'Daily' | 'Weekly' | 'All time'): Promise<Player[]> => {
-  try {
-    const tabParam = tab === 'All time' ? 'alltime' : tab.toLowerCase();
-    const response = await axios.get(`${apiUrl}/api/groups/${id}/leaderboard`, {
-      params: { period: tabParam , groupId: id },
-    });
-    if (response.status === 200) {
-      return response.data;
-    }
-    return [];
-  } catch (error) {
-    return [];
-  }
-};
- 
-function useLeaderboardFeed(groupId: string | undefined, tab: 'Daily' | 'Weekly' | 'All time') {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
- 
-  const load = async () => {
-    if (!groupId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchLeaderboard(groupId, tab);
-      setPlayers(data);
-    } catch {
-      setError('Failed to load leaderboard.');
-    } finally {
-      setLoading(false);
-    }
-  };
- 
-  useEffect(() => {
-    load();
-  }, [groupId, tab]);
- 
-  return { players, loading, error, refresh: load };
+function getInitials(name: string) {
+  const parts = name.trim().split(' ');
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
  
-export default function Leaderboard() {
+export default function LeaderboardPage() {
   const { id } = useLocalSearchParams();
-  const groupId = Array.isArray(id) ? id[0] : id;
-  const [tab, setTab] = useState<'Daily' | 'Weekly' | 'All time'>('Daily');
+  const groupId = Array.isArray(id) ? id[0] : id ?? '';
+  const [tab, setTab] = useState<Tab>('All time');
+  const [refreshing, setRefreshing] = useState(false);
  
-  const { players, loading, error, refresh } = useLeaderboardFeed(groupId, tab);
+  const { getData, fetch, isLoading } = useGroupData();
  
-  const sorted = useMemo(() => {
-    return players.slice().sort((a, b) => b.points - a.points);
-  }, [players, tab]);
+  useFocusEffect(
+    useCallback(() => {
+      fetch(groupId, ['leaderboard']);
+    }, [groupId]),
+  );
  
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetch(groupId, ['leaderboard']);
+    setRefreshing(false);
+  };
+ 
+  const { leaderboard } = getData(groupId);
+  const loading = isLoading(groupId, ['leaderboard']);
+ 
+  const sorted = [...leaderboard].sort((a, b) => b.points - a.points);
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
  
-  return (
-    <LinearGradient
-      colors={[colors.gradienttop, colors.gradientmid, colors.gradientbottom]}
-      style={authStyles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <BackButton />
+  // ─── Loading ──────────────────────────────────────────────────────────────
  
-        <ThemedText type="title" style={styles.header}>
-          Leaderboard
-        </ThemedText>
-        <ThemedText style={styles.subheader}>Group ID: {id}</ThemedText>
+  if (loading && leaderboard.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={PRIMARY} />
+        <Text style={styles.loadingText}>Loading leaderboard…</Text>
+      </View>
+    );
+  }
+ 
+  // ─── Empty ────────────────────────────────────────────────────────────────
+ 
+  if (!loading && sorted.length === 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.centeredScroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
+      >
+        <Ionicons name="trophy-outline" size={48} color="#ccc" />
+        <Text style={styles.emptyTitle}>No players yet</Text>
+        <Text style={styles.emptySubtitle}>Complete quizzes to appear on the leaderboard.</Text>
+        <Text style={styles.pullToRefresh}>Pull down to refresh</Text>
+      </ScrollView>
+    );
+  }
+ 
+  // ─── Main ─────────────────────────────────────────────────────────────────
+ 
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.contentPadding}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={PRIMARY} />}
+      >
+        <BackButton />
+        <Text style={styles.heading}>Leaderboard</Text>
  
         {/* Tab Row */}
         <View style={styles.tabRow}>
-          {(['Daily', 'Weekly', 'All time'] as const).map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={[styles.tab, tab === t ? styles.tabActive : undefined]}
-            >
-              <ThemedText style={[styles.tabText, tab === t ? styles.tabTextActive : undefined]}>
-                {t}
-              </ThemedText>
+          {TABS.map((t) => (
+            <Pressable key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabActive]}>
+              <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
             </Pressable>
           ))}
         </View>
  
-        {/* Loading / Error States */}
-        {loading && (
-          <View style={styles.centered}>
-            <ActivityIndicator color="#fff" size="large" />
-            <ThemedText style={styles.statusText}>Loading leaderboard…</ThemedText>
-          </View>
-        )}
- 
-        {!loading && error && (
-          <View style={styles.centered}>
-            <ThemedText style={styles.statusText}>{error}</ThemedText>
-            <Pressable onPress={refresh} style={styles.retryBtn}>
-              <ThemedText style={styles.retryText}>Try again</ThemedText>
-            </Pressable>
-          </View>
-        )}
- 
-        {!loading && !error && sorted.length === 0 && (
-          <View style={styles.centered}>
-            <ThemedText style={styles.statusText}>No players yet.</ThemedText>
-          </View>
-        )}
- 
-        {!loading && !error && sorted.length > 0 && (
-          <>
-            {/* Podium */}
-            <View style={styles.podiumRow}>
-              <View style={styles.podiumSide}>
-                {top3[1] && (
-                  <View style={styles.podiumItem}>
-                    <Image source={bee} style={[styles.avatarLarge, styles.avatarSilverImage]} />
-                    <View style={styles.podiumCard}>
-                      <ThemedText style={styles.podiumName}>{top3[1].name}</ThemedText>
-                      <ThemedText style={styles.podiumPoints}>{top3[1].points}</ThemedText>
-                    </View>
-                  </View>
-                )}
+        {/* Podium */}
+        <View style={styles.podiumRow}>
+          <View style={styles.podiumSide}>
+            {top3[1] && (
+              <View style={styles.podiumItem}>
+                <Text style={styles.medalText}>🥈</Text>
+                <Image source={bee} style={[styles.avatarLarge, styles.avatarSilver]} />
+                <View style={styles.podiumCard}>
+                  <Text style={styles.podiumName} numberOfLines={1}>{top3[1].name}</Text>
+                  <Text style={styles.podiumPoints}>{top3[1].points} pts</Text>
+                </View>
               </View>
+            )}
+          </View>
  
-              <View style={styles.podiumCenter}>
-                {top3[0] && (
-                  <View style={styles.podiumItemCenter}>
-                    <Image source={queen} style={[styles.avatarXL, styles.avatarGoldImage]} />
-                    <View style={styles.podiumCardCenter}>
-                      <ThemedText style={styles.podiumNameCenter}>{top3[0].name}</ThemedText>
-                      <ThemedText style={styles.podiumPointsCenter}>{top3[0].points}</ThemedText>
-                    </View>
-                  </View>
-                )}
+          <View style={styles.podiumCenter}>
+            {top3[0] && (
+              <View style={styles.podiumItem}>
+                <Text style={styles.medalText}>🥇</Text>
+                <Image source={queen} style={[styles.avatarXL, styles.avatarGold]} />
+                <View style={[styles.podiumCard, styles.podiumCardCenter]}>
+                  <Text style={[styles.podiumName, styles.podiumNameCenter]} numberOfLines={1}>{top3[0].name}</Text>
+                  <Text style={[styles.podiumPoints, styles.podiumPointsCenter]}>{top3[0].points} pts</Text>
+                </View>
               </View>
+            )}
+          </View>
  
-              <View style={styles.podiumSide}>
-                {top3[2] && (
-                  <View style={styles.podiumItem}>
-                    <Image source={bee} style={[styles.avatarLarge, styles.avatarBronzeImage]} />
-                    <View style={styles.podiumCard}>
-                      <ThemedText style={styles.podiumName}>{top3[2].name}</ThemedText>
-                      <ThemedText style={styles.podiumPoints}>{top3[2].points}</ThemedText>
-                    </View>
-                  </View>
-                )}
+          <View style={styles.podiumSide}>
+            {top3[2] && (
+              <View style={styles.podiumItem}>
+                <Text style={styles.medalText}>🥉</Text>
+                <Image source={bee} style={[styles.avatarLarge, styles.avatarBronze]} />
+                <View style={styles.podiumCard}>
+                  <Text style={styles.podiumName} numberOfLines={1}>{top3[2].name}</Text>
+                  <Text style={styles.podiumPoints}>{top3[2].points} pts</Text>
+                </View>
               </View>
-            </View>
+            )}
+          </View>
+        </View>
  
-            {/* Remaining players */}
-            <View style={styles.listWrap}>
-              <FlatList
-                data={rest}
-                keyExtractor={(p) => p.id}
-                scrollEnabled={false}
-                renderItem={({ item, index }) => (
-                  <View style={styles.listCard}>
-                    <View style={styles.listLeft}>
-                      <ThemedText style={styles.rankNumber}>{index + 4}</ThemedText>
-                      <View style={styles.avatarSmall}>
-                        <ThemedText style={styles.avatarTextSmall}>{getInitials(item.name)}</ThemedText>
-                      </View>
-                      <View style={styles.nameCol}>
-                        <ThemedText style={styles.nameBold}>{item.name}</ThemedText>
-                        <ThemedText style={styles.username}>@username</ThemedText>
-                      </View>
+        {/* Rest of list */}
+        {rest.length > 0 && (
+          <View style={styles.listWrap}>
+            <FlatList
+              data={rest}
+              keyExtractor={(p) => p.UID}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              renderItem={({ item, index }) => (
+                <View style={styles.listCard}>
+                  <View style={styles.listLeft}>
+                    <Text style={styles.rankNumber}>{index + 4}</Text>
+                    <View style={styles.avatarSmall}>
+                      <Text style={styles.avatarInitials}>{getInitials(item.name)}</Text>
                     </View>
-                    <ThemedText style={styles.points}>{item.points}</ThemedText>
+                    <Text style={styles.playerName} numberOfLines={1}>{item.name}</Text>
                   </View>
-                )}
-                ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                contentContainerStyle={{ paddingBottom: 80 }}
-              />
-            </View>
-          </>
+                  <Text style={styles.playerPoints}>{item.points} pts</Text>
+                </View>
+              )}
+            />
+          </View>
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
  
-function getInitials(name: string) {
-  const parts = name.split(' ');
-  const first = parts[0] ? parts[0][0] : '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-  return (first + last).toUpperCase();
-}
- 
 const styles = StyleSheet.create({
-  scroll: {
-    padding: 20,
-    paddingTop: 34,
-    flexGrow: 1,
-  },
-  header: {
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  subheader: {
-    textAlign: 'center',
-    marginBottom: 12,
-    opacity: 0.9,
-    color: '#fff',
-  },
-  tabRow: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 999,
-    padding: 6,
-    marginBottom: 18,
-  },
-  tab: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-  },
-  tabActive: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  tabText: {
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '600',
-  },
-  tabTextActive: {
-    color: '#fff',
-    fontWeight: '800',
-  },
- 
-  centered: {
-    alignItems: 'center',
-    marginTop: 40,
-    gap: 12,
-  },
-  statusText: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 15,
-  },
-  retryBtn: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 999,
-  },
-  retryText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
- 
-  podiumRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    marginBottom: 20,
-    gap: 8,
-  },
-  podiumSide: {
-    width: 110,
-    alignItems: 'center',
-  },
-  podiumCenter: {
-    width: 130,
-    alignItems: 'center',
-  },
-  podiumItem: {
-    alignItems: 'center',
-  },
-  podiumItemCenter: {
-    alignItems: 'center',
-  },
-  avatarLarge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    marginBottom: 8,
-  },
-  avatarXL: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    marginBottom: 10,
-  },
-  avatarSilverImage: {
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  avatarGoldImage: {
-    borderWidth: 4,
-    borderColor: '#FFD700',
-  },
-  avatarBronzeImage: {
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  podiumCard: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  podiumCardCenter: {
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  podiumName: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  podiumPoints: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  podiumNameCenter: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  podiumPointsCenter: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 18,
-  },
- 
-  listWrap: {
-    marginTop: 6,
-  },
-  listCard: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  listLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rankNumber: {
-    color: 'rgba(255,255,255,0.5)',
-    fontWeight: '700',
-    fontSize: 13,
-    width: 24,
-    textAlign: 'center',
-    marginRight: 6,
-  },
-  avatarSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarTextSmall: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  nameCol: {
-    flexDirection: 'column',
-  },
-  nameBold: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  username: {
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 12,
-  },
-  points: {
-    color: '#fff',
-    fontWeight: '700',
-  },
+  container: { flex: 1, backgroundColor: BG },
+  contentPadding: { padding: 20, paddingTop: 40, flexGrow: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12 },
+  centeredScroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BG, padding: 32, gap: 12, minHeight: '100%' },
+  heading: { fontSize: 28, fontWeight: '700', color: PRIMARY, textAlign: 'center', marginTop: 8, marginBottom: 20 },
+  tabRow: { flexDirection: 'row', alignSelf: 'center', backgroundColor: '#e8e4f3', borderRadius: 999, padding: 4, marginBottom: 24 },
+  tab: { paddingVertical: 7, paddingHorizontal: 16, borderRadius: 999 },
+  tabActive: { backgroundColor: PRIMARY },
+  tabText: { fontSize: 13, fontWeight: '600', color: PRIMARY },
+  tabTextActive: { color: '#fff' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333', textAlign: 'center' },
+  emptySubtitle: { fontSize: 14, color: '#999', textAlign: 'center', lineHeight: 20 },
+  pullToRefresh: { fontSize: 12, color: '#bbb', marginTop: 8 },
+  podiumRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', marginBottom: 28, gap: 8 },
+  podiumSide: { width: 110, alignItems: 'center' },
+  podiumCenter: { width: 130, alignItems: 'center' },
+  podiumItem: { alignItems: 'center' },
+  medalText: { fontSize: 22, marginBottom: 4 },
+  avatarLarge: { width: 72, height: 72, borderRadius: 36, marginBottom: 8 },
+  avatarXL: { width: 88, height: 88, borderRadius: 44, marginBottom: 8 },
+  avatarSilver: { borderWidth: 3, borderColor: '#C0C0C0' },
+  avatarGold: { borderWidth: 3, borderColor: '#FFD700' },
+  avatarBronze: { borderWidth: 3, borderColor: '#CD7F32' },
+  podiumCard: { backgroundColor: '#fff', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: BORDER, width: '100%' },
+  podiumCardCenter: { borderColor: '#FFD700', borderWidth: 2 },
+  podiumName: { fontSize: 12, fontWeight: '700', color: PRIMARY },
+  podiumNameCenter: { fontSize: 14 },
+  podiumPoints: { fontSize: 12, fontWeight: '600', color: '#666' },
+  podiumPointsCenter: { fontSize: 14, fontWeight: '700', color: PRIMARY },
+  listWrap: { marginTop: 4 },
+  listCard: { backgroundColor: '#fff', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: BORDER },
+  listLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  rankNumber: { width: 24, textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#999', marginRight: 10 },
+  avatarSmall: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e8e4f3', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  avatarInitials: { color: PRIMARY, fontWeight: '700', fontSize: 13 },
+  playerName: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', flex: 1 },
+  playerPoints: { fontSize: 14, fontWeight: '700', color: PRIMARY },
+  loadingText: { fontSize: 16, color: '#999', marginTop: 12 },
 });

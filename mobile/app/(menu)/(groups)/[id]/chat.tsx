@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import pageStyles from '@/constants/styles/page-styles';
 import { useAuth, useUser } from '@clerk/expo';
 import { useGlobalSearchParams } from 'expo-router';
@@ -22,6 +23,8 @@ export default function ChatScreen() {
   const groupId = Array.isArray(id) ? id[0] : id;
 
   const [text, setText] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const userName = user?.firstName ?? user?.username ?? userId ?? 'User';
 
@@ -31,19 +34,35 @@ export default function ChatScreen() {
     userName,
   );
 
+  // Track keyboard height manually — works reliably on both platforms
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const handleSend = () => {
     if (!text.trim()) return;
     sendMessage(text);
     setText('');
-    Keyboard.dismiss();
+    scrollRef.current?.scrollToEnd({ animated: true });
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
+    <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
       <View style={[pageStyles.container, styles.container]}>
         {/* Header */}
         <View style={styles.header}>
@@ -55,15 +74,29 @@ export default function ChatScreen() {
           ref={scrollRef}
           contentContainerStyle={styles.messages}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: false })
+          }
         >
           {messages.map((m) => (
-            <View key={m.id} style={[styles.messageRow, m.isOwn ? styles.rowRight : styles.rowLeft]}>
+            <View
+              key={m.id}
+              style={[styles.messageRow, m.isOwn ? styles.rowRight : styles.rowLeft]}
+            >
               {!m.isOwn && (
-                <Text style={styles.avatar}>{(m.sender ?? '?').charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatar}>
+                  {(m.sender ?? '?').charAt(0).toUpperCase()}
+                </Text>
               )}
               <View style={[styles.bubble, m.isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
                 {!m.isOwn && <Text style={styles.senderName}>{m.sender}</Text>}
-                <Text style={[styles.messageText, m.isOwn ? styles.messageTextOwn : styles.messageTextOther]}>
+                <Text
+                  style={[
+                    styles.messageText,
+                    m.isOwn ? styles.messageTextOwn : styles.messageTextOther,
+                  ]}
+                >
                   {m.text}
                 </Text>
                 <Text style={styles.timeText}>{m.time}</Text>
@@ -73,7 +106,7 @@ export default function ChatScreen() {
         </ScrollView>
 
         {/* Input */}
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <TextInput
             value={text}
             onChangeText={setText}
@@ -82,12 +115,16 @@ export default function ChatScreen() {
             returnKeyType="send"
             onSubmitEditing={handleSend}
           />
-          <TouchableOpacity onPress={handleSend} style={styles.sendButton} accessibilityLabel="Send message">
+          <TouchableOpacity
+            onPress={handleSend}
+            style={styles.sendButton}
+            accessibilityLabel="Send message"
+          >
             <Text style={{ color: 'white', fontWeight: '600' }}>Send</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
