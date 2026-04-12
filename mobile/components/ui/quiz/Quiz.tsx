@@ -20,7 +20,7 @@ type QuizProps = {
   onBackToFileUpload?: () => void;
 };
 
-const baseUrl = IPHONE_TESTING_URL;
+const baseUrl = API_BASE_URL;
 
 export default function Quiz({ questions, groupId, onFinish, onBackToFileUpload }: QuizProps) {
   const [index, setIndex] = React.useState(0);

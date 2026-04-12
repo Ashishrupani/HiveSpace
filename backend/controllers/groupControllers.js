@@ -270,6 +270,9 @@ export const leaveGroupHandler = async (req, res) => {
     // Remove userId from the group's UID array
     group.UID = group.UID.filter(uid => uid !== userId);
 
+    // Also remove the user from the memberNames array
+    group.memberNames = group.memberNames.filter(member => member.UID !== userId);
+
     // Save the updated group
     await group.save();
 

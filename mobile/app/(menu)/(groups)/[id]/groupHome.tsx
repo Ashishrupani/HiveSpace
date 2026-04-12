@@ -443,6 +443,13 @@ export default function GroupHome() {
           onPress={() => router.push(`/(groups)/${id}/quiz` as any)}
         />
         <HorizontalCard
+          icon="reader"
+          title="Chat"
+          subtitle="Group discussions"
+          detail="Connect with your group members"
+          onPress={() => router.push(`/(groups)/${id}/chat` as any)}
+        />
+        <HorizontalCard
           icon="bookmark"
           title="Saved"
           subtitle={`Saved quizzes: ${savedQuizCount}`}

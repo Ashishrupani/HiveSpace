@@ -1,22 +1,3 @@
-/**
- * GroupDataContext
- *
- * Single source of truth for all group-level remote data.
- * All screens read from this cache — no screen owns its own fetch loop.
- *
- * Cached slices
- * ─────────────
- *  • quizzes / summaries   (ragApi)
- *  • members + adminUID    (groups/:id/members)
- *  • leaderboard           (groups/:id/leaderboard)
- *  • groupMeta             (groups/:id)
- *
- * Usage
- * ─────
- *  const { getData, fetch, isLoading, invalidate } = useGroupData();
- *  const { quizzes, members, leaderboard, groupMeta } = getData(groupId);
- */
- 
 import React, {
   createContext,
   useContext,
@@ -29,12 +10,8 @@ import axios from 'axios';
 import { getSavedQuizzes, getSavedSummaries, SavedQuiz, SavedSummary } from '@/api/ragApi';
 import { API_BASE_URL } from '@/api/constants';
  
-// ─── Types ────────────────────────────────────────────────────────────────────
- 
 export type Member = { UID: string; name: string };
- 
 export type LeaderboardPlayer = { UID: string; name: string; points: number };
- 
 export type GroupMeta = {
   name: string;
   color: string;
@@ -42,7 +19,6 @@ export type GroupMeta = {
   about?: string;
   logoUri?: string;
 };
- 
 export type GroupData = {
   quizzes: SavedQuiz[];
   summaries: SavedSummary[];
@@ -52,25 +28,18 @@ export type GroupData = {
   groupMeta: GroupMeta | null;
 };
  
-// Which slices can be fetched independently
 export type GroupDataSlice = 'saved' | 'members' | 'leaderboard' | 'groupMeta';
- 
 type LoadingMap = Record<string, Partial<Record<GroupDataSlice, boolean>>>;
  
 type GroupDataContextType = {
-  /** Returns cached data for a group (empty defaults if not yet fetched) */
   getData: (groupId: string) => GroupData;
-  /** Fetch one or more slices. No-ops if already in-flight. */
   fetch: (groupId: string, slices?: GroupDataSlice[]) => Promise<void>;
-  /** True while any of the requested slices are loading */
   isLoading: (groupId: string, slices?: GroupDataSlice[]) => boolean;
-  /** Force-clear cached slices so next fetch() hits the network */
   invalidate: (groupId: string, slices?: GroupDataSlice[]) => void;
-  /** Optimistically patch quizzes/summaries counts after a save */
+  /** Call when the active group changes so the context can clear stale data */
+  setActiveGroup: (groupId: string) => void;
   patchSavedCounts: (groupId: string, delta: { quizzes?: number; summaries?: number }) => void;
 };
- 
-// ─── Defaults ─────────────────────────────────────────────────────────────────
  
 const EMPTY_DATA: GroupData = {
   quizzes: [],
@@ -83,25 +52,37 @@ const EMPTY_DATA: GroupData = {
  
 const ALL_SLICES: GroupDataSlice[] = ['saved', 'members', 'leaderboard', 'groupMeta'];
  
-// ─── Context ──────────────────────────────────────────────────────────────────
- 
 const GroupDataContext = createContext<GroupDataContextType | null>(null);
  
 export function GroupDataProvider({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
  
-  // Keyed by groupId
   const cache = useRef<Record<string, GroupData>>({});
-  // Per-slice in-flight guard: fetchingRef[groupId][slice] = true
   const fetchingRef = useRef<Record<string, Partial<Record<GroupDataSlice, boolean>>>>({});
-  // Reactive loading state for UI
+  const activeGroupRef = useRef<string>('');
   const [loadingMap, setLoadingMap] = useState<LoadingMap>({});
  
   // ─── Helpers ─────────────────────────────────────────────────────────────
  
-  const getCached = useCallback((groupId: string): GroupData => {
-    return cache.current[groupId] ?? { ...EMPTY_DATA };
-  }, []);
+  const resetSlices = (groupId: string, slices: GroupDataSlice[]) => {
+    // Clear cache data
+    const patch: Partial<GroupData> = {};
+    for (const slice of slices) {
+      switch (slice) {
+        case 'saved':       patch.quizzes = []; patch.summaries = []; break;
+        case 'members':     patch.members = []; patch.adminUID = ''; break;
+        case 'leaderboard': patch.leaderboard = []; break;
+        case 'groupMeta':   patch.groupMeta = null; break;
+      }
+    }
+    cache.current[groupId] = { ...(cache.current[groupId] ?? { ...EMPTY_DATA }), ...patch };
+ 
+    // Clear in-flight guards so fetch() will actually run
+    const ref = (fetchingRef.current[groupId] ??= {});
+    for (const slice of slices) {
+      ref[slice] = false;
+    }
+  };
  
   const setSliceLoading = (groupId: string, slice: GroupDataSlice, value: boolean) => {
     setLoadingMap((prev) => ({
@@ -113,6 +94,27 @@ export function GroupDataProvider({ children }: { children: React.ReactNode }) {
   const patchCache = (groupId: string, patch: Partial<GroupData>) => {
     cache.current[groupId] = { ...(cache.current[groupId] ?? { ...EMPTY_DATA }), ...patch };
   };
+ 
+  // ─── Active group tracking ────────────────────────────────────────────────
+ 
+  /**
+   * Called by _layout whenever the group id param changes.
+   * Runs synchronously so that the very first getData() call from any
+   * tab screen already sees an empty cache for the new group, not stale
+   * data from the previous group.
+   */
+  const setActiveGroup = useCallback((groupId: string) => {
+    if (activeGroupRef.current === groupId) return;
+    // Only mutate refs here — called during render so setState is forbidden.
+    // cache.current is read directly by getData(), so children see empty data
+    // immediately without needing a setState trigger.
+    if (activeGroupRef.current) {
+      resetSlices(activeGroupRef.current, ALL_SLICES);
+    }
+    activeGroupRef.current = groupId;
+    resetSlices(groupId, ALL_SLICES);
+    // loadingMap updates naturally when fetch() sets slice loading state
+  }, []);
  
   // ─── Slice fetchers ───────────────────────────────────────────────────────
  
@@ -126,10 +128,7 @@ export function GroupDataProvider({ children }: { children: React.ReactNode }) {
         getSavedQuizzes(groupId, token),
         getSavedSummaries(groupId, token),
       ]);
-      patchCache(groupId, {
-        quizzes: quizzes ?? [],
-        summaries: summaries ?? [],
-      });
+      patchCache(groupId, { quizzes: quizzes ?? [], summaries: summaries ?? [] });
     } catch {
       patchCache(groupId, { quizzes: [], summaries: [] });
     } finally {
@@ -206,7 +205,7 @@ export function GroupDataProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch {
-      // Leave groupMeta null — callers can show a fallback
+      // Leave groupMeta null
     } finally {
       ref.groupMeta = false;
       setSliceLoading(groupId, 'groupMeta', false);
@@ -216,8 +215,8 @@ export function GroupDataProvider({ children }: { children: React.ReactNode }) {
   // ─── Public API ───────────────────────────────────────────────────────────
  
   const getData = useCallback(
-    (groupId: string): GroupData => getCached(groupId),
-    [getCached],
+    (groupId: string): GroupData => cache.current[groupId] ?? { ...EMPTY_DATA },
+    [],
   );
  
   const fetch = useCallback(
@@ -250,45 +249,35 @@ export function GroupDataProvider({ children }: { children: React.ReactNode }) {
  
   const invalidate = useCallback(
     (groupId: string, slices: GroupDataSlice[] = ALL_SLICES) => {
-      if (!cache.current[groupId]) return;
-      const patch: Partial<GroupData> = {};
-      for (const slice of slices) {
-        switch (slice) {
-          case 'saved':       patch.quizzes = []; patch.summaries = []; break;
-          case 'members':     patch.members = []; patch.adminUID = ''; break;
-          case 'leaderboard': patch.leaderboard = []; break;
-          case 'groupMeta':   patch.groupMeta = null; break;
-        }
-      }
-      patchCache(groupId, patch);
+      resetSlices(groupId, slices);
+      setLoadingMap((prev) => {
+        const groupMap = { ...prev[groupId] };
+        for (const slice of slices) groupMap[slice] = false;
+        return { ...prev, [groupId]: groupMap };
+      });
     },
     [],
   );
  
-  /**
-   * Call after saving a quiz or summary to bump the visible count on GroupHome
-   * without waiting for a full refetch.
-   */
   const patchSavedCounts = useCallback(
     (groupId: string, delta: { quizzes?: number; summaries?: number }) => {
-      const current = getCached(groupId);
+      const current = cache.current[groupId] ?? { ...EMPTY_DATA };
       patchCache(groupId, {
         quizzes: delta.quizzes !== undefined
-          ? Array(current.quizzes.length + delta.quizzes) // length-only bump
+          ? Array(current.quizzes.length + delta.quizzes)
           : current.quizzes,
         summaries: delta.summaries !== undefined
           ? Array(current.summaries.length + delta.summaries)
           : current.summaries,
       });
-      // Trigger re-render
       setLoadingMap((prev) => ({ ...prev }));
     },
-    [getCached],
+    [],
   );
  
   return (
     <GroupDataContext.Provider
-      value={{ getData, fetch, isLoading, invalidate, patchSavedCounts }}
+      value={{ getData, fetch, isLoading, invalidate, setActiveGroup, patchSavedCounts }}
     >
       {children}
     </GroupDataContext.Provider>
@@ -300,3 +289,4 @@ export function useGroupData() {
   if (!ctx) throw new Error('useGroupData must be used inside <GroupDataProvider>');
   return ctx;
 }
+ 

@@ -1,10 +1,11 @@
 // members.tsx
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   ScrollView, View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
 import { useAuth, useUser } from '@clerk/expo';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
@@ -13,13 +14,13 @@ import { API_BASE_URL } from '@/api/constants';
 import { useGroupData, Member } from '@/contexts/GroupDataContext';
  
 export default function GroupMembersPage() {
-  const { id } = useLocalSearchParams();
-  const groupId = Array.isArray(id) ? id[0] : id ?? '';
+  const groupId = useActiveGroupId();
   const router = useRouter();
  
   const { getToken } = useAuth();
   const { user } = useUser();
   const { getData, fetch, isLoading, invalidate } = useGroupData();
+  const lastGroupId = useRef<string>('');
  
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -29,6 +30,11 @@ export default function GroupMembersPage() {
   // Fetch members slice on focus
   useFocusEffect(
     useCallback(() => {
+      if (lastGroupId.current !== groupId) {
+        if (lastGroupId.current) invalidate(lastGroupId.current, ['members']);
+        invalidate(groupId, ['members']);
+        lastGroupId.current = groupId;
+      }
       fetch(groupId, ['members']);
     }, [groupId]),
   );
