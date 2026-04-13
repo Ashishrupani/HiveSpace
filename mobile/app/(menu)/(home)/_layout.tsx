@@ -54,6 +54,12 @@ export default function HomeLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="editProfile"
+          options={{
+            href: null, 
+          }}
+        />
       </Tabs>
     </GoalsProvider>
   )

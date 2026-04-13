@@ -133,7 +133,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           style={styles.accountCard}
-          onPress={() => router.push("/(menu)/(home)/profile/editProfile")}
+          onPress={() => router.push("/(menu)/(home)/editProfile")}
         >
           {avatarEl}
           <View style={{ flex: 1, marginLeft: 12 }}>

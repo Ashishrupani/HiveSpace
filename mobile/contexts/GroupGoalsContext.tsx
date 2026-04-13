@@ -126,6 +126,22 @@ export function GroupGoalsProvider({ children }: { children: ReactNode }) {
                     }
                 }));
                 Alert.alert('Error', response.data.message || 'Failed to create goal');
+            } else {
+                // Refetch so local state has the real backend-generated id.
+                // Without this, update/edit/delete send the wrong id and get "Goal not found".
+                const refetch = await axios.post(
+                    `${baseUrl}/api/groups/fetch-goals`,
+                    { groupId },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                const rawGoals = Array.isArray(refetch.data.goals) ? refetch.data.goals : [];
+                setGroupGoalsMap(prev => ({
+                    ...prev,
+                    [groupId]: {
+                        active: rawGoals.map(mapFromBackend),
+                        completed: prev[groupId]?.completed || [],
+                    }
+                }));
             }
         } catch (error: any) {
             setGroupGoalsMap(prev => ({

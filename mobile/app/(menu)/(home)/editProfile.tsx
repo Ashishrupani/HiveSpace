@@ -19,7 +19,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-const DefaultAvatar: any = require("../../../../assets/images/default-avatar.png");
+const DefaultAvatar: any = require("../../../assets/images/default-avatar.png");
 
 // helpers
 const range = (s: number, e: number) => Array.from({ length: e - s + 1 }, (_, i) => s + i);
@@ -145,7 +145,7 @@ export default function EditProfileScreen() {
       await user?.reload?.();
       Alert.alert("Saved", "Your profile has been updated.");
       // Go back to the Profile tab explicitly
-      router.replace("/(menu)/(home)/profile/profilePage");
+      router.push("/profile");
     } catch (e: any) {
       console.error(e);
       if (typeof e?.errors?.[0]?.message === "string" && e.errors[0].message.toLowerCase().includes("username")) {
@@ -171,7 +171,7 @@ export default function EditProfileScreen() {
       {/* Minimal header (no big banner). Back takes you to Profile tab. */}
       <View style={styles.headerBar}>
         <TouchableOpacity
-          onPress={() => router.replace("/(menu)/(home)/profile/profilePage")}
+          onPress={() => router.push("/profile")}
           hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
         >
           <IconSymbol name="chevron.left" size={20} color="#111" />
