@@ -5,12 +5,12 @@ import GoalProgressBar from '@/components/ui/goalsProgressbar';
 import { colors } from "../../../../constants/theme";
 import { useGroupGoals } from '@/contexts/GroupGoalsContext';
 import { Goal } from '@/contexts/GoalsContext';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useActiveGroupId } from '@/contexts/ActiveGroupContext';
 import BackButton from '@/components/ui/BackButton';
  
 export default function GroupGoals() {
-    const { id } = useLocalSearchParams();
-    const groupId = Array.isArray(id) ? id[0] : id || '1';
+    const groupId = useActiveGroupId();
     const router = useRouter();
     
     const { 
